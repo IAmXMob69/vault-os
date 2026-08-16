@@ -1,0 +1,847 @@
+#!/usr/bin/env bash
+# vault-os — production control plane for Fallout NV XFCE stack
+set -euo pipefail
+
+readonly VERSION="1.4.2"
+readonly CONF_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
+
+export DISPLAY="${DISPLAY:-:0}"
+export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+load_config() {
+  THEME_NAME=PipBoy-NV
+  ICON_THEME=FalloutMojave
+  WM_THEME=PipBoy-NV
+  CURSOR_THEME=PipBoy-NV-Cursors
+  CURSOR_SIZE=24
+  UI_FONT="Share Tech Mono 10"
+  MONO_FONT="Share Tech Mono 10"
+  TITLE_FONT="Share Tech Mono Bold 10"
+  WALLPAPER="$HOME/.local/share/backgrounds/fnv-mojave-strip-4k.jpg"
+  WALLPAPER_FALLBACK="$HOME/.local/share/backgrounds/fnv-vaultboy-perks-4k.jpg"
+  PANEL1_POSITION="p=6;x=0;y=0"
+  PANEL1_LENGTH=100
+  PANEL1_SIZE=30
+  PANEL1_AUTOHIDE=0
+  PANEL1_BG_IMAGE="$HOME/.local/share/vault-os/panel/panel-top.png"
+  PANEL2_POSITION="p=10;x=0;y=0"
+  PANEL2_LENGTH=100
+  PANEL2_SIZE=56
+  PANEL2_AUTOHIDE=0
+  PANEL2_BG_IMAGE="$HOME/.local/share/vault-os/panel/panel-bg.png"
+  PANEL_BG_STYLE=2
+  PANEL_BG_R=0.027
+  PANEL_BG_G=0.051
+  PANEL_BG_B=0.035
+  PANEL_BG_A=1.0
+  INTRO_FILE="$HOME/.local/share/fallout-nv/boot-intro.mp4"
+  INTRO_VOLUME=90
+  INTRO_ENABLED=0
+  LOG_FILE="$HOME/.local/share/fallout-nv/logs/vault-os.log"
+  LOCK_DIR="${XDG_RUNTIME_DIR}/vault-os"
+
+  if [[ -f "$CONF_DEFAULT" ]]; then
+    set +u
+    # shellcheck disable=SC1090
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      [[ "$line" =~ ^[[:space:]]*# ]] && continue
+      [[ -z "${line// }" ]] && continue
+      key="${line%%=*}"
+      val="${line#*=}"
+      key="${key// /}"
+      # expand $HOME and $XDG_RUNTIME_DIR
+      val="${val//\$HOME/$HOME}"
+      val="${val//\$XDG_RUNTIME_DIR/$XDG_RUNTIME_DIR}"
+      printf -v "$key" '%s' "$val"
+    done < "$CONF_DEFAULT"
+    set -u
+  fi
+  mkdir -p "$(dirname "$LOG_FILE")" "$LOCK_DIR" \
+    "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv" \
+    "$HOME/.local/state/vault-os"
+}
+
+_ts() { date -Iseconds 2>/dev/null || date '+%Y-%m-%dT%H:%M:%S'; }
+log()  { printf '%s INFO  %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] %s\n' "$*"; }
+warn() { printf '%s WARN  %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] WARN: %s\n' "$*" >&2; }
+err()  { printf '%s ERROR %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] ERROR: %s\n' "$*" >&2; }
+have() { command -v "$1" >/dev/null 2>&1; }
+
+has_share_tech_mono() {
+  # File check first (fast, no pipefail issues under set -e)
+  [[ -f "$HOME/.local/share/fonts/ShareTechMono/ShareTechMono-Regular.ttf" ]] && return 0
+  [[ -f "$HOME/.local/share/fonts/pipboy/ShareTechMono-Regular.ttf" ]] && return 0
+  if fc-list : family 2>/dev/null | grep -Fqi "Share Tech Mono"; then return 0; fi
+  if fc-list 2>/dev/null | grep -Fqi "ShareTechMono"; then return 0; fi
+  return 1
+}
+
+
+_panel_num_ok() { awk -v v="${1:-0}" -v m="${2:-0}" 'BEGIN{ exit !(v+0 >= m) }'; }
+
+xq_set() {
+  # Type-safe xfconf set: on failure reset property then create (-n).
+  have xfconf-query || return 0
+  local ch="$1" prop="$2"; shift 2
+  if xfconf-query -c "$ch" -p "$prop" "$@" 2>/dev/null; then
+    return 0
+  fi
+  # Existing property may have wrong type — remove and recreate
+  xfconf-query -c "$ch" -p "$prop" -r 2>/dev/null || true
+  xfconf-query -c "$ch" -p "$prop" -n "$@" 2>/dev/null || true
+}
+xq_get() {
+  have xfconf-query || { echo ""; return 0; }
+  xfconf-query -c "$1" -p "$2" 2>/dev/null || true
+}
+
+ensure_xfdesktop() {
+  # Wallpaper vanishes if xfdesktop dies — restart and re-pin backdrop.
+  export DISPLAY="${DISPLAY:-:0}"
+  export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+  export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+  export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
+
+  local wall="${WALLPAPER:-$HOME/.local/share/backgrounds/fnv-mojave-strip-4k.jpg}"
+  [[ -f "$wall" ]] || wall="${WALLPAPER_FALLBACK:-$HOME/.local/share/backgrounds/fnv-vaultboy-perks-4k.jpg}"
+  [[ -f "$wall" ]] || wall="$HOME/.local/share/backgrounds/pipboy-nv-wasteland.png"
+
+  # Always re-assert wallpaper path (cheap, prevents blank solid color)
+  if [[ -f "$wall" ]] && have xfconf-query; then
+    while IFS= read -r prop; do
+      [[ -n "$prop" ]] || continue
+      xfconf-query -c xfce4-desktop -p "$prop" -s "$wall" 2>/dev/null || true
+    done < <(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image$' || true)
+    while IFS= read -r prop; do
+      [[ -n "$prop" ]] || continue
+      xfconf-query -c xfce4-desktop -p "$prop" -t int -s 5 2>/dev/null || true
+    done < <(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'image-style$' || true)
+  fi
+
+  if pgrep -x xfdesktop >/dev/null 2>&1; then
+    return 0
+  fi
+
+  warn "xfdesktop not running — starting (wallpaper guard)"
+  mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv"
+  # Avoid duplicate races
+  local lock="${XDG_RUNTIME_DIR}/vault-os/xfdesktop.start.lock"
+  mkdir -p "$(dirname "$lock")"
+  exec 9>"$lock"
+  if ! flock -n 9; then
+    sleep 0.5
+    pgrep -x xfdesktop >/dev/null 2>&1 && return 0
+  fi
+
+  nohup xfdesktop --disable-wm-check \
+    >>"${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/xfdesktop.log" 2>&1 &
+  sleep 0.9
+
+  if ! pgrep -x xfdesktop >/dev/null 2>&1; then
+    nohup xfdesktop \
+      >>"${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/xfdesktop.log" 2>&1 &
+    sleep 0.9
+  fi
+
+  if pgrep -x xfdesktop >/dev/null 2>&1; then
+    log "xfdesktop started pid=$(pgrep -x xfdesktop | head -1)"
+    # Force redraw
+    xfdesktop --reload 2>/dev/null || true
+    return 0
+  fi
+  err "failed to start xfdesktop — see ~/.config/fallout-nv/xfdesktop.log"
+  return 1
+}
+
+cmd_ensure_desktop() {
+  log "ensure desktop (xfdesktop + wallpaper)"
+  load_config 2>/dev/null || true
+  ensure_xfdesktop
+}
+
+
+
+intro_mpv_running() {
+  # Match mpv by PID + cmdline without killing self; only look at mpv processes
+  local pid cmd
+  for pid in $(pgrep -x mpv 2>/dev/null || true); do
+    cmd=$(tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null || true)
+    case "$cmd" in
+      *boot-intro*|*FNVIntro*) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+stop_intro_mpv() {
+  local pid cmd
+  for pid in $(pgrep -x mpv 2>/dev/null || true); do
+    cmd=$(tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null || true)
+    case "$cmd" in
+      *boot-intro*|*FNVIntro*) kill "$pid" 2>/dev/null || true ;;
+    esac
+  done
+}
+
+cmd_apply() {
+  log "apply theme stack ($THEME_NAME / $ICON_THEME / $CURSOR_THEME)"
+
+  # Font fallback if Share Tech Mono missing
+  if has_share_tech_mono; then
+    UI_FONT="Share Tech Mono 10"
+    MONO_FONT="Share Tech Mono 10"
+    TITLE_FONT="Share Tech Mono Bold 10"
+  elif fc-list : family 2>/dev/null | grep -Fqi "JetBrains Mono"; then
+    UI_FONT="JetBrains Mono 10"
+    MONO_FONT="JetBrains Mono 10"
+    TITLE_FONT="JetBrains Mono Bold 10"
+    warn "Share Tech Mono missing — using JetBrains Mono"
+  fi
+
+  xq_set xsettings /Net/ThemeName -t string -s "$THEME_NAME"
+  xq_set xsettings /Net/IconThemeName -t string -s "$ICON_THEME"
+  xq_set xsettings /Gtk/FontName -t string -s "$UI_FONT"
+  xq_set xsettings /Gtk/MonospaceFontName -t string -s "$MONO_FONT"
+  xq_set xsettings /Gtk/CursorThemeName -t string -s "${CURSOR_THEME:-Adwaita}"
+  xq_set xsettings /Gtk/CursorThemeSize -t int -s "${CURSOR_SIZE:-24}"
+  xq_set xsettings /Net/EnableEventSounds -t bool -s false
+  xq_set xsettings /Net/EnableInputFeedbackSounds -t bool -s false
+  xq_set xfwm4 /general/theme -t string -s "$WM_THEME"
+  xq_set xfwm4 /general/title_font -t string -s "$TITLE_FONT"
+  xq_set xfwm4 /general/workspace_names -t string -s "STAT" -t string -s "DATA" -t string -s "ITEM" -t string -s "MAP"
+  xq_set xfwm4 /general/workspace_count -t int -s 4
+
+  # Wallpaper
+  local wall="$WALLPAPER"
+  [[ -f "$wall" ]] || wall="$WALLPAPER_FALLBACK"
+  if [[ -f "$wall" ]] && have xfconf-query; then
+    while IFS= read -r p; do
+      [[ -n "$p" ]] || continue
+      xfconf-query -c xfce4-desktop -p "$p" -s "$wall" 2>/dev/null || true
+    done < <(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image$' || true)
+    # image-style 5 = zoom
+    while IFS= read -r p; do
+      [[ -n "$p" ]] || continue
+      xfconf-query -c xfce4-desktop -p "$p" -t int -s 5 2>/dev/null || true
+    done < <(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'image-style$' || true)
+  fi
+
+  # Backdrop solid-color fallback (never leave stock red)
+  if have xfconf-query; then
+    while IFS= read -r rp; do
+      [[ -n "$rp" ]] || continue
+      xfconf-query -c xfce4-desktop -p "$rp" -r 2>/dev/null || true
+      xfconf-query -c xfce4-desktop -p "$rp" -n \
+        -t double -s 0.027 -t double -s 0.051 \
+        -t double -s 0.035 -t double -s 1.0 2>/dev/null || true
+    done < <(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep -E 'rgba[0-9]?$' || true)
+  fi
+
+  # Desktop icon label colors (CRT green)
+  xq_set xfce4-desktop /desktop-icons/label-text-color \
+    -t double -s 0.72 -t double -s 1.0 -t double -s 0.80 -t double -s 1.0
+  xq_set xfce4-desktop /desktop-icons/label-background-color \
+    -t double -s 0.027 -t double -s 0.051 -t double -s 0.035 -t double -s 0.75
+  xq_set xfce4-desktop /desktop-icons/use-custom-label-text-color -t bool -s true
+  xq_set xfce4-desktop /desktop-icons/use-custom-label-background-color -t bool -s true
+
+  # Notifications (avoid /primary-monitor — type varies by xfce4-notifyd version)
+  # Drop legacy wrong-typed props if present
+  if have xfconf-query; then
+    for bad in /primary-monitor; do
+      xfconf-query -c xfce4-notifyd -p "$bad" -r 2>/dev/null || true
+    done
+  fi
+  xq_set xfce4-notifyd /theme -t string -s "PipBoy-NV"
+  xq_set xfce4-notifyd /do-fadeout -t bool -s true
+  xq_set xfce4-notifyd /do-slideout -t bool -s true
+  xq_set xfce4-notifyd /initial-opacity -t double -s 0.96
+  # Modern xfce4-notifyd uses string enum: top-left|bottom-left|top-right|bottom-right
+  # Older builds used int — detect and set the correct type for this system.
+  if have xfconf-query; then
+    cur=$(xfconf-query -c xfce4-notifyd -p /notify-location 2>/dev/null || true)
+    if [[ -z "$cur" ]]; then
+      # Prefer string (current xfce4-notifyd); fall back to int
+      xfconf-query -c xfce4-notifyd -p /notify-location -n -t string -s "bottom-left" 2>/dev/null \
+        || xfconf-query -c xfce4-notifyd -p /notify-location -n -t int -s 1 2>/dev/null \
+        || true
+    elif [[ "$cur" =~ ^[0-9]+$ ]]; then
+      : # numeric already — leave it
+    else
+      : # string already — leave it
+    fi
+  fi
+
+  # Clock — military / Pip-Boy style
+  xq_set xfce4-panel /plugins/plugin-8/digital-time-format -t string -s "%I:%M %p  %a %d"
+  xq_set xfce4-panel /plugins/plugin-8/digital-format -t string -s "%I:%M %p  %a %d"
+
+  # GTK settings.ini
+  mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
+  cat > "$HOME/.config/gtk-3.0/settings.ini" << INI
+[Settings]
+gtk-theme-name=${THEME_NAME}
+gtk-icon-theme-name=${ICON_THEME}
+gtk-font-name=${UI_FONT}
+gtk-cursor-theme-name=${CURSOR_THEME:-Adwaita}
+gtk-cursor-theme-size=${CURSOR_SIZE:-24}
+gtk-application-prefer-dark-theme=1
+gtk-xft-antialias=1
+gtk-xft-hinting=1
+gtk-xft-hintstyle=hintslight
+gtk-xft-rgba=rgb
+gtk-enable-animations=true
+INI
+  cp -f "$HOME/.config/gtk-3.0/settings.ini" "$HOME/.config/gtk-4.0/settings.ini"
+
+  # Flatpak GTK/icon theme alignment
+  if have flatpak; then
+    flatpak override --user --env=GTK_THEME="$THEME_NAME" 2>/dev/null || true
+    flatpak override --user --env=ICON_THEME="$ICON_THEME" 2>/dev/null || true
+    flatpak override --user --filesystem=xdg-config/gtk-3.0:ro 2>/dev/null || true
+    flatpak override --user --filesystem=xdg-config/gtk-4.0:ro 2>/dev/null || true
+    flatpak override --user --filesystem=~/.themes:ro 2>/dev/null || true
+    flatpak override --user --filesystem=~/.icons:ro 2>/dev/null || true
+    flatpak override --user --filesystem=~/.local/share/icons:ro 2>/dev/null || true
+  fi
+
+  # Qt (qt5ct/qt6ct) — keep in sync
+  for qt in qt5ct qt6ct; do
+    local qtc="$HOME/.config/$qt/$qt.conf"
+    mkdir -p "$HOME/.config/$qt"
+    if [[ -f "$qtc" ]]; then
+      sed -i "s|^icon_theme=.*|icon_theme=${ICON_THEME}|" "$qtc" 2>/dev/null || true
+      sed -i "s|^style=.*|style=Fusion|" "$qtc" 2>/dev/null || true
+    else
+      cat > "$qtc" << QTC
+[Appearance]
+custom_palette=false
+icon_theme=${ICON_THEME}
+standard_dialogs=default
+style=Fusion
+
+[Fonts]
+fixed="${MONO_FONT%,*},10,-1,5,50,0,0,0,0,0"
+general="${UI_FONT%,*},10,-1,5,50,0,0,0,0,0"
+QTC
+    fi
+  done
+
+  # Environment hint for Qt apps (session)
+  mkdir -p "$HOME/.config/environment.d"
+  cat > "$HOME/.config/environment.d/vault-os.conf" << ENV
+GTK_THEME=${THEME_NAME}
+QT_QPA_PLATFORMTHEME=qt5ct
+XCURSOR_THEME=${CURSOR_THEME:-PipBoy-NV-Cursors}
+XCURSOR_SIZE=${CURSOR_SIZE:-24}
+ENV
+
+
+  # Terminal — pure Pip-Boy phosphor (no blue/purple drift)
+  if have xfconf-query; then
+    local pal="#070C09;#FF4D4D;#249B4C;#FFB000;#1A4A2A;#249B4C;#249B4C;#33FF6A;#0C1610;#FF6B6B;#33FF6A;#FFC940;#249B4C;#5CFF9A;#C8FFD8;#C8FFD8"
+    xq_set xfce4-terminal /color-use-theme -t bool -s false
+    xq_set xfce4-terminal /color-foreground -t string -s "#33FF6A"
+    xq_set xfce4-terminal /color-background -t string -s "#070C09"
+    xq_set xfce4-terminal /color-cursor -t string -s "#C8FFD8"
+    xq_set xfce4-terminal /color-bold -t string -s "#C8FFD8"
+    xq_set xfce4-terminal /color-palette -t string -s "$pal"
+    xq_set xfce4-terminal /background-mode -t string -s "TERMINAL_BACKGROUND_SOLID"
+    xq_set xfce4-terminal /misc-borders-default -t bool -s true
+    xq_set xfce4-terminal /font-name -t string -s "Share Tech Mono 11"
+    xq_set xfce4-terminal /title-initial -t string -s "ROBCO TERMLINK — PIP-BOY 3000"
+  fi
+
+  ensure_xfdesktop || true
+  log "apply complete"
+}
+
+
+cmd_ensure_panel() {
+  log "ensure panels"
+
+  # Always write FULL position strings — XFCE truncating to p=N loses the bottom bar
+  xq_set xfce4-panel /panels -t int -s 1 -t int -s 2
+
+  xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
+  xq_set xfce4-panel /panels/panel-1/length -t double -s "$PANEL1_LENGTH"
+  xq_set xfce4-panel /panels/panel-1/size -t int -s "$PANEL1_SIZE"
+  xq_set xfce4-panel /panels/panel-1/autohide-behavior -t int -s "$PANEL1_AUTOHIDE"
+  xq_set xfce4-panel /panels/panel-1/position-locked -t bool -s true
+  xq_set xfce4-panel /panels/panel-1/mode -t int -s 0
+
+  xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
+  xq_set xfce4-panel /panels/panel-2/length -t double -s "$PANEL2_LENGTH"
+  xq_set xfce4-panel /panels/panel-2/size -t int -s "$PANEL2_SIZE"
+  xq_set xfce4-panel /panels/panel-2/autohide-behavior -t int -s "$PANEL2_AUTOHIDE"
+  xq_set xfce4-panel /panels/panel-2/position-locked -t bool -s true
+  xq_set xfce4-panel /panels/panel-2/mode -t int -s 0
+
+  # Panel chrome — prefer textured images (style 2), color fallback (style 1)
+  local bg_style="${PANEL_BG_STYLE:-2}"
+  xq_set xfce4-panel /panels/panel-1/background-style -t int -s "$bg_style"
+  xq_set xfce4-panel /panels/panel-2/background-style -t int -s "$bg_style"
+  if [[ -f "${PANEL1_BG_IMAGE:-}" ]]; then
+    xq_set xfce4-panel /panels/panel-1/background-image -t string -s "$PANEL1_BG_IMAGE"
+  fi
+  if [[ -f "${PANEL2_BG_IMAGE:-}" ]]; then
+    xq_set xfce4-panel /panels/panel-2/background-image -t string -s "$PANEL2_BG_IMAGE"
+  fi
+  local p
+  for p in 1 2; do
+    if have xfconf-query; then
+      xfconf-query -c xfce4-panel -p "/panels/panel-${p}/background-rgba" -r 2>/dev/null || true
+      xfconf-query -c xfce4-panel -p "/panels/panel-${p}/background-rgba" -n \
+        -t double -s "$PANEL_BG_R" \
+        -t double -s "$PANEL_BG_G" \
+        -t double -s "$PANEL_BG_B" \
+        -t double -s "$PANEL_BG_A" 2>/dev/null || true
+    fi
+  done
+  xq_set xfce4-panel /panels/panel-1/icon-size -t int -s "${PANEL1_ICON_SIZE:-16}"
+  xq_set xfce4-panel /panels/panel-2/icon-size -t int -s "${PANEL2_ICON_SIZE:-48}" 
+
+  local len2
+  len2=$(xq_get xfce4-panel /panels/panel-2/length | head -1)
+  if ! _panel_num_ok "${len2:-0}" 50; then
+    warn "panel-2 length bad ($len2) — restoring XML backup"
+    local good="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/xfce4-panel.xml.known-good"
+    local live="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+    [[ -f "$good" ]] && cp -a "$good" "$live"
+  fi
+
+  if ! pgrep -x xfce4-panel >/dev/null 2>&1; then
+    warn "xfce4-panel dead — starting"
+    local good="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/xfce4-panel.xml.known-good"
+    local live="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+    [[ -f "$good" ]] && cp -a "$good" "$live"
+    nohup xfce4-panel >>"${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/panel.log" 2>&1 &
+    sleep 0.7
+  fi
+
+  # Re-assert full positions (daemon may rewrite to p=N only)
+  xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
+  xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
+
+  if pgrep -x xfce4-panel >/dev/null 2>&1; then
+    log "panels OK (pid $(pgrep -x xfce4-panel | head -1))"
+    return 0
+  fi
+  err "failed to start xfce4-panel"
+  return 1
+}
+
+cmd_intro() {
+  if [[ "${INTRO_ENABLED:-1}" != "1" ]] || [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/skip-boot-intro" ]]; then
+    log "intro disabled"
+    return 0
+  fi
+  local intro="$INTRO_FILE"
+  [[ -f "$intro" ]] || intro="$HOME/.local/share/fallout-nv/FNVIntro-1080p-1m26s.mp4"
+  if [[ ! -f "$intro" ]]; then warn "intro media missing"; return 0; fi
+  have mpv || { warn "mpv missing"; return 0; }
+  if intro_mpv_running; then log "intro already playing"; return 0; fi
+
+  local lock="$LOCK_DIR/intro.lock"
+  log "intro start: $intro"
+  (
+    flock -n 200 || exit 0
+    local i
+    for i in $(seq 1 60); do
+      xset q &>/dev/null && break
+      sleep 0.05
+    done
+    exec mpv \
+      --fullscreen \
+      --force-window=immediate \
+      --no-border \
+      --ontop \
+      --cursor-autohide=always \
+      --no-osc \
+      --osd-level=0 \
+      --really-quiet \
+      --keep-open=no \
+      --stop-screensaver \
+      --hwdec=auto-safe \
+      --vo=gpu \
+      --profile=fast \
+      --volume="${INTRO_VOLUME:-90}" \
+      --title="Fallout: New Vegas — Opening" \
+      "$intro"
+  ) 200>"$lock" &
+  disown 2>/dev/null || true
+}
+
+cmd_intro_enable() {
+  rm -f "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/skip-boot-intro"
+  [[ -f "$CONF_DEFAULT" ]] && sed -i 's/^INTRO_ENABLED=.*/INTRO_ENABLED=1/' "$CONF_DEFAULT" 2>/dev/null || true
+  log "intro enabled"
+}
+cmd_intro_disable() {
+  mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv"
+  touch "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/skip-boot-intro"
+  [[ -f "$CONF_DEFAULT" ]] && sed -i 's/^INTRO_ENABLED=.*/INTRO_ENABLED=0/' "$CONF_DEFAULT" 2>/dev/null || true
+  stop_intro_mpv
+  log "intro disabled"
+}
+
+
+cmd_ensure_theme() {
+  # Re-assert PipBoy stack if anything (login race, app, settings) flipped to Adwaita/GTK default
+  local want_t="${THEME_NAME:-PipBoy-NV}"
+  local want_i="${ICON_THEME:-FalloutMojave}"
+  local want_w="${WM_THEME:-PipBoy-NV}"
+  local want_c="${CURSOR_THEME:-PipBoy-NV-Cursors}"
+  local cur_t cur_i cur_w cur_c
+  cur_t=$(xq_get xsettings /Net/ThemeName | head -1)
+  cur_i=$(xq_get xsettings /Net/IconThemeName | head -1)
+  cur_w=$(xq_get xfwm4 /general/theme | head -1)
+  cur_c=$(xq_get xsettings /Gtk/CursorThemeName | head -1)
+
+  local bad=0
+  [[ "$cur_t" == "$want_t" ]] || bad=1
+  [[ "$cur_i" == "$want_i" ]] || bad=1
+  [[ "$cur_w" == "$want_w" ]] || bad=1
+  [[ "$cur_c" == "$want_c" ]] || bad=1
+
+  # Also catch empty / Adwaita / Greybird defaults
+  case "$cur_t" in
+    Adwaita|Adwaita-dark|Greybird|Default|"" ) bad=1 ;;
+  esac
+  case "$cur_i" in
+    Adwaita|hicolor|"" ) bad=1 ;;
+  esac
+
+  if [[ "$bad" -eq 1 ]]; then
+    warn "theme drift (gtk='$cur_t' icons='$cur_i' wm='$cur_w') — reapplying $want_t"
+    cmd_apply
+    # Kick settings daemon + window manager so widgets/titlebars refresh
+    pgrep -x xfsettingsd >/dev/null 2>&1 && killall -HUP xfsettingsd 2>/dev/null || true
+    if pgrep -x xfwm4 >/dev/null 2>&1; then
+      # soft re-set is enough usually; replace only if theme still wrong after apply
+      cur_w=$(xq_get xfwm4 /general/theme | head -1)
+      if [[ "$cur_w" != "$want_w" ]]; then
+        xq_set xfwm4 /general/theme -t string -s "$want_w"
+      fi
+    fi
+  else
+    # light re-assert without full wallpaper work (cheap, stops drift)
+    xq_set xsettings /Net/ThemeName -t string -s "$want_t"
+    xq_set xsettings /Net/IconThemeName -t string -s "$want_i"
+    xq_set xsettings /Gtk/CursorThemeName -t string -s "$want_c"
+    xq_set xfwm4 /general/theme -t string -s "$want_w"
+  fi
+
+  # Chromium: do not leave Appearance stuck on stock "GTK" after login
+  local cpref="$HOME/.config/chromium/Default/Preferences"
+  if [[ -f "$cpref" ]] && ! pgrep -x chromium >/dev/null 2>&1; then
+    python3 -c "
+import json
+p='$cpref'
+with open(p) as f: d=json.load(f)
+theme=d.setdefault('extensions',{}).setdefault('theme',{})
+if theme.get('system_theme')==1:
+    theme['system_theme']=0
+    auto=d.setdefault('autogenerated',{}).setdefault('theme',{})
+    auto['colors']={'frame':[6,10,8],'frame_inactive':[4,8,6],'toolbar':[10,18,12],'ntp_background':[7,12,9],'ntp_text':[51,255,106]}
+    auto['color']=(0x06<<16)|(0x0A<<8)|0x08
+    with open(p,'w') as f: json.dump(d,f,separators=(',',':'))
+" 2>/dev/null || true
+  fi
+
+  # Force Pip-Boy Chromium theme (not stock GTK)
+  if [[ -x "$HOME/.local/bin/vault-os-chromium-theme" ]]; then
+    "$HOME/.local/bin/vault-os-chromium-theme" 2>/dev/null || true
+  fi
+}
+
+
+cmd_ensure_qt() {
+  log "ensure Qt/Kvantum PipBoy-NV"
+  mkdir -p "$HOME/.config/Kvantum" "$HOME/.config/qt5ct" "$HOME/.config/qt6ct" "$HOME/.config/environment.d"
+  if [[ -f "$HOME/.config/Kvantum/kvantum.kvconfig" ]]; then
+    sed -i 's/^theme=.*/theme=PipBoy-NV/' "$HOME/.config/Kvantum/kvantum.kvconfig" 2>/dev/null || true
+  else
+    printf '[General]\ntheme=PipBoy-NV\n' > "$HOME/.config/Kvantum/kvantum.kvconfig"
+  fi
+  for qt in qt5ct qt6ct; do
+    local conf="$HOME/.config/$qt/$qt.conf"
+    if [[ -f "$conf" ]]; then
+      sed -i 's/^style=.*/style=kvantum/' "$conf" 2>/dev/null || true
+      sed -i "s/^icon_theme=.*/icon_theme=${ICON_THEME}/" "$conf" 2>/dev/null || true
+    fi
+  done
+  cat > "$HOME/.config/environment.d/vault-os.conf" << ENV
+GTK_THEME=${THEME_NAME}
+QT_QPA_PLATFORMTHEME=qt5ct
+QT_STYLE_OVERRIDE=kvantum
+XCURSOR_THEME=${CURSOR_THEME:-PipBoy-NV-Cursors}
+XCURSOR_SIZE=${CURSOR_SIZE:-24}
+ENV
+}
+
+cmd_ensure_coverage() {
+  log "ensure extended theme coverage"
+  cmd_ensure_qt || true
+  # sounds
+  if [[ -d "$HOME/.local/share/sounds/PipBoy-NV" ]]; then
+    xq_set xsettings /Net/SoundThemeName -t string -s "PipBoy-NV"
+    xq_set xsettings /Net/EnableEventSounds -t bool -s true
+  fi
+  # chromium theme
+  if [[ -x "$HOME/.local/bin/vault-os-chromium-theme" ]]; then
+    "$HOME/.local/bin/vault-os-chromium-theme" 2>/dev/null || true
+  fi
+  # flatpak
+  if have flatpak; then
+    flatpak override --user --env=GTK_THEME="$THEME_NAME" 2>/dev/null || true
+    flatpak override --user --env=ICON_THEME="$ICON_THEME" 2>/dev/null || true
+    flatpak override --user --env=XCURSOR_THEME="${CURSOR_THEME:-PipBoy-NV-Cursors}" 2>/dev/null || true
+  fi
+}
+
+cmd_coverage() {
+  printf 'Vault-OS theme coverage\n'
+  printf '======================\n'
+  printf 'GTK:     %s\n' "$(xq_get xsettings /Net/ThemeName | head -1)"
+  printf 'Icons:   %s\n' "$(xq_get xsettings /Net/IconThemeName | head -1)"
+  printf 'WM:      %s\n' "$(xq_get xfwm4 /general/theme | head -1)"
+  printf 'Cursor:  %s\n' "$(xq_get xsettings /Gtk/CursorThemeName | head -1)"
+  printf 'Sound:   %s\n' "$(xq_get xsettings /Net/SoundThemeName | head -1)"
+  printf 'Notify:  %s\n' "$(xq_get xfce4-notifyd /theme | head -1)"
+  printf 'Kvantum: %s\n' "$(grep ^theme= "$HOME/.config/Kvantum/kvantum.kvconfig" 2>/dev/null | cut -d= -f2)"
+  printf 'qt5ct:   %s\n' "$(grep ^style= "$HOME/.config/qt5ct/qt5ct.conf" 2>/dev/null | cut -d= -f2)"
+  printf 'VS Code: %s\n' "$(grep colorTheme "$HOME/.config/Code - OSS/User/settings.json" 2>/dev/null | head -1)"
+  printf 'Firefox: %s\n' "$(ls -d "$HOME/.mozilla/firefox/"*/chrome/userChrome.css 2>/dev/null | head -1)"
+  printf 'Discord: %s\n' "$(ls "$HOME/.config/discord/vault-os/"*.css 2>/dev/null | head -1)"
+  printf 'LightDM: run vault-os-install-system-theme (sudo)\n'
+  printf 'Sounds:  %s\n' "$(ls -d "$HOME/.local/share/sounds/PipBoy-NV" 2>/dev/null)"
+}
+
+cmd_session_start() {
+  local lock="$LOCK_DIR/session.lock"
+  exec 8>"$lock"
+  if ! flock -n 8; then warn "session-start already running"; return 0; fi
+
+  log "session-start begin v$VERSION"
+  local i
+  for i in $(seq 1 100); do
+    xset q &>/dev/null && break
+    sleep 0.05
+  done
+
+  # Wait for xfsettingsd so our theme is not overwritten by late session defaults
+  local j
+  for j in $(seq 1 50); do
+    pgrep -x xfsettingsd >/dev/null 2>&1 && break
+    sleep 0.1
+  done
+
+  cmd_apply
+  ensure_xfdesktop || true
+  cmd_ensure_panel
+  pgrep -x xfsettingsd >/dev/null 2>&1 && killall -HUP xfsettingsd 2>/dev/null || true
+
+  # XFCE/settings often re-assert stock "GTK"/Adwaita shortly after login — fight the race
+  ( sleep 2;  load_config; cmd_ensure_theme ) >/dev/null 2>&1 &
+  ( sleep 6;  load_config; cmd_ensure_theme; cmd_ensure_panel ) >/dev/null 2>&1 &
+  ( sleep 15; load_config; cmd_ensure_theme; cmd_ensure_coverage ) >/dev/null 2>&1 &
+
+  cmd_intro
+
+  local l2
+  l2=$(xq_get xfce4-panel /panels/panel-2/length | head -1)
+  if _panel_num_ok "${l2:-0}" 50; then
+    local live="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+    local good="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/xfce4-panel.xml.known-good"
+    [[ -f "$live" ]] && cp -a "$live" "$good"
+  fi
+  log "session-start complete"
+}
+
+cmd_status() {
+  local ec=0
+  echo "vault-os $VERSION"
+  echo "───────────────"
+  local t i w
+  t=$(xq_get xsettings /Net/ThemeName | head -1)
+  i=$(xq_get xsettings /Net/IconThemeName | head -1)
+  w=$(xq_get xfwm4 /general/theme | head -1)
+  printf 'theme      %s %s\n' "$t" "$([[ "$t" == "$THEME_NAME" ]] && echo OK || echo DRIFT)"
+  printf 'icons      %s %s\n' "$i" "$([[ "$i" == "$ICON_THEME" ]] && echo OK || echo DRIFT)"
+  printf 'wm         %s %s\n' "$w" "$([[ "$w" == "$WM_THEME" ]] && echo OK || echo DRIFT)"
+  if pgrep -x xfce4-panel >/dev/null 2>&1; then
+    printf 'panel      running pid=%s\n' "$(pgrep -x xfce4-panel | head -1)"
+  else
+    printf 'panel      DEAD\n'; ec=1
+  fi
+  local p1 p2 pos2
+  p1=$(xq_get xfce4-panel /panels/panel-1/length | head -1)
+  p2=$(xq_get xfce4-panel /panels/panel-2/length | head -1)
+  pos2=$(xq_get xfce4-panel /panels/panel-2/position | head -1)
+  printf 'panel-1    length=%s\n' "$p1"
+  printf 'panel-2    length=%s position=%s\n' "$p2" "$pos2"
+  _panel_num_ok "${p2:-0}" 50 || { printf 'panel-2    LENGTH_BAD\n'; ec=1; }
+  [[ "$pos2" == *x=* ]] || { printf 'panel-2    POSITION_INCOMPLETE\n'; ec=1; }
+  if [[ -f "$INTRO_FILE" || -f "$HOME/.local/share/fallout-nv/FNVIntro-1080p-1m26s.mp4" ]]; then
+    printf 'intro      media OK\n'
+  else
+    printf 'intro      MEDIA_MISSING\n'; ec=1
+  fi
+  if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/skip-boot-intro" ]]; then
+    printf 'intro      disabled\n'
+  else
+    printf 'intro      enabled on login\n'
+  fi
+  [[ -d "$HOME/.themes/$THEME_NAME" ]] && printf 'theme_dir  OK\n' || { printf 'theme_dir  MISSING\n'; ec=1; }
+  if [[ -d "$HOME/.local/share/icons/$ICON_THEME" || -d "$HOME/.icons/$ICON_THEME" ]]; then
+    printf 'icon_dir   OK\n'
+  else
+    printf 'icon_dir   MISSING\n'; ec=1
+  fi
+  local wall_live wall_ok=0
+  wall_live=$(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image$' | head -1)
+  if [[ -n "$wall_live" ]]; then
+    wall_live=$(xq_get xfce4-desktop "$wall_live" | head -1)
+    [[ -f "$wall_live" ]] && wall_ok=1
+    printf 'wallpaper  %s\n' "$([[ $wall_ok -eq 1 ]] && echo OK || echo MISSING) ${wall_live##*/}"
+  fi
+  local cur
+  cur=$(xq_get xsettings /Gtk/CursorThemeName | head -1)
+  if [[ "${cur:-}" == "${CURSOR_THEME}" ]]; then
+    printf 'cursor     %s OK
+' "$cur"
+  else
+    printf 'cursor     %s DRIFT (want %s)
+' "${cur:-none}" "${CURSOR_THEME}"
+  fi
+  local ntheme
+  ntheme=$(xq_get xfce4-notifyd /theme | head -1)
+  printf 'notify     %s\n' "${ntheme:-default}"
+  if has_share_tech_mono; then
+    printf 'font       Share Tech Mono OK\n'
+  else
+    printf 'font       Share Tech Mono MISSING\n'
+  fi
+  if [[ -d "$HOME/.icons/${CURSOR_THEME:-PipBoy-NV-Cursors}/cursors" || -d "$HOME/.local/share/icons/${CURSOR_THEME:-PipBoy-NV-Cursors}/cursors" ]]; then
+    printf 'cursor_dir OK\n'
+  else
+    printf 'cursor_dir MISSING\n'; ec=1
+  fi
+  if pgrep -x picom >/dev/null 2>&1; then
+    printf 'picom      running\n'
+  else
+    printf 'picom      not running\n'
+  fi
+  if pgrep -x xfdesktop >/dev/null 2>&1; then
+    printf 'xfdesktop  running\n'
+  else
+    printf 'xfdesktop  DEAD\n'; ec=1
+  fi
+  if [[ -d "$HOME/.themes/$THEME_NAME/xfce-notify-4.0" ]]; then
+    printf 'notify_thm OK\n'
+  else
+    printf 'notify_thm MISSING\n'
+  fi
+  return "$ec"
+}
+
+
+cmd_doctor() {
+  log "doctor: diagnose + repair"
+  cmd_apply || true
+  cmd_ensure_coverage || true
+  ensure_xfdesktop || true
+  cmd_ensure_panel || true
+  xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
+  xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
+
+  if pgrep -x xfce4-panel >/dev/null 2>&1; then
+    local p2
+    p2=$(xq_get xfce4-panel /panels/panel-2/length | head -1)
+    if _panel_num_ok "${p2:-0}" 50; then
+      xfce4-panel -r 2>/dev/null || true
+      sleep 0.5
+      xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
+      xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
+    else
+      killall xfce4-panel 2>/dev/null || true
+      sleep 0.5
+      nohup xfce4-panel >>"${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/panel.log" 2>&1 &
+      sleep 0.8
+      xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
+      xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
+    fi
+  fi
+
+  if cmd_status; then
+    local live="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
+    local good="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/xfce4-panel.xml.known-good"
+    [[ -f "$live" ]] && cp -a "$live" "$good" && log "snapshot panel config"
+  fi
+}
+
+cmd_selftest() {
+  log "selftest"
+  local fail=0
+  [[ -x "$HOME/.local/bin/vault-os" ]] || { err "vault-os not executable"; fail=1; }
+  [[ -f "$CONF_DEFAULT" ]] || { err "missing conf"; fail=1; }
+  [[ -d "$HOME/.themes/$THEME_NAME" ]] || { err "theme dir"; fail=1; }
+  have xfconf-query || { err "xfconf-query missing"; fail=1; }
+  have mpv || warn "mpv missing"
+  if cmd_status; then log "selftest PASS"; else warn "selftest issues — run: vault-os doctor"; fail=1; fi
+  return "$fail"
+}
+
+usage() {
+  cat <<U
+vault-os ${VERSION} — Fallout NV XFCE control plane
+
+  session-start   Login orchestrator (theme → panel → intro)
+  apply           Apply theme, icons, wallpaper
+  ensure-panel    Repair/restore both panels
+  ensure-desktop  Keep xfdesktop/wallpaper alive
+  ensure-theme    Re-assert PipBoy GTK/icons/wm if drifted
+  ensure-qt       Kvantum + qt5ct/qt6ct PipBoy
+  ensure-coverage Qt/sounds/flatpak/chromium theme extras
+  coverage        Print theme integration coverage report
+  doctor          Diagnose + full repair
+  intro           Play boot intro now
+  intro-enable    Enable intro on login
+  intro-disable   Disable intro on login
+  status          Health check (exit 1 if unhealthy)
+  selftest        Validate installation
+  version         Print version
+
+Config: ${CONF_DEFAULT}
+U
+}
+
+main() {
+  load_config
+  local cmd="${1:-status}"
+  case "$cmd" in
+    session-start|session) cmd_session_start ;;
+    apply|theme)           cmd_apply; cmd_ensure_panel; cmd_ensure_coverage ;;
+    ensure-panel|panel)    cmd_ensure_panel ;;
+    ensure-desktop|desktop|xfdesktop) cmd_ensure_desktop ;;
+    ensure-theme|theme-guard) cmd_ensure_theme ;;
+    ensure-qt)             cmd_ensure_qt ;;
+    ensure-coverage)       cmd_ensure_coverage ;;
+    coverage)              cmd_coverage ;;
+    doctor|repair|fix)   cmd_doctor; cmd_status ;;
+    intro|play-intro)      cmd_intro ;;
+    intro-enable|enable)   cmd_intro_enable ;;
+    intro-disable|disable) cmd_intro_disable ;;
+    status|st)             cmd_status ;;
+    selftest|test)         cmd_selftest ;;
+    version|-V|--version)  echo "vault-os $VERSION" ;;
+    -h|--help|help)        usage ;;
+    *)                     usage; exit 2 ;;
+  esac
+}
+
+main "$@"

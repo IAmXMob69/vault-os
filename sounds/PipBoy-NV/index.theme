@@ -1,0 +1,7 @@
+[Sound Theme]
+Name=PipBoy-NV
+Comment=Vault-OS short UI beeps
+Directories=stereo
+
+[stereo]
+OutputProfile=stereo

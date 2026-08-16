@@ -1,0 +1,51 @@
+# Pip-Boy phosphor dircolors
+TERM xterm-256color
+TERM xterm-color
+TERM screen-256color
+TERM tmux-256color
+TERM *-256color
+RESET 0
+DIR 01;32
+LINK 01;32
+FIFO 33
+SOCK 01;32
+DOOR 01;32
+BLK 33
+CHR 33
+ORPHAN 01;31
+MISSING 01;31
+SETUID 37;41
+SETGID 30;43
+CAPABILITY 30;41
+STICKY_OTHER_WRITABLE 30;42
+OTHER_WRITABLE 34;42
+STICKY 37;44
+EXEC 01;32
+# extensions — all green variants
+*tar=01;32
+*tgz=01;32
+*zip=01;32
+*gz=01;32
+*bz2=01;32
+*xz=01;32
+*7z=01;32
+*jpg=00;32
+*jpeg=00;32
+*png=00;32
+*gif=00;32
+*webp=00;32
+*svg=00;32
+*mp3=00;32
+*mp4=00;32
+*mkv=00;32
+*pdf=00;32
+*txt=00;32
+*md=00;32
+*c=00;32
+*h=00;32
+*py=00;32
+*rs=00;32
+*go=00;32
+*js=00;32
+*ts=00;32
+*sh=01;32

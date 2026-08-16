@@ -1,0 +1,7 @@
+style "pipboy-notify" {
+  bg[NORMAL] = "#0D1510"
+  fg[NORMAL] = "#33FF6A"
+  base[NORMAL] = "#070C09"
+  text[NORMAL] = "#33FF6A"
+}
+widget "XfceNotifyWindow*" style "pipboy-notify"

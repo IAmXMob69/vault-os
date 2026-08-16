@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Picom
+Comment=Vault-OS compositor
+Exec=picom --config @HOME@/.config/picom.conf -b
+Terminal=false
+X-GNOME-Autostart-enabled=true
+OnlyShowIn=XFCE;

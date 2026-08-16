@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Requires sudo — installs LightDM greeter + optional GRUB background
+set -euo pipefail
+
+HOME="${HOME:-/home/$USER}"
+ROOT_THEME_SRC="$HOME/.themes/PipBoy-NV"
+ROOT_ICON_SRC="${XDG_DATA_HOME:-$HOME/.local/share}/icons/FalloutMojave"
+ROOT_CURSOR_SRC="$HOME/.icons/PipBoy-NV-Cursors"
+WALL="${XDG_DATA_HOME:-$HOME/.local/share}/backgrounds/fnv-mojave-strip-4k.jpg"
+PIPBOY_ICON="$ROOT_ICON_SRC/128x128/apps/pipboy.png"
+
+echo "[vault-os] Installing system greeter theme (needs sudo)..."
+sudo mkdir -p /usr/share/themes /usr/share/icons /etc/lightdm
+
+if [[ -d "$ROOT_THEME_SRC" ]]; then
+  sudo rsync -a --delete "$ROOT_THEME_SRC/" /usr/share/themes/PipBoy-NV/
+fi
+if [[ -d "$ROOT_ICON_SRC" ]]; then
+  sudo rsync -a --delete --exclude 'icon-theme.cache' "$ROOT_ICON_SRC/" /usr/share/icons/FalloutMojave/
+fi
+if [[ -d "$ROOT_CURSOR_SRC" ]]; then
+  sudo rsync -a --delete "$ROOT_CURSOR_SRC/" /usr/share/icons/PipBoy-NV-Cursors/ || true
+fi
+
+tmp="$(mktemp)"
+cat >"$tmp" <<EOF
+[greeter]
+theme-name=PipBoy-NV
+icon-theme-name=FalloutMojave
+cursor-theme-name=PipBoy-NV-Cursors
+cursor-theme-size=24
+font-name=Share Tech Mono 11
+background=$WALL
+user-background=false
+default-user-image=$PIPBOY_ICON
+hide-user-image=false
+clock-format=%H:%M
+indicators=~host;~spacer;~clock;~spacer;~session;~power
+xft-antialias=true
+xft-hintstyle=hintslight
+xft-rgba=rgb
+EOF
+sudo cp "$tmp" /etc/lightdm/lightdm-gtk-greeter.conf
+rm -f "$tmp"
+
+if [[ -f "$WALL" && -d /boot/grub ]]; then
+  sudo cp "$WALL" /boot/grub/vault-os-bg.jpg
+  if ! grep -q vault-os-bg /etc/default/grub 2>/dev/null; then
+    echo 'GRUB_BACKGROUND="/boot/grub/vault-os-bg.jpg"' | sudo tee -a /etc/default/grub >/dev/null
+  fi
+  sudo grub-mkconfig -o /boot/grub/grub.cfg || true
+fi
+
+echo "[vault-os] System theme install complete. Reboot to see the LightDM greeter."

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=PipBoy-NV
+Comment=Professional Fallout New Vegas Pip-Boy theme for XFCE (v7)
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=PipBoy-NV
+MetacityTheme=PipBoy-NV
+IconTheme=FalloutMojave
+CursorTheme=PipBoy-NV-Cursors
+ButtonLayout=menu:minimize,maximize,close

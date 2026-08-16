@@ -1,0 +1,34 @@
+/**
+ * @name Pip-Boy NV
+ * @author Vault-OS
+ * @description Fallout Pip-Boy green Discord theme
+ * @version 1.0.0
+*/
+:root {
+  --pb-bg: #070C09;
+  --pb-elev: #0D1510;
+  --pb-fg: #33FF6A;
+  --pb-dim: #1A4A2A;
+  --pb-border: #147832;
+  --pb-bright: #B8FFCC;
+}
+.theme-dark, .theme-light {
+  --background-primary: var(--pb-bg) !important;
+  --background-secondary: #060A08 !important;
+  --background-secondary-alt: var(--pb-elev) !important;
+  --background-tertiary: #040806 !important;
+  --background-accent: #1B5C32 !important;
+  --background-floating: #0A100C !important;
+  --channeltextarea-background: #040806 !important;
+  --interactive-normal: var(--pb-fg) !important;
+  --interactive-hover: var(--pb-bright) !important;
+  --interactive-active: var(--pb-bright) !important;
+  --text-normal: var(--pb-fg) !important;
+  --text-muted: var(--pb-dim) !important;
+  --header-primary: var(--pb-bright) !important;
+  --header-secondary: var(--pb-fg) !important;
+  --brand-experiment: var(--pb-fg) !important;
+  --brand-experiment-560: #1B5C32 !important;
+}
+/* scrollbar */
+::-webkit-scrollbar-thumb { background: var(--pb-border) !important; }

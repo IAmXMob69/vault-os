@@ -1,0 +1,62 @@
+{
+  "window.autoDetectColorScheme": false,
+  "workbench.startupEditor": "none",
+  "editor.fontFamily": "'Share Tech Mono', 'JetBrains Mono', monospace",
+  "editor.fontSize": 13,
+  "terminal.integrated.fontFamily": "'Share Tech Mono', monospace",
+  "terminal.integrated.fontSize": 13,
+  "workbench.colorCustomizations": {
+    "[Default Dark Modern]": {
+      "activityBar.background": "#060A08",
+      "activityBar.foreground": "#33FF6A",
+      "activityBar.inactiveForeground": "#1A4A2A",
+      "activityBarBadge.background": "#33FF6A",
+      "activityBarBadge.foreground": "#070C09",
+      "sideBar.background": "#070C09",
+      "sideBar.foreground": "#33FF6A",
+      "sideBarTitle.foreground": "#B8FFCC",
+      "editor.background": "#070C09",
+      "editor.foreground": "#33FF6A",
+      "editor.lineHighlightBackground": "#0D1510",
+      "editor.selectionBackground": "#1B5C3266",
+      "editorCursor.foreground": "#C8FFD8",
+      "editorLineNumber.foreground": "#1A4A2A",
+      "editorLineNumber.activeForeground": "#33FF6A",
+      "editorGroupHeader.tabsBackground": "#060A08",
+      "tab.activeBackground": "#0D1510",
+      "tab.activeForeground": "#B8FFCC",
+      "tab.inactiveBackground": "#060A08",
+      "tab.inactiveForeground": "#1A4A2A",
+      "tab.activeBorderTop": "#33FF6A",
+      "statusBar.background": "#060A08",
+      "statusBar.foreground": "#33FF6A",
+      "titleBar.activeBackground": "#060A08",
+      "titleBar.activeForeground": "#33FF6A",
+      "panel.background": "#070C09",
+      "panel.border": "#147832",
+      "terminal.background": "#070C09",
+      "terminal.foreground": "#33FF6A",
+      "list.activeSelectionBackground": "#1B5C32",
+      "list.hoverBackground": "#0D1510",
+      "input.background": "#040806",
+      "input.foreground": "#33FF6A",
+      "input.border": "#147832",
+      "dropdown.background": "#0A100C",
+      "dropdown.foreground": "#33FF6A",
+      "button.background": "#1B5C32",
+      "button.foreground": "#B8FFCC",
+      "focusBorder": "#1B5C32",
+      "scrollbarSlider.background": "#14783266"
+    }
+  },
+  "editor.tokenColorCustomizations": {
+    "[Default Dark Modern]": {
+      "comments": "#1A4A2A",
+      "strings": "#5CFF9A",
+      "keywords": "#33FF6A",
+      "functions": "#B8FFCC",
+      "numbers": "#FFB000",
+      "types": "#C8FFD8"
+    }
+  }
+}

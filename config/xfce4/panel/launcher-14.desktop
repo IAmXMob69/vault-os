@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Exec=exo-open --launch FileManager %u
+Icon=@HOME@/.icons/vault-dock/dock-files.png
+StartupNotify=true
+Terminal=false
+Categories=Utility;X-XFCE;X-Xfce-Toplevel;
+OnlyShowIn=XFCE;
+Name=Files
+Comment=Browse the file system

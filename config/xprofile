@@ -1,0 +1,6 @@
+# Vault-OS session environment only (no UI side effects)
+export QT_QPA_PLATFORMTHEME=qt5ct
+export EDITOR=nvim
+export VISUAL=nvim
+export BROWSER=firefox
+export PATH="$HOME/.local/bin:$PATH"

@@ -1,0 +1,117 @@
+{
+  "manifest_version": 2,
+  "name": "Pip-Boy NV",
+  "version": "1.0.2",
+  "description": "Fallout New Vegas Pip-Boy browser theme",
+  "theme": {
+    "colors": {
+      "frame": [
+        6,
+        10,
+        8
+      ],
+      "frame_inactive": [
+        4,
+        8,
+        6
+      ],
+      "frame_incognito": [
+        3,
+        6,
+        4
+      ],
+      "frame_incognito_inactive": [
+        2,
+        4,
+        3
+      ],
+      "toolbar": [
+        10,
+        18,
+        12
+      ],
+      "tab_text": [
+        51,
+        255,
+        106
+      ],
+      "tab_background_text": [
+        26,
+        90,
+        48
+      ],
+      "bookmark_text": [
+        51,
+        255,
+        106
+      ],
+      "ntp_background": [
+        7,
+        12,
+        9
+      ],
+      "ntp_text": [
+        51,
+        255,
+        106
+      ],
+      "ntp_link": [
+        184,
+        255,
+        204
+      ],
+      "ntp_header": [
+        12,
+        28,
+        16
+      ],
+      "button_background": [
+        12,
+        28,
+        16
+      ],
+      "omnibox_background": [
+        6,
+        10,
+        8
+      ],
+      "omnibox_text": [
+        51,
+        255,
+        106
+      ]
+    },
+    "tints": {
+      "buttons": [
+        0.35,
+        0.65,
+        0.55
+      ],
+      "frame": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "frame_inactive": [
+        -1.0,
+        0.25,
+        0.35
+      ],
+      "frame_incognito": [
+        -1.0,
+        0.2,
+        0.3
+      ],
+      "frame_incognito_inactive": [
+        -1.0,
+        0.3,
+        0.4
+      ],
+      "background_tab": [
+        0.33,
+        0.5,
+        0.22
+      ]
+    }
+  }
+}

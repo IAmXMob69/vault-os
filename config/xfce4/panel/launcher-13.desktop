@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Exec=exo-open --launch TerminalEmulator
+Icon=@HOME@/.icons/vault-dock/dock-terminal.png
+StartupNotify=true
+Terminal=false
+Categories=Utility;X-XFCE;X-Xfce-Toplevel;
+OnlyShowIn=XFCE;
+Name=Terminal
+Comment=Use the command line

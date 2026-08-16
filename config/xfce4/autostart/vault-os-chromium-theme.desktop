@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Vault-OS Chromium Theme
+Comment=Force Pip-Boy Chromium theme after login
+Exec=@HOME@/.local/bin/vault-os-chromium-theme
+Icon=chromium
+Terminal=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=4
+StartupNotify=false
+OnlyShowIn=XFCE;

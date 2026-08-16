@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Close All
+Comment=Close all open windows
+Exec=@HOME@/.local/bin/vault-os-close-all
+Icon=application-exit
+Terminal=false
+Categories=Utility;X-XFCE;
+StartupNotify=false

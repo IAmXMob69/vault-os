@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Vault-OS lock wrapper
+export DISPLAY="${DISPLAY:-:0}"
+if command -v xfce4-screensaver-command >/dev/null; then
+  xfce4-screensaver-command --lock
+elif command -v light-locker-command >/dev/null; then
+  light-locker-command --lock
+elif command -v xflock4 >/dev/null; then
+  xflock4
+else
+  loginctl lock-session
+fi

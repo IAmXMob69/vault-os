@@ -1,0 +1,8 @@
+[Icon Theme]
+Name=PipBoy-NV-Cursors
+Comment=Fallout New Vegas Pip-Boy CRT phosphor cursors
+Inherits=Adwaita
+
+# XCursor theme name for X11
+[X-Cursor-Theme]
+Name=PipBoy-NV-Cursors

@@ -1,0 +1,44 @@
+/* Vault-OS product chrome — terminal & window polish */
+
+.xfce4-panel,
+#XfcePanelWindow {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.xfce4-panel button {
+  border-radius: 2px;
+  padding: 2px 7px;
+}
+
+menu menuitem,
+.menu menuitem {
+  min-height: 30px;
+  padding: 6px 12px;
+}
+
+.tasklist button {
+  border-radius: 2px;
+  margin: 1px 2px;
+}
+
+/* Terminal: dense professional pad */
+VteTerminal, vte-terminal {
+  padding: 10px 12px;
+}
+
+/* Headerbars denser for CSD apps */
+headerbar {
+  min-height: 36px;
+  padding: 2px 8px;
+}
+headerbar button.titlebutton {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 2px;
+}
+headerbar button.titlebutton.close:hover {
+  background-color: alpha(#FF4D4D, 0.25);
+  color: #FF6B6B;
+}

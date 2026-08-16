@@ -1,0 +1,10 @@
+*.log
+*.cache
+icon-theme.cache
+.DS_Store
+Thumbs.db
+*~
+*.bak
+.idea/
+.vscode/
+__pycache__/

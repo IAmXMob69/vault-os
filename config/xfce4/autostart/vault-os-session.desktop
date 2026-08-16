@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Vault-OS Session
+Comment=Theme, panel integrity, desktop guard
+Exec=@HOME@/.local/bin/vault-os session-start
+Icon=applications-system
+Terminal=false
+Categories=System;
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=0
+StartupNotify=false
+OnlyShowIn=XFCE;

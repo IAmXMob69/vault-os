@@ -1,0 +1,653 @@
+/*
+ * PipBoy-NV v7 (GTK4) — Professional Pip-Boy CRT UI
+ * Fallout: New Vegas · ROBCO Industries (TM)
+ *
+ * Design language: Materia elevation + Adapta flat chrome +
+ * authentic Pip-Boy phosphor palette. Clean, dense, industrial.
+ */
+
+/* ── Palette ─────────────────────────────────────────────── */
+@define-color pb_fg        #33FF6A;
+@define-color pb_fg_bri    #B8FFCC;
+@define-color pb_fg_dim    #2A9B4E;
+@define-color pb_mute      #1A3D28;
+@define-color pb_bg        #070C09;
+@define-color pb_elev      #0D1510;
+@define-color pb_mid       #121C15;
+@define-color pb_sel       #1B5C32;
+@define-color pb_sel_soft  alpha(#1B5C32, 0.55);
+@define-color pb_warn      #FFB000;
+@define-color pb_error     #FF4D4D;
+@define-color pb_glow      alpha(#33FF6A, 0.18);
+@define-color pb_border    #1F4A30;
+@define-color pb_inset     #040806;
+
+/* ── Base (Materia-style: avoid deadly wildcards on bg) ──── */
+* {
+  color: @pb_fg;
+  caret-color: @pb_fg_bri;
+  outline-color: alpha(@pb_fg, 0.35);
+  -gtk-secondary-caret-color: @pb_fg_dim;
+}
+
+.background, window, .csd, .app-notification {
+  background-color: @pb_bg;
+  color: @pb_fg;
+}
+
+decoration {
+  border-radius: 0;
+  box-shadow:
+    0 10px 40px alpha(black, 0.70),
+    0 0 0 1px alpha(@pb_fg, 0.16),
+    0 0 20px alpha(@pb_fg, 0.05);
+}
+decoration:backdrop {
+  box-shadow:
+    0 6px 24px alpha(black, 0.50),
+    0 0 0 1px alpha(@pb_mute, 0.8);
+}
+
+*:disabled {
+  color: alpha(@pb_fg_dim, 0.45);
+  -gtk-icon-effect: dim;
+  opacity: 0.55;
+}
+
+/* Focus ring — Adapta-inspired, subtle */
+*:focus {
+  outline: 1px solid alpha(@pb_fg, 0.35);
+  outline-offset: -2px;
+}
+
+/* ── Headerbars ──────────────────────────────────────────── */
+headerbar, .titlebar {
+  background-image: linear-gradient(180deg, #121c16 0%, @pb_elev 100%);
+  background-color: @pb_elev;
+  color: @pb_fg;
+  border-bottom: 1px solid @pb_border;
+  box-shadow:
+    inset 0 -1px 0 alpha(@pb_fg, 0.10),
+    inset 0 1px 0 alpha(@pb_fg, 0.04);
+  min-height: 40px;
+  padding: 4px 12px;
+}
+headerbar:backdrop, .titlebar:backdrop {
+  background-image: none;
+  background-color: @pb_bg;
+  color: @pb_fg_dim;
+}
+headerbar .title {
+  color: @pb_fg_bri;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 12px @pb_glow;
+}
+headerbar .subtitle {
+  color: @pb_fg_dim;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  font-size: 0.85em;
+}
+headerbar button {
+  background: transparent;
+  background-image: none;
+  border: 1px solid transparent;
+  color: @pb_fg_dim;
+  border-radius: 2px;
+  min-height: 26px;
+  min-width: 26px;
+  box-shadow: none;
+  text-shadow: none;
+  transition: background 80ms ease, border-color 80ms ease, color 80ms ease;
+}
+headerbar button:hover {
+  background: @pb_sel;
+  border-color: @pb_fg_dim;
+  color: @pb_fg_bri;
+  box-shadow: 0 0 8px alpha(@pb_fg, 0.12);
+}
+headerbar button:active, headerbar button:checked {
+  background: @pb_mute;
+  border-color: @pb_fg;
+  color: @pb_fg_bri;
+}
+headerbar button.close:hover {
+  background: alpha(@pb_error, 0.25);
+  border-color: @pb_error;
+  color: @pb_error;
+}
+
+/* ── Buttons (industrial flat) ───────────────────────────── */
+button {
+  background-image: linear-gradient(180deg, #141f18 0%, @pb_elev 100%);
+  background-color: @pb_elev;
+  color: @pb_fg;
+  border: 1px solid @pb_border;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 alpha(@pb_fg, 0.05);
+  text-shadow: none;
+  min-height: 30px;
+  padding: 5px 14px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: all 80ms ease;
+}
+button:hover {
+  background-image: none;
+  background-color: @pb_sel;
+  border-color: @pb_fg_dim;
+  color: @pb_fg_bri;
+  box-shadow: 0 0 12px alpha(@pb_fg, 0.14), inset 0 0 0 1px alpha(@pb_fg, 0.08);
+}
+button:active, button:checked {
+  background-image: none;
+  background-color: @pb_mute;
+  border-color: @pb_fg;
+  color: @pb_fg_bri;
+  box-shadow: inset 0 2px 4px alpha(black, 0.45);
+}
+button:disabled { opacity: 0.40; }
+button.suggested-action {
+  border-color: @pb_fg;
+  background-image: none;
+  background-color: alpha(@pb_fg, 0.12);
+  color: @pb_fg_bri;
+}
+button.suggested-action:hover {
+  background-color: alpha(@pb_fg, 0.24);
+  box-shadow: 0 0 16px alpha(@pb_fg, 0.25);
+}
+button.destructive-action {
+  border-color: @pb_error;
+  color: @pb_error;
+}
+button.destructive-action:hover {
+  background-color: alpha(@pb_error, 0.18);
+}
+button.flat, button.text-button.flat {
+  background: transparent;
+  background-image: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+button.flat:hover {
+  background: @pb_sel_soft;
+  border-color: @pb_mute;
+}
+button.flat:checked, button.flat:active {
+  background: @pb_sel;
+  border-color: @pb_fg_dim;
+}
+
+/* Linked buttons */
+button.linked, .linked > button {
+  border-radius: 0;
+}
+.linked > button:first-child { border-top-left-radius: 2px; border-bottom-left-radius: 2px; }
+.linked > button:last-child  { border-top-right-radius: 2px; border-bottom-right-radius: 2px; }
+
+/* ── Entries ─────────────────────────────────────────────── */
+entry, spinbutton {
+  background-color: @pb_inset;
+  color: @pb_fg;
+  border: 1px solid @pb_border;
+  border-radius: 2px;
+  box-shadow: inset 0 2px 4px alpha(black, 0.50), inset 0 0 0 1px alpha(@pb_fg, 0.03);
+  min-height: 30px;
+  padding: 5px 10px;
+  caret-color: @pb_fg_bri;
+  transition: border-color 80ms ease, box-shadow 80ms ease;
+}
+entry:focus, spinbutton:focus {
+  border-color: @pb_fg;
+  box-shadow:
+    inset 0 2px 4px alpha(black, 0.50),
+    0 0 0 1px alpha(@pb_fg, 0.25),
+    0 0 14px alpha(@pb_fg, 0.12);
+}
+entry:disabled { opacity: 0.45; }
+entry selection, textview text selection, label selection {
+  background-color: @pb_sel;
+  color: @pb_fg_bri;
+}
+
+/* ── Lists / Tree / Icon views ───────────────────────────── */
+treeview, list, listview, .view, iconview, content-view, .content-view {
+  background-color: @pb_bg;
+  color: @pb_fg;
+  border-color: @pb_border;
+}
+row:hover, .view:hover {
+  background-color: @pb_sel_soft;
+}
+treeview:selected, list row:selected, .view:selected,
+iconview:selected, row:selected, .view:selected:focus {
+  background-color: @pb_sel;
+  color: @pb_fg_bri;
+  box-shadow: inset 3px 0 0 @pb_fg;
+}
+treeview header button {
+  background-color: @pb_elev;
+  background-image: none;
+  border: none;
+  border-bottom: 1px solid @pb_border;
+  border-right: 1px solid @pb_mute;
+  color: @pb_fg_dim;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  padding: 8px 10px;
+  border-radius: 0;
+  box-shadow: none;
+}
+treeview header button:hover {
+  color: @pb_fg;
+  background-color: @pb_mid;
+}
+
+/* ── Notebook tabs (STAT / DATA / ITEM feel) ─────────────── */
+notebook {
+  background-color: @pb_bg;
+  border: none;
+}
+notebook > header {
+  background-color: @pb_elev;
+  border-bottom: 1px solid @pb_border;
+  box-shadow: inset 0 -1px 0 alpha(@pb_fg, 0.06);
+}
+notebook > header > tabs > tab {
+  background: transparent;
+  color: @pb_fg_dim;
+  border: none;
+  border-radius: 0;
+  padding: 10px 18px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  min-width: 48px;
+  transition: color 80ms ease, background 80ms ease, box-shadow 80ms ease;
+}
+notebook > header > tabs > tab:hover {
+  color: @pb_fg;
+  background-color: alpha(@pb_sel, 0.45);
+}
+notebook > header > tabs > tab:checked {
+  color: @pb_fg_bri;
+  background-color: @pb_bg;
+  box-shadow: inset 0 -2px 0 @pb_fg, 0 0 10px alpha(@pb_fg, 0.08);
+}
+notebook > stack {
+  background-color: @pb_bg;
+}
+
+/* ── Menus / Popovers ────────────────────────────────────── */
+menu, .menu, .context-menu, popover, popover.background {
+  background-color: @pb_elev;
+  color: @pb_fg;
+  border: 1px solid @pb_border;
+  border-radius: 2px;
+  box-shadow:
+    0 14px 40px alpha(black, 0.65),
+    0 0 0 1px alpha(@pb_fg, 0.08),
+    0 0 24px alpha(@pb_fg, 0.05);
+  padding: 5px;
+}
+menuitem, modelbutton, .menuitem {
+  border-radius: 2px;
+  padding: 7px 12px;
+  min-height: 28px;
+  font-weight: 500;
+  transition: background 60ms ease;
+}
+menuitem:hover, modelbutton:hover, menuitem:selected,
+.menuitem:hover {
+  background-color: @pb_sel;
+  color: @pb_fg_bri;
+  box-shadow: inset 2px 0 0 @pb_fg;
+}
+menuitem:disabled { opacity: 0.40; }
+separator, .separator {
+  background-color: @pb_mute;
+  min-height: 1px;
+  min-width: 1px;
+  margin: 5px 4px;
+  border: none;
+}
+
+/* ── Scrollbars (thin, professional) ─────────────────────── */
+scrollbar {
+  background: transparent;
+  border: none;
+}
+scrollbar trough {
+  background-color: alpha(@pb_mute, 0.40);
+  border-radius: 3px;
+  min-width: 8px;
+  min-height: 8px;
+  margin: 2px;
+}
+scrollbar slider {
+  background-color: @pb_fg_dim;
+  border-radius: 3px;
+  min-width: 8px;
+  min-height: 8px;
+  border: none;
+  transition: background 80ms ease;
+}
+scrollbar slider:hover {
+  background-color: @pb_fg;
+  box-shadow: 0 0 6px alpha(@pb_fg, 0.30);
+}
+scrollbar slider:active { background-color: @pb_fg_bri; }
+scrollbar.overlay-indicator slider {
+  background-color: alpha(@pb_fg_dim, 0.7);
+}
+
+/* ── Progress / Level bars ───────────────────────────────── */
+progressbar trough, levelbar trough {
+  background-color: @pb_inset;
+  border: 1px solid @pb_border;
+  border-radius: 2px;
+  min-height: 8px;
+}
+progressbar progress, levelbar block.filled {
+  background-image: linear-gradient(90deg, #1a6b35 0%, @pb_fg 60%, @pb_fg_bri 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 12px alpha(@pb_fg, 0.45);
+}
+
+/* ── Checks / Radios / Switches ──────────────────────────── */
+check, radio {
+  background-color: @pb_inset;
+  border: 1px solid @pb_border;
+  border-radius: 2px;
+  min-width: 16px;
+  min-height: 16px;
+  box-shadow: inset 0 1px 2px alpha(black, 0.40);
+  color: transparent;
+  -gtk-icon-source: none;
+}
+radio { border-radius: 100%; }
+check:checked, radio:checked,
+check:checked:hover, radio:checked:hover {
+  background-color: @pb_fg_dim;
+  border-color: @pb_fg;
+  color: @pb_fg_bri;
+  box-shadow: 0 0 6px alpha(@pb_fg, 0.28);
+  -gtk-icon-source: -gtk-icontheme("object-select-symbolic");
+}
+check:hover, radio:hover {
+  border-color: @pb_fg_dim;
+}
+switch {
+  background-color: @pb_inset;
+  border: 1px solid @pb_border;
+  border-radius: 11px;
+  min-width: 42px;
+  min-height: 20px;
+  transition: all 100ms ease;
+}
+switch:checked {
+  background-color: @pb_mute;
+  border-color: @pb_fg;
+  box-shadow: 0 0 8px alpha(@pb_fg, 0.18);
+}
+switch slider {
+  background-color: @pb_fg_dim;
+  border-radius: 100%;
+  min-width: 14px;
+  min-height: 14px;
+  margin: 2px;
+  box-shadow: 0 1px 2px alpha(black, 0.4);
+}
+switch:checked slider { background-color: @pb_fg_bri; }
+
+/* ── Scale / Slider ──────────────────────────────────────── */
+scale trough {
+  background-color: @pb_inset;
+  border: 1px solid @pb_border;
+  border-radius: 2px;
+  min-height: 5px;
+  min-width: 5px;
+}
+scale highlight {
+  background-image: linear-gradient(90deg, @pb_fg_dim, @pb_fg);
+  border-radius: 2px;
+}
+scale slider {
+  background-color: @pb_fg_bri;
+  border: 1px solid @pb_fg;
+  border-radius: 2px;
+  min-width: 13px;
+  min-height: 13px;
+  box-shadow: 0 0 10px alpha(@pb_fg, 0.40);
+  margin: -5px;
+}
+scale slider:hover {
+  box-shadow: 0 0 14px alpha(@pb_fg, 0.55);
+}
+
+/* ── Chrome: toolbars, sidebars ──────────────────────────── */
+toolbar, .toolbar {
+  background-color: @pb_elev;
+  border-bottom: 1px solid @pb_border;
+  padding: 4px 6px;
+  box-shadow: inset 0 1px 0 alpha(@pb_fg, 0.03);
+}
+.sidebar, placessidebar, stacksidebar, .sidebar.view {
+  background-color: @pb_elev;
+  border-right: 1px solid @pb_border;
+  color: @pb_fg;
+}
+placessidebar row, .sidebar row {
+  border-radius: 2px;
+  margin: 1px 5px;
+  padding: 6px 8px;
+  min-height: 28px;
+}
+placessidebar row:hover, .sidebar row:hover {
+  background-color: @pb_sel_soft;
+}
+placessidebar row:selected, .sidebar row:selected {
+  background-color: @pb_sel;
+  color: @pb_fg_bri;
+  box-shadow: inset 3px 0 0 @pb_fg;
+}
+
+/* ── Tooltips ────────────────────────────────────────────── */
+tooltip, tooltip.background {
+  background-color: @pb_elev;
+  color: @pb_fg;
+  border: 1px solid @pb_fg_dim;
+  border-radius: 2px;
+  box-shadow: 0 6px 22px alpha(black, 0.55), 0 0 10px alpha(@pb_fg, 0.06);
+  padding: 6px 10px;
+  opacity: 0.97;
+}
+tooltip * { background: transparent; color: @pb_fg; }
+
+/* ── Dialogs ─────────────────────────────────────────────── */
+dialog, messagedialog, .dialog {
+  background-color: @pb_bg;
+  border: 1px solid @pb_border;
+  color: @pb_fg;
+}
+dialog .dialog-action-area, messagedialog .dialog-action-area {
+  padding: 10px 12px;
+  background-color: @pb_elev;
+  border-top: 1px solid @pb_border;
+}
+
+/* ── Selection / Links ───────────────────────────────────── */
+*:selected {
+  background-color: @pb_sel;
+  color: @pb_fg_bri;
+}
+*:link { color: @pb_fg_bri; }
+*:link:hover { color: @pb_fg; text-decoration: underline; }
+
+/* ── Combobox / Frames ───────────────────────────────────── */
+combobox button, combobox entry {
+  background-color: @pb_elev;
+  border: 1px solid @pb_border;
+  border-radius: 2px;
+}
+frame {
+  border-color: @pb_border;
+  border-radius: 2px;
+}
+frame > border, .frame {
+  border: 1px solid @pb_border;
+  border-radius: 2px;
+}
+/* XFCE settings headings */
+XfceHeading {
+  background-color: @pb_elev;
+  color: @pb_fg_bri;
+  border-bottom: 1px solid @pb_border;
+  letter-spacing: 0.07em;
+  font-weight: 700;
+  padding: 10px 14px;
+}
+spinner { color: @pb_fg; }
+calendar {
+  background-color: @pb_bg;
+  color: @pb_fg;
+  border: 1px solid @pb_border;
+}
+calendar:selected {
+  background-color: @pb_sel;
+  color: @pb_fg_bri;
+}
+calendar.header {
+  background-color: @pb_elev;
+  color: @pb_fg_bri;
+  font-weight: 700;
+}
+
+/* ── Paned separators ────────────────────────────────────── */
+paned > separator {
+  background-color: @pb_mute;
+  min-width: 2px;
+  min-height: 2px;
+  background-image: none;
+}
+paned > separator:hover {
+  background-color: @pb_fg_dim;
+}
+
+/* ── Statusbar / Infobar ─────────────────────────────────── */
+statusbar {
+  background-color: @pb_elev;
+  border-top: 1px solid @pb_border;
+  color: @pb_fg_dim;
+  padding: 3px 8px;
+  font-size: 0.9em;
+  letter-spacing: 0.04em;
+}
+infobar {
+  border: none;
+  border-bottom: 1px solid @pb_border;
+}
+infobar.info    { background-color: alpha(@pb_sel, 0.7); color: @pb_fg_bri; }
+infobar.warning { background-color: alpha(@pb_warn, 0.18); color: @pb_warn; }
+infobar.error   { background-color: alpha(@pb_error, 0.18); color: @pb_error; }
+infobar.question{ background-color: alpha(@pb_fg, 0.10); color: @pb_fg; }
+
+/* ── XFCE Panel (embedded widgets) ───────────────────────── */
+.xfce4-panel, #XfcePanelWindow, panel-window {
+  background-color: alpha(@pb_elev, 0.96);
+  color: @pb_fg;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.xfce4-panel button,
+#XfcePanelWindow button,
+panel-window button {
+  background: transparent;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: @pb_fg;
+  box-shadow: none;
+  min-height: 24px;
+  padding: 2px 6px;
+  text-shadow: none;
+}
+.xfce4-panel button:hover,
+#XfcePanelWindow button:hover {
+  background: @pb_sel;
+  border-color: @pb_mute;
+  color: @pb_fg_bri;
+  box-shadow: 0 0 8px alpha(@pb_fg, 0.10);
+}
+.xfce4-panel button:checked,
+.xfce4-panel button:active {
+  background: @pb_mute;
+  border-color: @pb_fg_dim;
+  color: @pb_fg_bri;
+}
+.tasklist button,
+wnck-pager {
+  border-radius: 2px;
+}
+/* Clock / systray labels */
+.xfce4-panel label {
+  color: @pb_fg;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* ── Whisker Menu ────────────────────────────────────────── */
+/* whisker uses standard gtk widgets — already covered */
+
+/* ── Thunar pathbar ──────────────────────────────────────── */
+.path-bar button, .pathbar button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: @pb_fg_dim;
+  padding: 4px 8px;
+}
+.path-bar button:hover, .pathbar button:hover {
+  background: @pb_sel_soft;
+  color: @pb_fg;
+  border-color: @pb_mute;
+}
+.path-bar button:checked, .pathbar button:checked {
+  background: @pb_sel;
+  color: @pb_fg_bri;
+  border-color: @pb_fg_dim;
+}
+
+/* ── Notifications (libnotify / xfce4-notifyd) ───────────── */
+.app-notification, .notification {
+  background-color: @pb_elev;
+  border: 1px solid @pb_border;
+  border-radius: 2px;
+  color: @pb_fg;
+  box-shadow: 0 10px 32px alpha(black, 0.6), 0 0 16px alpha(@pb_fg, 0.06);
+}
+
+/* ── Scrollable text ─────────────────────────────────────── */
+textview, textview text {
+  background-color: @pb_bg;
+  color: @pb_fg;
+}
+textview text:selected {
+  background-color: @pb_sel;
+  color: @pb_fg_bri;
+}
+
+/* ── Rubberband / DnD ────────────────────────────────────── */
+.rubberband, rubberband {
+  background-color: alpha(@pb_fg, 0.12);
+  border: 1px solid @pb_fg;
+  border-radius: 0;
+}
+
+/* ── Terminal (VTE via CSS when themed) ──────────────────── */
+vte-terminal, terminal-window {
+  background-color: @pb_bg;
+  color: @pb_fg;
+}

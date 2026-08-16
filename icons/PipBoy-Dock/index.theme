@@ -1,0 +1,20 @@
+[Icon Theme]
+Name=PipBoy-Dock
+Comment=Professional neon dock tiles for Vault-OS
+Inherits=FalloutMojave,hicolor
+Directories=32x32/apps,48x48/apps,64x64/apps
+
+[32x32/apps]
+Size=32
+Context=Applications
+Type=Fixed
+
+[48x48/apps]
+Size=48
+Context=Applications
+Type=Fixed
+
+[64x64/apps]
+Size=64
+Context=Applications
+Type=Fixed

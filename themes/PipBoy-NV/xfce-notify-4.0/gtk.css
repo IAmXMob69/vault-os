@@ -1,0 +1,49 @@
+/* PipBoy-NV notifications — CRT toast */
+#XfceNotifyWindow {
+  background-color: alpha(#0D1510, 0.96);
+  border: 1px solid #33FF6A;
+  border-radius: 2px;
+  padding: 14px;
+  box-shadow: 0 0 18px alpha(#33FF6A, 0.18), 0 12px 32px alpha(black, 0.55);
+}
+#XfceNotifyWindow label,
+#XfceNotifyWindow box,
+#XfceNotifyWindow box > box {
+  color: #33FF6A;
+  background: transparent;
+}
+#XfceNotifyWindow label#summary {
+  color: #B8FFCC;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 1.05em;
+  text-shadow: 0 0 8px alpha(#33FF6A, 0.35);
+}
+#XfceNotifyWindow label#body {
+  color: #2A9B4E;
+  font-weight: 500;
+}
+#XfceNotifyWindow button {
+  background-color: #0D1510;
+  color: #33FF6A;
+  border: 1px solid #1F4A30;
+  border-radius: 2px;
+  padding: 4px 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+#XfceNotifyWindow button:hover {
+  background-color: #1B5C32;
+  border-color: #33FF6A;
+  color: #B8FFCC;
+}
+#XfceNotifyWindow progressbar trough {
+  background-color: #040806;
+  border: 1px solid #1F4A30;
+  border-radius: 2px;
+  min-height: 6px;
+}
+#XfceNotifyWindow progressbar progress {
+  background-image: linear-gradient(90deg, #1a6b35, #33FF6A);
+  border-radius: 2px;
+}
