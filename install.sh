@@ -272,4 +272,4 @@ if (( SYSTEM == 1 )); then
 fi
 
 info "Done. Log out and back in (or run: vault-os doctor)"
-printf '\n  Theme   PipBoy-NV\n  Icons   FalloutMojave\n  Cursor  PipBoy-NV-Cursors\n  Walls   ~/.local/share/backgrounds/  (pick one in Settings → Desktop)\n\n'
+printf '%s\n' '' '  Theme   PipBoy-NV' '  Icons   FalloutMojave' '  Cursor  PipBoy-NV-Cursors' '  Walls   ~/.local/share/backgrounds/' '  Pick a wallpaper in Settings -> Desktop' ''
