@@ -51,7 +51,10 @@ __pipboy_prompt() {
   PS2="${d}| ${g}...${r} "
 }
 
-PROMPT_COMMAND="__pipboy_prompt${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
+case ";${PROMPT_COMMAND:-};" in
+  *__pipboy_prompt*) ;;
+  *) PROMPT_COMMAND="__pipboy_prompt${PROMPT_COMMAND:+; $PROMPT_COMMAND}" ;;
+esac
 
 # ── Aliases ────────────────────────────────────────────────────
 alias ls='ls --color=auto'

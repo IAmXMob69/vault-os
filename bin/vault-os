@@ -2,7 +2,7 @@
 # vault-os — production control plane for Fallout NV XFCE stack
 set -euo pipefail
 
-readonly VERSION="1.4.6"
+readonly VERSION="1.4.7"
 readonly CONF_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
 
 export DISPLAY="${DISPLAY:-:0}"
@@ -29,14 +29,16 @@ load_config() {
   PANEL1_BG_IMAGE="$HOME/.local/share/vault-os/panel/panel-top.png"
   PANEL2_POSITION="p=10;x=0;y=0"
   PANEL2_LENGTH=100
-  PANEL2_SIZE=56
+  PANEL2_SIZE=44
   PANEL2_AUTOHIDE=0
   PANEL2_BG_IMAGE="$HOME/.local/share/vault-os/panel/panel-bg.png"
   PANEL_BG_STYLE=2
-  PANEL_BG_R=0.027
-  PANEL_BG_G=0.051
-  PANEL_BG_B=0.035
+  PANEL_BG_R=0.024
+  PANEL_BG_G=0.039
+  PANEL_BG_B=0.031
   PANEL_BG_A=1.0
+  PANEL1_ICON_SIZE=16
+  PANEL2_ICON_SIZE=32
   INTRO_FILE="$HOME/.local/share/fallout-nv/boot-intro.mp4"
   INTRO_VOLUME=90
   INTRO_ENABLED=0
@@ -190,7 +192,12 @@ cmd_apply() {
   xq_set xsettings /Gtk/MonospaceFontName -t string -s "$MONO_FONT"
   xq_set xsettings /Gtk/CursorThemeName -t string -s "${CURSOR_THEME:-Adwaita}"
   xq_set xsettings /Gtk/CursorThemeSize -t int -s "${CURSOR_SIZE:-24}"
-  xq_set xsettings /Net/EnableEventSounds -t bool -s false
+  if [[ -d "$HOME/.local/share/sounds/PipBoy-NV" ]]; then
+    xq_set xsettings /Net/SoundThemeName -t string -s "PipBoy-NV"
+    xq_set xsettings /Net/EnableEventSounds -t bool -s true
+  else
+    xq_set xsettings /Net/EnableEventSounds -t bool -s false
+  fi
   xq_set xsettings /Net/EnableInputFeedbackSounds -t bool -s false
   xq_set xfwm4 /general/theme -t string -s "$WM_THEME"
   xq_set xfwm4 /general/title_font -t string -s "$TITLE_FONT"
@@ -353,16 +360,17 @@ cmd_ensure_panel() {
   local p
   for p in 1 2; do
     if have xfconf-query; then
-      xfconf-query -c xfce4-panel -p "/panels/panel-${p}/background-rgba" -r 2>/dev/null || true
-      xfconf-query -c xfce4-panel -p "/panels/panel-${p}/background-rgba" -n \
-        -t double -s "$PANEL_BG_R" \
-        -t double -s "$PANEL_BG_G" \
-        -t double -s "$PANEL_BG_B" \
-        -t double -s "$PANEL_BG_A" 2>/dev/null || true
+      if ! xfconf-query -c xfce4-panel -p "/panels/panel-${p}/background-rgba" >/dev/null 2>&1; then
+        xfconf-query -c xfce4-panel -p "/panels/panel-${p}/background-rgba" -n \
+          -t double -s "$PANEL_BG_R" \
+          -t double -s "$PANEL_BG_G" \
+          -t double -s "$PANEL_BG_B" \
+          -t double -s "$PANEL_BG_A" 2>/dev/null || true
+      fi
     fi
   done
   xq_set xfce4-panel /panels/panel-1/icon-size -t int -s "${PANEL1_ICON_SIZE:-16}"
-  xq_set xfce4-panel /panels/panel-2/icon-size -t int -s "${PANEL2_ICON_SIZE:-48}" 
+  xq_set xfce4-panel /panels/panel-2/icon-size -t int -s "${PANEL2_ICON_SIZE:-32}" 
 
   local len2
   len2=$(xq_get xfce4-panel /panels/panel-2/length | head -1)

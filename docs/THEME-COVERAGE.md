@@ -17,9 +17,8 @@
 | Discord | CSS theme file (enable in Vencord/BetterDiscord) |
 | Chromium | Pip-Boy theme extension + flags |
 | Flatpak | GTK/icon/cursor/Qt env overrides |
-| Thunar | Vault-style bookmarks |
 | Lock | `vault-os-lock` helper |
-| Guards | vault-os ensure-theme/coverage on login + 30s watch |
+| Guards | login autostart + optional 30s systemd watch (no wallpaper writes) |
 
 ## Needs sudo once
 

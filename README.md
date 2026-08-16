@@ -74,7 +74,7 @@ Optional system greeter / GRUB (needs sudo):
 
 ```bash
 vault-os status            # health check
-vault-os apply             # apply GTK / icons / wallpaper / panels
+vault-os apply             # apply GTK / icons / cursor / panels (not wallpaper)
 vault-os doctor            # repair theme + panels
 vault-os coverage          # what is themed
 vault-os ensure-theme      # re-assert after login races
@@ -115,7 +115,7 @@ docs/          theme notes and upgrade history
 ## Notes
 
 - Extracted *Fallout: New Vegas* game textures and the official boot intro video are **not** in this repo.
-- The installer is idempotent. Re-run it after `git pull`.
+- The installer is idempotent. Re-run it after `git pull`. It will not overwrite your wallpaper, panel layout, or `vault-os.conf`.
 - Firefox: copy `config/firefox/user.js` + `chrome/userChrome.css` into your profile (or let the installer drop them on the default profile).
 - Discord: enable `PipBoyNV.theme.css` in Vencord or BetterDiscord.
 - Chromium: the installer installs an unpacked Pip-Boy theme; reopen Chromium after install.

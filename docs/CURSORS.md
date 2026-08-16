@@ -5,7 +5,7 @@ CRT phosphor green X11 cursor theme for Vault-OS / PipBoy-NV.
 ## Location
 - `~/.icons/PipBoy-NV-Cursors/`
 - symlink: `~/.local/share/icons/PipBoy-NV-Cursors`
-- sources/previews: `~/Themes/fallout-nv/cursors/`
+- sources/previews: `extras/cursors-src/` in this repo
 
 ## Apply
 ```bash

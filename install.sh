@@ -44,10 +44,13 @@ subst_home() {
   sed "s|@HOME@|$HOME|g" "$src" >"$dest"
 }
 
-link_or_copy() {
+install_new() {
+  # Write dest only when it does not already exist (never clobber wallpaper/conf).
   local src="$1" dest="$2"
-  mkdir -p "$(dirname "$dest")"
-  rsync -a "$src" "$dest"
+  if [[ -e "$dest" ]]; then
+    return 0
+  fi
+  subst_home "$src" "$dest"
 }
 
 info "Vault-OS — installing Pip-Boy rice into $HOME"
@@ -138,9 +141,9 @@ cp -f "$ROOT/config/qt5ct/qt5ct.conf" "$CFG/qt5ct/qt5ct.conf"
 cp -f "$ROOT/config/qt6ct/qt6ct.conf" "$CFG/qt6ct/qt6ct.conf"
 cp -f "$ROOT/config/environment.d/qt.conf" "$CFG/environment.d/qt.conf"
 cp -f "$ROOT/config/environment.d/vault-os.conf" "$CFG/environment.d/vault-os.conf"
-cp -f "$ROOT/config/xprofile" "$HOME/.xprofile"
+[[ -f "$HOME/.xprofile" ]] || cp -f "$ROOT/config/xprofile" "$HOME/.xprofile"
 
-subst_home "$ROOT/config/fallout-nv/vault-os.conf" "$CFG/fallout-nv/vault-os.conf"
+install_new "$ROOT/config/fallout-nv/vault-os.conf" "$CFG/fallout-nv/vault-os.conf"
 cp -f "$ROOT/config/xfce4/terminal/terminalrc" "$CFG/xfce4/terminal/terminalrc"
 [[ -f "$ROOT/config/xfce4/helpers.rc" ]] && cp -f "$ROOT/config/xfce4/helpers.rc" "$CFG/xfce4/helpers.rc"
 
@@ -149,9 +152,10 @@ for xml in xsettings.xml xfwm4.xml xfce4-notifyd.xml thunar.xml; do
   subst_home "$ROOT/config/xfce4/xfconf/xfce-perchannel-xml/$xml" \
     "$CFG/xfce4/xfconf/xfce-perchannel-xml/$xml"
 done
-subst_home "$ROOT/config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml" \
+# Never overwrite an existing desktop/panel layout (wallpaper is user-owned).
+install_new "$ROOT/config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml" \
   "$CFG/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
-subst_home "$ROOT/config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml" \
+install_new "$ROOT/config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml" \
   "$CFG/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
 
 # Dock launchers
@@ -242,6 +246,15 @@ fi
 # ---------------------------------------------------------------------------
 # Apply live (if an XFCE session is running)
 # ---------------------------------------------------------------------------
+# systemd user watch (theme/panel/xfdesktop liveness — does not touch wallpaper)
+if command -v systemctl >/dev/null; then
+  mkdir -p "$HOME/.config/systemd/user"
+  cp -f "$ROOT/extras/systemd/vault-os-watch.service" "$HOME/.config/systemd/user/vault-os-watch.service"
+  cp -f "$ROOT/extras/systemd/vault-os-watch.timer" "$HOME/.config/systemd/user/vault-os-watch.timer"
+  systemctl --user daemon-reload 2>/dev/null || true
+  systemctl --user enable --now vault-os-watch.timer 2>/dev/null || true
+fi
+
 if (( APPLY == 1 )); then
   if command -v xfconf-query >/dev/null && [[ -n "${DISPLAY:-}" ]]; then
     info "Applying live session..."
@@ -260,4 +273,4 @@ if (( SYSTEM == 1 )); then
 fi
 
 info "Done. Log out and back in (or run: vault-os doctor)"
-printf '\n  Theme   PipBoy-NV\n  Icons   FalloutMojave\n  Cursor  PipBoy-NV-Cursors\n  Wall    ~/.local/share/backgrounds/fnv-mojave-strip-4k.jpg\n\n'
+printf '\n  Theme   PipBoy-NV\n  Icons   FalloutMojave\n  Cursor  PipBoy-NV-Cursors\n  Walls   ~/.local/share/backgrounds/  (pick one in Settings → Desktop)\n\n'

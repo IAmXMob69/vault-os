@@ -68,23 +68,3 @@ headerbar button.titlebutton.close:hover {
   color: #FF6B6B;
 }
 menu menuitem, .menu menuitem { min-height: 28px; padding: 5px 12px; }
-
-/* Firefox chrome — RobCo terminal (WM_CLASS = firefox / Navigator) */
-window.csd.browser-window,
-window.csd[class~="firefox"],
-window[class~="firefox"] {
-  background-color: #070C09;
-  color: #33FF6A;
-  background-image: none;
-}
-window.csd.browser-window headerbar,
-window.csd.browser-window .titlebar,
-window[class~="firefox"] headerbar,
-window[class~="firefox"] toolbar,
-window[class~="firefox"] .toolbar {
-  background-color: #070C09;
-  background-image: none;
-  color: #33FF6A;
-  box-shadow: none;
-  border: none;
-}

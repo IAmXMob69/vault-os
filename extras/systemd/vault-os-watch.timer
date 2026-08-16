@@ -1,0 +1,12 @@
+[Unit]
+Description=Vault-OS desktop+panel integrity timer (every 30s)
+
+[Timer]
+OnBootSec=20s
+OnUnitActiveSec=30s
+AccuracySec=5s
+Persistent=false
+Unit=vault-os-watch.service
+
+[Install]
+WantedBy=timers.target
