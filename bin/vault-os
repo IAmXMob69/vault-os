@@ -2,7 +2,7 @@
 # vault-os — production control plane for Fallout NV XFCE stack
 set -euo pipefail
 
-readonly VERSION="1.4.4"
+readonly VERSION="1.4.5"
 readonly CONF_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
 
 export DISPLAY="${DISPLAY:-:0}"
@@ -82,37 +82,6 @@ has_share_tech_mono() {
 
 _panel_num_ok() { awk -v v="${1:-0}" -v m="${2:-0}" 'BEGIN{ exit !(v+0 >= m) }'; }
 
-lock_wallpaper() {
-  # Keep one static backdrop. Writing last-image (even to the same path)
-  # makes xfdesktop reload the JPEG and the desktop appears to change.
-  have xfconf-query || return 0
-
-  xq_set xfce4-desktop /backdrop/single-workspace-mode -t bool -s true
-  xq_set xfce4-desktop /backdrop/single-workspace-number -t int -s 0
-
-  local prop cur
-  while IFS= read -r prop; do
-    [[ -n "$prop" ]] || continue
-    xfconf-query -c xfce4-desktop -p "$prop" -s false 2>/dev/null \
-      || xfconf-query -c xfce4-desktop -p "$prop" -n -t bool -s false 2>/dev/null \
-      || true
-  done < <(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'backdrop-cycle-enable$' || true)
-
-  local wall="${WALLPAPER:-$HOME/.local/share/backgrounds/fnv-mojave-strip-4k.jpg}"
-  [[ -f "$wall" ]] || wall="${WALLPAPER_FALLBACK:-$HOME/.local/share/backgrounds/fnv-vaultboy-perks-4k.jpg}"
-  [[ -f "$wall" ]] || wall="$HOME/.local/share/backgrounds/pipboy-nv-wasteland.png"
-  [[ -f "$wall" ]] || return 0
-
-  while IFS= read -r prop; do
-    [[ -n "$prop" ]] || continue
-    cur=$(xfconf-query -c xfce4-desktop -p "$prop" 2>/dev/null || true)
-    # Only fill blanks / missing files. Never overwrite a valid image.
-    if [[ -z "$cur" || ! -f "$cur" ]]; then
-      xfconf-query -c xfce4-desktop -p "$prop" -s "$wall" 2>/dev/null || true
-    fi
-  done < <(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image$' || true)
-}
-
 xq_set() {
   # Type-safe xfconf set: on failure reset property then create (-n).
   have xfconf-query || return 0
@@ -130,14 +99,12 @@ xq_get() {
 }
 
 ensure_xfdesktop() {
-  # Keep xfdesktop alive. Do not rewrite last-image on a healthy desktop —
-  # that reloads the JPEG and the wallpaper appears to change.
+  # Keep xfdesktop running. Never touch last-image / backdrop — the user
+  # owns the wallpaper (Settings → Desktop).
   export DISPLAY="${DISPLAY:-:0}"
   export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
   export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
   export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR}/bus}"
-
-  lock_wallpaper
 
   if pgrep -x xfdesktop >/dev/null 2>&1; then
     return 0
@@ -229,8 +196,7 @@ cmd_apply() {
   xq_set xfwm4 /general/workspace_names -t string -s "STAT" -t string -s "DATA" -t string -s "ITEM" -t string -s "MAP"
   xq_set xfwm4 /general/workspace_count -t int -s 4
 
-  # Wallpaper — lock once, never rewrite a valid image (avoids xfdesktop reload)
-  lock_wallpaper
+  # Wallpaper is user-owned. Do not write last-image here.
 
   # Desktop icon label colors (CRT green)
   xq_set xfce4-desktop /desktop-icons/label-text-color \
