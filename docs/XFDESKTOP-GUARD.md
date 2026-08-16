@@ -1,6 +1,9 @@
 # XFDesktop wallpaper guard (Vault-OS 1.4.2)
 
-Prevents blank desktop when `xfdesktop` crashes or is killed.
+Keeps xfdesktop alive if it dies. Does **not** rewrite `last-image` when a
+valid wallpaper is already set — rewriting it made xfdesktop reload the JPEG
+every 30s and the background appeared to change. Slideshows stay off; all
+workspaces share workspace 0 (`single-workspace-mode`).
 
 ## Layers
 1. **systemd user service** `vault-os-xfdesktop.service` — owns xfdesktop, `Restart=always` (1s)
