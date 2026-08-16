@@ -1,46 +1,43 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python3
 # Close all application windows (Wnck). Skip panel/desktop.
-export DISPLAY="${DISPLAY:-:0}"
-export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
-exec python3 - "$@" << 'PY'
-import os, sys
+import os
+import sys
+
+os.environ.setdefault("DISPLAY", os.environ.get("DISPLAY", ":0"))
+os.environ.setdefault("GDK_BACKEND", "x11")
+
 import gi
+
 gi.require_version("Gtk", "3.0")
 gi.require_version("Wnck", "3.0")
 from gi.repository import Gtk, Wnck, GLib
-
-# Force X11 backend for Wnck
-os.environ.setdefault("GDK_BACKEND", "x11")
 
 screen = Wnck.Screen.get_default()
 if screen is None:
     sys.stderr.write("no wnck screen\n")
     sys.exit(1)
 
-# Process events so screen is populated
 Gtk.init([])
 screen.force_update()
 
 skip_classes = {
-    "xfce4-panel", "xfdesktop", "xfwm4", "wrapper-2.0",
-    "xfce4-notifyd", "notify-osd", "plasmashell",
+    "xfce4-panel",
+    "xfdesktop",
+    "xfwm4",
+    "wrapper-2.0",
+    "xfce4-notifyd",
+    "notify-osd",
+    "plasmashell",
 }
-skip_names = {"xfce4-panel", "Desktop", "Desktop icons"}
 
 closed = 0
-# copy list — closing mutates
 for win in list(screen.get_windows() or []):
     try:
-        if win.is_skip_tasklist() and win.is_skip_pager():
-            # likely panel/utility; still check class
-            pass
         wclass = (win.get_class_group_name() or "").lower()
-        name = win.get_name() or ""
         if wclass in skip_classes:
             continue
         if any(s in wclass for s in ("panel", "xfdesktop", "notify")):
             continue
-        # skip desktop type
         wtype = win.get_window_type()
         if wtype in (
             Wnck.WindowType.DESKTOP,
@@ -56,18 +53,16 @@ for win in list(screen.get_windows() or []):
     except Exception as e:
         sys.stderr.write(f"skip: {e}\n")
 
-# brief main loop so close requests flush
 GLib.timeout_add(200, Gtk.main_quit)
 Gtk.main()
 
 try:
     gi.require_version("Notify", "0.7")
     from gi.repository import Notify
+
     Notify.init("Vault-OS")
-    n = Notify.Notification.new("Close All", f"Closed {closed} window(s)", "nuclear_waste")
-    n.show()
+    Notify.Notification.new("Close All", f"Closed {closed} window(s)", "nuclear_waste").show()
 except Exception:
     pass
 
 print(f"closed {closed}")
-PY

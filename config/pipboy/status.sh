@@ -42,28 +42,27 @@ if [[ -f /sys/class/power_supply/BAT0/capacity ]]; then
   bat=$(printf '  CHARGE   [%s] %s%%\n' "$(bar "$bat_pct")" "$bat_pct")
 fi
 
-cat <<EOF
-${D}+------------------------------------------+
-|${G}${B}  PIP-BOY 3000  .  STAT                   ${R}${D}|
-+------------------------------------------+${R}
-  ${G}DWELLER${R}  ${USER}
-  ${G}HOST   ${R}  ${host}
-  ${G}OS     ${R}  $(uname -sr)
-  ${G}UPTIME ${R}  ${up}
-
-  ${G}HP     ${R}  [$(bar "$hp")] ${hp}%
-  ${G}RADS   ${R}  [$(bar "$load")] ${load}%
-  ${G}SUPPLY ${R}  [$(bar "$ammo")] free disk ${ammo}%
-${bat}
-${D}+------------------------------------------+
-|${G}  SPECIAL                                 ${R}${D}|
-+------------------------------------------+${R}
-  ${G}S${R}tr  $(nproc 2>/dev/null || echo 1) cores
-  ${G}P${R}er  load $(cut -d' ' -f1-3 /proc/loadavg)
-  ${G}E${R}nd  ${mem_used}M / ${mem_total}M RAM
-  ${G}C${R}ha  $(df -h "$HOME" | awk 'END{print $4}') free home
-  ${G}I${R}nt  bash ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}
-  ${G}A${R}gi  $(date +%H:%M:%S)
-  ${G}L${R}ck  vault-tec online
-${D}+------------------------------------------+${R}
-EOF
+printf '%s\n' \
+  "${D}+------------------------------------------+${R}" \
+  "|${G}${B}  PIP-BOY 3000  .  STAT                   ${R}${D}|${R}" \
+  "${D}+------------------------------------------+${R}" \
+  "  ${G}DWELLER${R}  ${USER}" \
+  "  ${G}HOST   ${R}  ${host}" \
+  "  ${G}OS     ${R}  $(uname -sr)" \
+  "  ${G}UPTIME ${R}  ${up}" \
+  "" \
+  "  ${G}HP     ${R}  [$(bar "$hp")] ${hp}%" \
+  "  ${G}RADS   ${R}  [$(bar "$load")] ${load}%" \
+  "  ${G}SUPPLY ${R}  [$(bar "$ammo")] free disk ${ammo}%" \
+  ${bat:+"$bat"} \
+  "${D}+------------------------------------------+${R}" \
+  "|${G}  SPECIAL                                 ${R}${D}|${R}" \
+  "${D}+------------------------------------------+${R}" \
+  "  ${G}S${R}tr  $(nproc 2>/dev/null || echo 1) cores" \
+  "  ${G}P${R}er  load $(cut -d' ' -f1-3 /proc/loadavg)" \
+  "  ${G}E${R}nd  ${mem_used}M / ${mem_total}M RAM" \
+  "  ${G}C${R}ha  $(df -h "$HOME" | awk 'END{print $4}') free home" \
+  "  ${G}I${R}nt  bash ${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}" \
+  "  ${G}A${R}gi  $(date +%H:%M:%S)" \
+  "  ${G}L${R}ck  vault-tec online" \
+  "${D}+------------------------------------------+${R}"

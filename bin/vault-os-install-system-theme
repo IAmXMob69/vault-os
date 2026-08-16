@@ -23,23 +23,23 @@ if [[ -d "$ROOT_CURSOR_SRC" ]]; then
 fi
 
 tmp="$(mktemp)"
-cat >"$tmp" <<EOF
-[greeter]
-theme-name=PipBoy-NV
-icon-theme-name=FalloutMojave
-cursor-theme-name=PipBoy-NV-Cursors
-cursor-theme-size=24
-font-name=Share Tech Mono 11
-background=$WALL
-user-background=false
-default-user-image=$PIPBOY_ICON
-hide-user-image=false
-clock-format=%H:%M
-indicators=~host;~spacer;~clock;~spacer;~session;~power
-xft-antialias=true
-xft-hintstyle=hintslight
-xft-rgba=rgb
-EOF
+printf '%s\n' \
+  '[greeter]' \
+  'theme-name=PipBoy-NV' \
+  'icon-theme-name=FalloutMojave' \
+  'cursor-theme-name=PipBoy-NV-Cursors' \
+  'cursor-theme-size=24' \
+  'font-name=Share Tech Mono 11' \
+  "background=$WALL" \
+  'user-background=false' \
+  "default-user-image=$PIPBOY_ICON" \
+  'hide-user-image=false' \
+  'clock-format=%H:%M' \
+  'indicators=~host;~spacer;~clock;~spacer;~session;~power' \
+  'xft-antialias=true' \
+  'xft-hintstyle=hintslight' \
+  'xft-rgba=rgb' \
+  >"$tmp"
 sudo cp "$tmp" /etc/lightdm/lightdm-gtk-greeter.conf
 rm -f "$tmp"
 

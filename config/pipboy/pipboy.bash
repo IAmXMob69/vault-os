@@ -72,22 +72,21 @@ alias vault-doctor='$HOME/.local/bin/vault-os doctor'
 
 # ── Help ───────────────────────────────────────────────────────
 help-pipboy() {
-  cat <<EOF
-${PIPBOY_G}${PIPBOY_B}PIP-BOY 3000 - TERMINAL COMMANDS${PIPBOY_R}
-${PIPBOY_D}--------------------------------${PIPBOY_R}
-  pipboy-banner     Re-run boot sequence
-  pipboy-status     System / radiation-style stats
-  pipboy-green      Classic green phosphor
-  pipboy-amber      Amber Pip-Boy variant
-  vault             Jump to Fallout NV install
-  vault-os          Control plane (status/doctor/apply)
-  vault-status      Quick health check
-  vault-doctor      Repair theme/panels
-
-  Theme files: ~/.config/pipboy/
-  Terminal:    ~/.config/xfce4/terminal/terminalrc
-${PIPBOY_D}--------------------------------${PIPBOY_R}
-EOF
+  printf '%s\n' \
+    "${PIPBOY_G}${PIPBOY_B}PIP-BOY 3000 - TERMINAL COMMANDS${PIPBOY_R}" \
+    "${PIPBOY_D}--------------------------------${PIPBOY_R}" \
+    '  pipboy-banner     Re-run boot sequence' \
+    '  pipboy-status     System / radiation-style stats' \
+    '  pipboy-green      Classic green phosphor' \
+    '  pipboy-amber      Amber Pip-Boy variant' \
+    '  vault             Jump to Fallout NV install' \
+    '  vault-os          Control plane (status/doctor/apply)' \
+    '  vault-status      Quick health check' \
+    '  vault-doctor      Repair theme/panels' \
+    '' \
+    '  Theme files: ~/.config/pipboy/' \
+    '  Terminal:    ~/.config/xfce4/terminal/terminalrc' \
+    "${PIPBOY_D}--------------------------------${PIPBOY_R}"
 }
 
 # ── Boot banner (once per terminal session) ────────────────────

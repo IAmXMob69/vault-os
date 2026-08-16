@@ -1,0 +1,7 @@
+bin/vault-os linguist-language=Shell
+bin/vault-os-lock linguist-language=Shell
+bin/vault-os-install-system-theme linguist-language=Shell
+bin/vault-os-close-all linguist-language=Python
+bin/vault-os-chromium-theme linguist-language=Python
+*.bash linguist-language=Shell
+*.sh linguist-language=Shell

@@ -16,14 +16,13 @@ ok()    { printf '\033[38;2;51;255;106m  ✓\033[0m %s\n' "$*"; }
 warn()  { printf '\033[38;2;255;176;0m  !\033[0m %s\n' "$*"; }
 
 usage() {
-  cat <<EOF
-Usage: $0 [options]
-
-  --no-apply     Install files only (do not call vault-os apply)
-  --system       Also install LightDM greeter + GRUB background (sudo)
-  --packages     Install recommended Arch packages with pacman
-  -h, --help     Show this help
-EOF
+  printf '%s\n' \
+    "Usage: $0 [options]" \
+    '' \
+    '  --no-apply     Install files only (do not call vault-os apply)' \
+    '  --system       Also install LightDM greeter + GRUB background (sudo)' \
+    '  --packages     Install recommended Arch packages with pacman' \
+    '  -h, --help     Show this help'
 }
 
 while [[ $# -gt 0 ]]; do
@@ -227,15 +226,15 @@ ok "app skins installed"
 # bashrc / PATH
 # ---------------------------------------------------------------------------
 if [[ -f "$HOME/.bashrc" ]] && ! grep -q 'pipboy theme' "$HOME/.bashrc"; then
-  cat >>"$HOME/.bashrc" <<'EOF'
-
-# >>> pipboy theme >>>
-if [[ -r "$HOME/.config/pipboy/pipboy.bash" ]]; then
-  # shellcheck source=/dev/null
-  source "$HOME/.config/pipboy/pipboy.bash"
-fi
-# <<< pipboy theme <<<
-EOF
+  printf '%s\n' \
+    '' \
+    '# -- pipboy theme --' \
+    'if [[ -r "$HOME/.config/pipboy/pipboy.bash" ]]; then' \
+    '  # shellcheck source=/dev/null' \
+    '  source "$HOME/.config/pipboy/pipboy.bash"' \
+    'fi' \
+    '# -- end pipboy theme --' \
+    >>"$HOME/.bashrc"
   ok "hooked Pip-Boy theme into ~/.bashrc"
 fi
 
