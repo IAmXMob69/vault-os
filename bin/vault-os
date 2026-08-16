@@ -2,7 +2,7 @@
 # vault-os — production control plane for Fallout NV XFCE stack
 set -euo pipefail
 
-readonly VERSION="1.4.5"
+readonly VERSION="1.4.6"
 readonly CONF_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
 
 export DISPLAY="${DISPLAY:-:0}"
@@ -52,6 +52,7 @@ load_config() {
       key="${line%%=*}"
       val="${line#*=}"
       key="${key// /}"
+      [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
       # expand $HOME and $XDG_RUNTIME_DIR
       val="${val//\$HOME/$HOME}"
       val="${val//\$XDG_RUNTIME_DIR/$XDG_RUNTIME_DIR}"
@@ -139,7 +140,7 @@ ensure_xfdesktop() {
 }
 
 cmd_ensure_desktop() {
-  log "ensure desktop (xfdesktop + wallpaper)"
+  log "ensure desktop (keep xfdesktop running)"
   load_config 2>/dev/null || true
   ensure_xfdesktop
 }
@@ -272,14 +273,14 @@ INI
     mkdir -p "$HOME/.config/$qt"
     if [[ -f "$qtc" ]]; then
       sed -i "s|^icon_theme=.*|icon_theme=${ICON_THEME}|" "$qtc" 2>/dev/null || true
-      sed -i "s|^style=.*|style=Fusion|" "$qtc" 2>/dev/null || true
+      sed -i "s|^style=.*|style=kvantum|" "$qtc" 2>/dev/null || true
     else
       cat > "$qtc" << QTC
 [Appearance]
 custom_palette=false
 icon_theme=${ICON_THEME}
 standard_dialogs=default
-style=Fusion
+style=kvantum
 
 [Fonts]
 fixed="${MONO_FONT%,*},10,-1,5,50,0,0,0,0,0"
@@ -293,6 +294,7 @@ QTC
   cat > "$HOME/.config/environment.d/vault-os.conf" << ENV
 GTK_THEME=${THEME_NAME}
 QT_QPA_PLATFORMTHEME=qt5ct
+QT_STYLE_OVERRIDE=kvantum
 XCURSOR_THEME=${CURSOR_THEME:-PipBoy-NV-Cursors}
 XCURSOR_SIZE=${CURSOR_SIZE:-24}
 ENV
@@ -393,7 +395,7 @@ cmd_ensure_panel() {
 }
 
 cmd_intro() {
-  if [[ "${INTRO_ENABLED:-1}" != "1" ]] || [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/skip-boot-intro" ]]; then
+  if [[ "${INTRO_ENABLED:-0}" != "1" ]] || [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/skip-boot-intro" ]]; then
     log "intro disabled"
     return 0
   fi
@@ -562,6 +564,14 @@ cmd_ensure_coverage() {
 }
 
 cmd_coverage() {
+  local kv qt vs ff disc snd
+  kv=$(grep ^theme= "$HOME/.config/Kvantum/kvantum.kvconfig" 2>/dev/null | cut -d= -f2 || true)
+  qt=$(grep ^style= "$HOME/.config/qt5ct/qt5ct.conf" 2>/dev/null | cut -d= -f2 || true)
+  vs=$(grep colorTheme "$HOME/.config/Code - OSS/User/settings.json" 2>/dev/null | head -1 || true)
+  ff=$(ls -d "$HOME/.mozilla/firefox/"*/chrome/userChrome.css 2>/dev/null | head -1 || true)
+  disc=$(ls "$HOME/.config/Vencord/themes/PipBoyNV.theme.css" \
+            "$HOME/.config/BetterDiscord/themes/PipBoyNV.theme.css" 2>/dev/null | head -1 || true)
+  snd=$(ls -d "$HOME/.local/share/sounds/PipBoy-NV" 2>/dev/null || true)
   printf 'Vault-OS theme coverage\n'
   printf '======================\n'
   printf 'GTK:     %s\n' "$(xq_get xsettings /Net/ThemeName | head -1)"
@@ -570,13 +580,13 @@ cmd_coverage() {
   printf 'Cursor:  %s\n' "$(xq_get xsettings /Gtk/CursorThemeName | head -1)"
   printf 'Sound:   %s\n' "$(xq_get xsettings /Net/SoundThemeName | head -1)"
   printf 'Notify:  %s\n' "$(xq_get xfce4-notifyd /theme | head -1)"
-  printf 'Kvantum: %s\n' "$(grep ^theme= "$HOME/.config/Kvantum/kvantum.kvconfig" 2>/dev/null | cut -d= -f2)"
-  printf 'qt5ct:   %s\n' "$(grep ^style= "$HOME/.config/qt5ct/qt5ct.conf" 2>/dev/null | cut -d= -f2)"
-  printf 'VS Code: %s\n' "$(grep colorTheme "$HOME/.config/Code - OSS/User/settings.json" 2>/dev/null | head -1)"
-  printf 'Firefox: %s\n' "$(ls -d "$HOME/.mozilla/firefox/"*/chrome/userChrome.css 2>/dev/null | head -1)"
-  printf 'Discord: %s\n' "$(ls "$HOME/.config/discord/vault-os/"*.css 2>/dev/null | head -1)"
+  printf 'Kvantum: %s\n' "${kv:-missing}"
+  printf 'qt5ct:   %s\n' "${qt:-missing}"
+  printf 'VS Code: %s\n' "${vs:-unset}"
+  printf 'Firefox: %s\n' "${ff:-missing}"
+  printf 'Discord: %s\n' "${disc:-missing}"
   printf 'LightDM: run vault-os-install-system-theme (sudo)\n'
-  printf 'Sounds:  %s\n' "$(ls -d "$HOME/.local/share/sounds/PipBoy-NV" 2>/dev/null)"
+  printf 'Sounds:  %s\n' "${snd:-missing}"
 }
 
 cmd_session_start() {
@@ -644,15 +654,14 @@ cmd_status() {
   printf 'panel-2    length=%s position=%s\n' "$p2" "$pos2"
   _panel_num_ok "${p2:-0}" 50 || { printf 'panel-2    LENGTH_BAD\n'; ec=1; }
   [[ "$pos2" == *x=* ]] || { printf 'panel-2    POSITION_INCOMPLETE\n'; ec=1; }
-  if [[ -f "$INTRO_FILE" || -f "$HOME/.local/share/fallout-nv/FNVIntro-1080p-1m26s.mp4" ]]; then
-    printf 'intro      media OK\n'
+  if [[ "${INTRO_ENABLED:-0}" == "1" && ! -f "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/skip-boot-intro" ]]; then
+    if [[ -f "$INTRO_FILE" || -f "$HOME/.local/share/fallout-nv/FNVIntro-1080p-1m26s.mp4" ]]; then
+      printf 'intro      enabled (media OK)\n'
+    else
+      printf 'intro      enabled (media missing)\n'
+    fi
   else
-    printf 'intro      MEDIA_MISSING\n'; ec=1
-  fi
-  if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/skip-boot-intro" ]]; then
     printf 'intro      disabled\n'
-  else
-    printf 'intro      enabled on login\n'
   fi
   [[ -d "$HOME/.themes/$THEME_NAME" ]] && printf 'theme_dir  OK\n' || { printf 'theme_dir  MISSING\n'; ec=1; }
   if [[ -d "$HOME/.local/share/icons/$ICON_THEME" || -d "$HOME/.icons/$ICON_THEME" ]]; then
@@ -661,20 +670,20 @@ cmd_status() {
     printf 'icon_dir   MISSING\n'; ec=1
   fi
   local wall_live wall_ok=0
-  wall_live=$(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image$' | head -1)
+  wall_live=$(xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image$' | head -1 || true)
   if [[ -n "$wall_live" ]]; then
     wall_live=$(xq_get xfce4-desktop "$wall_live" | head -1)
     [[ -f "$wall_live" ]] && wall_ok=1
-    printf 'wallpaper  %s\n' "$([[ $wall_ok -eq 1 ]] && echo OK || echo MISSING) ${wall_live##*/}"
+    printf 'wallpaper  %s %s\n' "$([[ $wall_ok -eq 1 ]] && echo OK || echo MISSING)" "${wall_live##*/}"
+  else
+    printf 'wallpaper  unset\n'
   fi
   local cur
   cur=$(xq_get xsettings /Gtk/CursorThemeName | head -1)
   if [[ "${cur:-}" == "${CURSOR_THEME}" ]]; then
-    printf 'cursor     %s OK
-' "$cur"
+    printf 'cursor     %s OK\n' "$cur"
   else
-    printf 'cursor     %s DRIFT (want %s)
-' "${cur:-none}" "${CURSOR_THEME}"
+    printf 'cursor     %s DRIFT (want %s)\n' "${cur:-none}" "${CURSOR_THEME}"
   fi
   local ntheme
   ntheme=$(xq_get xfce4-notifyd /theme | head -1)
@@ -759,9 +768,9 @@ usage() {
 vault-os ${VERSION} — Fallout NV XFCE control plane
 
   session-start   Login orchestrator (theme → panel → intro)
-  apply           Apply theme, icons, wallpaper
+  apply           Apply theme, icons, cursor, panels
   ensure-panel    Repair/restore both panels
-  ensure-desktop  Keep xfdesktop/wallpaper alive
+  ensure-desktop  Keep xfdesktop running (does not change wallpaper)
   ensure-theme    Re-assert PipBoy GTK/icons/wm if drifted
   ensure-qt       Kvantum + qt5ct/qt6ct PipBoy
   ensure-coverage Qt/sounds/flatpak/chromium theme extras
