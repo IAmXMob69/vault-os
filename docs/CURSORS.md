@@ -19,8 +19,16 @@ xfconf-query -c xsettings -p /Gtk/CursorThemeSize -t int -s 24
 Each cursor embeds 24, 32, and 48 px frames.
 
 ## Animated
-- `watch` / `wait` — rotating Pip-Boy ring
-- `left_ptr_watch` / `progress` — same spinner
+- `watch` / `wait` — Pip-Boy gauge spinner, **16 frames** @ 50 ms (was 8 @ 80 ms)
+- `left_ptr_watch` / `progress` — pixel pointer plus the same spinner badge
+
+Rebuild from `extras/cursors-src/anim/`:
+
+```bash
+python3 extras/cursors-src/anim/build-cursors.py
+```
+
+Sources: `spinner-base.png` (video-first loop) and `watch-frames/`. Do not commit `anim/video-frames/` (harvest dump).
 
 ## Config
 `CURSOR_THEME` and `CURSOR_SIZE` in `~/.config/fallout-nv/vault-os.conf`
