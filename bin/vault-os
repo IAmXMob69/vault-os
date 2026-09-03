@@ -2,7 +2,7 @@
 # vault-os — production control plane for Fallout NV XFCE stack
 set -euo pipefail
 
-readonly VERSION="1.4.9"
+readonly VERSION="1.5.0"
 readonly CONF_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
 
 export DISPLAY="${DISPLAY:-:0}"
@@ -68,9 +68,17 @@ load_config() {
 }
 
 _ts() { date -Iseconds 2>/dev/null || date '+%Y-%m-%dT%H:%M:%S'; }
-log()  { printf '%s INFO  %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] %s\n' "$*"; }
-warn() { printf '%s WARN  %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] WARN: %s\n' "$*" >&2; }
-err()  { printf '%s ERROR %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] ERROR: %s\n' "$*" >&2; }
+_rotate_log() {
+  [[ -n "${LOG_FILE:-}" && -f "$LOG_FILE" ]] || return 0
+  local sz
+  sz=$(stat -c '%s' "$LOG_FILE" 2>/dev/null || echo 0)
+  if (( sz > 2097152 )); then
+    mv -f "$LOG_FILE" "${LOG_FILE}.old" 2>/dev/null || true
+  fi
+}
+log()  { _rotate_log; printf '%s INFO  %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] %s\n' "$*"; }
+warn() { _rotate_log; printf '%s WARN  %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] WARN: %s\n' "$*" >&2; }
+err()  { _rotate_log; printf '%s ERROR %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] ERROR: %s\n' "$*" >&2; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 has_share_tech_mono() {
@@ -304,6 +312,7 @@ cmd_apply() {
     'QT_STYLE_OVERRIDE=kvantum' \
     "XCURSOR_THEME=${CURSOR_THEME:-PipBoy-NV-Cursors}" \
     "XCURSOR_SIZE=${CURSOR_SIZE:-24}" \
+    'GTK_MODULES=canberra-gtk-module' \
     > "$HOME/.config/environment.d/vault-os.conf"
 
   # Terminal — pure Pip-Boy phosphor (no blue/purple drift)
@@ -529,6 +538,7 @@ cmd_ensure_qt() {
     'QT_STYLE_OVERRIDE=kvantum' \
     "XCURSOR_THEME=${CURSOR_THEME:-PipBoy-NV-Cursors}" \
     "XCURSOR_SIZE=${CURSOR_SIZE:-24}" \
+    'GTK_MODULES=canberra-gtk-module' \
     > "$HOME/.config/environment.d/vault-os.conf"
 }
 
@@ -574,8 +584,23 @@ cmd_coverage() {
   printf 'VS Code: %s\n' "${vs:-unset}"
   printf 'Firefox: %s\n' "${ff:-missing}"
   printf 'Discord: %s\n' "${disc:-missing}"
-  printf 'LightDM: run vault-os-install-system-theme (sudo)\n'
+  local ldm
+  ldm=$(grep -E '^theme-name=' /etc/lightdm/lightdm-gtk-greeter.conf 2>/dev/null | cut -d= -f2 || true)
+  if [[ "$ldm" == "PipBoy-NV" ]]; then
+    printf 'LightDM: PipBoy-NV OK\n'
+  else
+    printf 'LightDM: missing (run vault-os-install-system-theme)\n'
+  fi
   printf 'Sounds:  %s\n' "${snd:-missing}"
+}
+
+cmd_ensure_all() {
+  # Single-process integrity pass for the watch timer (no panel restart).
+  log "ensure-all"
+  cmd_ensure_theme || true
+  cmd_ensure_coverage || true
+  ensure_xfdesktop || true
+  cmd_ensure_panel || true
 }
 
 cmd_session_start() {
@@ -763,6 +788,7 @@ usage() {
     '  ensure-theme    Re-assert PipBoy GTK/icons/wm if drifted' \
     '  ensure-qt       Kvantum + qt5ct/qt6ct PipBoy' \
     '  ensure-coverage Qt/sounds/flatpak/chromium theme extras' \
+    '  ensure-all      Theme + coverage + desktop + panel (watch timer)' \
     '  coverage        Print theme integration coverage report' \
     '  doctor          Diagnose + full repair' \
     '  intro           Play boot intro now' \
@@ -786,6 +812,7 @@ main() {
     ensure-theme|theme-guard) cmd_ensure_theme ;;
     ensure-qt)             cmd_ensure_qt ;;
     ensure-coverage)       cmd_ensure_coverage ;;
+    ensure-all)            cmd_ensure_all ;;
     coverage)              cmd_coverage ;;
     doctor|repair|fix)   cmd_doctor; cmd_status ;;
     intro|play-intro)      cmd_intro ;;

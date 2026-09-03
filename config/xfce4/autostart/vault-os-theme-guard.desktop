@@ -5,7 +5,9 @@ Comment=Re-apply PipBoy-NV after login race with stock GTK
 Exec=/bin/bash -c 'sleep 3; @HOME@/.local/bin/vault-os ensure-theme; sleep 8; @HOME@/.local/bin/vault-os ensure-theme'
 Icon=preferences-desktop-theme
 Terminal=false
-X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-enabled=false
 X-GNOME-Autostart-Delay=2
 StartupNotify=false
 OnlyShowIn=XFCE;
+Hidden=true
+# session-start already re-applies theme at 2/6/15s; this was a duplicate race.

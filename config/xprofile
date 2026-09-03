@@ -4,3 +4,8 @@ export EDITOR=nvim
 export VISUAL=nvim
 export BROWSER=firefox
 export PATH="$HOME/.local/bin:$PATH"
+# Intel HD 630: iHD for VA-API, EGL so Firefox can hardware-decode on X11
+export LIBVA_DRIVER_NAME=iHD
+export LIBVA_DRIVERS_PATH=/usr/lib/dri
+export MOZ_X11_EGL=1
+# HDMI mode/range is owned by vault-os-display (autostart). Do not force 60 Hz here.
