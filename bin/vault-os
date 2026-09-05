@@ -2,7 +2,7 @@
 # vault-os — production control plane for Vault.OS XFCE stack (HUD-04 panel/notify defaults)
 set -euo pipefail
 
-readonly VERSION="1.5.14-genius"
+readonly VERSION="1.5.15"
 readonly CONF_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
 
 export DISPLAY="${DISPLAY:-:0}"
@@ -80,6 +80,16 @@ log()  { _rotate_log; printf '%s INFO  %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf
 warn() { _rotate_log; printf '%s WARN  %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] WARN: %s\n' "$*" >&2; }
 err()  { _rotate_log; printf '%s ERROR %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] ERROR: %s\n' "$*" >&2; }
 have() { command -v "$1" >/dev/null 2>&1; }
+
+_gtk_overlay_dir() {
+  # Prefer conf/env checkout, then bin-adjacent repo, then ~/Vault.OS
+  local cand
+  for cand in "${VAULT_OS_ROOT:-}" "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)" "$HOME/Vault.OS"; do
+    [[ -n "$cand" && -d "$cand/source/gtk-overlay" ]] && { printf '%s\n' "$cand/source/gtk-overlay"; return 0; }
+  done
+  printf '%s\n' "$HOME/Vault.OS/source/gtk-overlay"
+}
+
 
 has_share_tech_mono() {
   # File check first (fast, no pipefail issues under set -e)
@@ -362,8 +372,8 @@ cmd_apply() {
 
 
 
-  # GTK user overlays (GTK-02) — HUD import only; never PipBoy; spinner stays in theme
-  local overlay_src="${VAULT_OS_ROOT:-$HOME/Vault.OS}/source/gtk-overlay"
+  # GTK user overlays — HUD import only; never legacy neon; spinner stays in theme
+  local overlay_src; overlay_src="$(_gtk_overlay_dir)"
   local hud_theme="$THEME_NAME"
   case "$hud_theme" in
     Vault.OS|Vault.OS-Reduced) ;;
@@ -584,7 +594,7 @@ cmd_intro_disable() {
 
 
 cmd_ensure_theme() {
-  # Single lock path (VDS-01): conf THEME_NAME wins. Vault.OS-Reduced only if conf says so.
+  # Single lock path: conf THEME_NAME wins. Vault.OS-Reduced only if conf says so.
   load_config
   local want_t="${THEME_NAME:-Vault.OS}"
   local want_i="${ICON_THEME:-Vault.OS}"
@@ -681,8 +691,8 @@ cmd_ensure_theme() {
 
 
 
-  # GTK overlays always (GTK-02) — HUD import only (spinner lives in theme gtk.css)
-  overlay_src="${VAULT_OS_ROOT:-$HOME/Vault.OS}/source/gtk-overlay"
+  # GTK overlays always — HUD import only (spinner lives in theme gtk.css)
+  overlay_src="$(_gtk_overlay_dir)"
   hud_theme="$want_t"
   case "$hud_theme" in Vault.OS|Vault.OS-Reduced) ;; *) hud_theme="Vault.OS" ;; esac
   mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
@@ -959,6 +969,117 @@ cmd_doctor() {
   fi
 }
 
+
+cmd_install() {
+  # User-session install from this checkout (no sudo).
+  local root here
+  here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  root="$(cd "$here/.." && pwd)"
+  [[ -d "$root/themes/Vault.OS" ]] || { err "run from a Vault.OS checkout (missing themes/Vault.OS)"; return 1; }
+
+  log "install from $root"
+  mkdir -p "$HOME/.themes" "$HOME/.icons" "$HOME/.local/bin" \
+    "$HOME/.local/share/backgrounds/Vault.OS" \
+    "$HOME/.local/share/Vault.OS" \
+    "${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv"
+
+  cp -a "$root/themes/Vault.OS" "$HOME/.themes/"
+  cp -a "$root/themes/Vault.OS-Reduced" "$HOME/.themes/"
+  cp -a "$root/icons/Vault.OS" "$HOME/.icons/"
+
+  # Wallpapers / panel plates
+  if [[ -d "$root/source/wallpapers" ]]; then
+    cp -a "$root/source/wallpapers/." "$HOME/.local/share/backgrounds/Vault.OS/" 2>/dev/null || true
+  fi
+  # Lock spin frames if shipped
+  if [[ -d "$root/source/lock/lock-spin-frames" ]]; then
+    mkdir -p "$HOME/.local/share/backgrounds/Vault.OS/lock-spin-frames"
+    cp -a "$root/source/lock/lock-spin-frames/." "$HOME/.local/share/backgrounds/Vault.OS/lock-spin-frames/"
+  elif [[ -d "$HOME/.local/share/backgrounds/Vault.OS/lock-spin-frames" ]]; then
+    :
+  fi
+
+  # Terminal scanline asset
+  if [[ -f "$root/source/xfce4-terminal/scanline.png" ]]; then
+    cp -f "$root/source/xfce4-terminal/scanline.png" "$HOME/.local/share/Vault.OS/scanline.png"
+  fi
+
+  # Control-plane helpers
+  local bin
+  for bin in vault-os vaultos-lock vaultos-session-lock vaultos-spin-arch \
+             vaultos-spin-lock vaultos-spin-lock-run vaultos-terminal-phosphor vaultos-watch; do
+    if [[ -f "$root/bin/$bin" ]]; then
+      ln -sfn "$root/bin/$bin" "$HOME/.local/bin/$bin"
+      chmod +x "$root/bin/$bin" 2>/dev/null || true
+    fi
+  done
+
+  # Seed conf (never leave PipBoy defaults in a Vault.OS install)
+  local conf="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
+  if [[ ! -f "$conf" ]] || grep -qE 'THEME_NAME=PipBoy-NV|ICON_THEME=FalloutMojave' "$conf" 2>/dev/null; then
+    cat >"$conf" <<EOF
+# Vault.OS configuration
+THEME_NAME=Vault.OS
+ICON_THEME=Vault.OS
+WM_THEME=Vault.OS
+CURSOR_THEME=Vault.OS
+CURSOR_SIZE=24
+UI_FONT=Share Tech Mono 10
+MONO_FONT=Share Tech Mono 10
+TITLE_FONT=Share Tech Mono Bold 10
+WALLPAPER=\$HOME/.local/share/backgrounds/Vault.OS/vault-111-base.png
+WALLPAPER_FALLBACK=\$HOME/.local/share/backgrounds/Vault.OS/vault-111.png
+PANEL1_POSITION=p=6;x=0;y=0
+PANEL1_LENGTH=100
+PANEL1_SIZE=28
+PANEL1_AUTOHIDE=0
+PANEL1_BG_IMAGE=\$HOME/.local/share/backgrounds/Vault.OS/panel-top.png
+PANEL2_POSITION=p=10;x=0;y=0
+PANEL2_LENGTH=100
+PANEL2_SIZE=44
+PANEL2_AUTOHIDE=0
+PANEL2_BG_IMAGE=\$HOME/.local/share/backgrounds/Vault.OS/panel-dock.png
+PANEL_BG_STYLE=2
+PANEL_BG_R=0.047
+PANEL_BG_G=0.059
+PANEL_BG_B=0.047
+PANEL_BG_A=1.0
+PANEL1_ICON_SIZE=16
+PANEL2_ICON_SIZE=32
+INTRO_ENABLED=0
+LOG_FILE=\$HOME/.local/share/fallout-nv/logs/vault-os.log
+LOCK_DIR=\$XDG_RUNTIME_DIR/vault-os
+EOF
+    log "wrote $conf"
+  fi
+
+  export VAULT_OS_ROOT="$root"
+  # Persist checkout root so ensure-theme finds source/gtk-overlay after reboot
+  if grep -q '^VAULT_OS_ROOT=' "$conf" 2>/dev/null; then
+    sed -i "s|^VAULT_OS_ROOT=.*|VAULT_OS_ROOT=$root|" "$conf"
+  else
+    printf '\nVAULT_OS_ROOT=%s\n' "$root" >>"$conf"
+  fi
+  # Seed GTK overlays from this checkout (HUD import + gtk4.css)
+  mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
+  printf '%s\n' \
+    '/* Vault.OS user GTK overlay — import theme HUD only; never legacy neon */' \
+    "@import url(\"file://$HOME/.themes/Vault.OS/gtk-3.0/hud.css\");" \
+    > "$HOME/.config/gtk-3.0/gtk.css"
+  if [[ -f "$root/source/gtk-overlay/gtk4.css" ]]; then
+    cp -f "$root/source/gtk-overlay/gtk4.css" "$HOME/.config/gtk-4.0/gtk.css"
+  fi
+  # Prefer ~/.local/bin copy
+  export PATH="$HOME/.local/bin:$PATH"
+  load_config
+  cmd_apply || true
+  cmd_ensure_theme || true
+  log "user install done — Appearance/WM should show Vault.OS"
+  log "screensaver system binary (optional sudo): $root/source/xfce4-screensaver/install-system.sh"
+  cmd_status || true
+}
+
+
 cmd_selftest() {
   log "selftest"
   local fail=0
@@ -973,7 +1094,7 @@ cmd_selftest() {
 
 usage() {
   printf '%s\n' \
-    "vault-os ${VERSION} — Fallout NV XFCE control plane" \
+    "vault-os ${VERSION} — Vault.OS XFCE control plane" \
     '' \
     '  session-start   Login orchestrator (theme → panel → intro)' \
     '  apply           Apply theme, icons, cursor, panels' \
@@ -989,6 +1110,7 @@ usage() {
     '  intro-enable    Enable intro on login' \
     '  intro-disable   Disable intro on login' \
     '  status          Health check (exit 1 if unhealthy)' \
+    '  install         Copy themes/icons/helpers into ~/.themes ~/.icons ~/.local' \
     '  selftest        Validate installation' \
     '  version         Print version' \
     '' \
@@ -1004,6 +1126,7 @@ main() {
     ensure-panel|panel)    cmd_ensure_panel ;;
     ensure-desktop|desktop|xfdesktop) cmd_ensure_desktop ;;
     ensure-theme|theme-guard) cmd_ensure_theme ;;
+    install) cmd_install ;;
     ensure-qt)             cmd_ensure_qt ;;
     ensure-coverage)       cmd_ensure_coverage ;;
     ensure-all)            cmd_ensure_all ;;
