@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Vault.OS — Arch logo MADE OF CODE, spinning in place (Y-axis). VDS-01 / TRM-05.
+"""Vault.OS — Arch logo MADE OF CODE, spinning in place (Y-axis). Vault.OS.
 
 Honors reduced phosphor (a11y):
   --reduced-phosphor          force effects off (static mark; PERIOD unused)

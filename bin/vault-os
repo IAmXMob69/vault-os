@@ -426,7 +426,7 @@ cmd_apply() {
 
   write_vault_os_env
 
-  # Terminal — TRM-05 CANON via vaultos-terminal-phosphor (no PipBoy #33FF6A)
+  # Terminal — vaultos-terminal-phosphor (CANON palette)
   # Modes: full|reduced|clear. Default reduced. See ~/Vault.OS/source/xfce4-terminal/A11Y.md
   if have vaultos-terminal-phosphor; then
     local phos_mode
@@ -999,9 +999,14 @@ cmd_install() {
     :
   fi
 
-  # Terminal scanline asset
-  if [[ -f "$root/source/xfce4-terminal/scanline.png" ]]; then
-    cp -f "$root/source/xfce4-terminal/scanline.png" "$HOME/.local/share/Vault.OS/scanline.png"
+  # Terminal theme + scanline asset
+  if [[ -d "$root/source/xfce4-terminal" ]]; then
+    mkdir -p "$HOME/.config/xfce4/terminal"              "$HOME/.local/share/xfce4/terminal/colorschemes"              "$HOME/.local/share/Vault.OS"
+    [[ -f "$root/source/xfce4-terminal/terminalrc" ]] &&       cp -f "$root/source/xfce4-terminal/terminalrc" "$HOME/.config/xfce4/terminal/terminalrc"
+    [[ -f "$root/source/xfce4-terminal/Vault.OS.theme" ]] &&       cp -f "$root/source/xfce4-terminal/Vault.OS.theme"         "$HOME/.local/share/xfce4/terminal/colorschemes/Vault.OS.theme"
+    [[ -f "$root/source/xfce4-terminal/scanline.png" ]] &&       cp -f "$root/source/xfce4-terminal/scanline.png" "$HOME/.local/share/Vault.OS/scanline.png"
+    mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS"
+    echo reduced > "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS/terminal-phosphor"
   fi
 
   # Control-plane helpers

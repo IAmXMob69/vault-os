@@ -1,5 +1,5 @@
 #!/bin/bash
-# Vault.OS — TRM-05 phosphor dial
+# Vault.OS — phosphor dial
 # Usage: vaultos-terminal-phosphor {full|reduced|clear|status}
 # HUD/GTK/a11y may call this. Default readable: clear/reduced.
 set -euo pipefail
