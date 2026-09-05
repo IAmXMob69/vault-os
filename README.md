@@ -1,81 +1,54 @@
 # Vault.OS
 
-An XFCE desktop theme for Arch Linux that reads as a recovered pre-war Vault-Tec interface — not a green overlay, not a ricing contest.
+XFCE desktop theme for Arch. Meant to feel like a recovered Vault-Tec terminal, not a green filter glued on top of Adwaita.
 
-| | |
-|---|---|
-| **Environment** | Arch Linux · XFCE 4.18+ |
-| **Phosphor** | `#1AFF6B` (hue 141) |
-| **Type** | Share Tech Mono · Overpass Mono · Terminus / PxPlus IBM VGA8 |
-| **Control plane** | `bin/vault-os` |
+Phosphor is `#1AFF6B`. Typefaces are Share Tech Mono, Overpass Mono, and Terminus (or PxPlus IBM VGA8 if you have it).
 
-## Design law
+## What's in here
 
-- [`DESIGN.md`](DESIGN.md) — palette, type, chrome, accessibility
-- [`tokens.css`](tokens.css) / [`tokens-reduced.css`](tokens-reduced.css) — single source of color
-- [`ERRORS.md`](ERRORS.md) — pitfalls already paid for; read before changing lock, spin, or tokens
+- `themes/Vault.OS` — GTK, xfwm4, notifications
+- `themes/Vault.OS-Reduced` — high-contrast / reduced motion
+- `icons/Vault.OS` — plate icons
+- `source/` — panel, lock, greeter, Plymouth staging
+- `bin/vault-os` — `ensure-theme`, `status`, session glue
+- `bin/vaultos-*` — lock, Arch spin mark, terminal phosphor
 
-## Layout
+Design rules live in [`DESIGN.md`](DESIGN.md). Color tokens are [`tokens.css`](tokens.css) (and [`tokens-reduced.css`](tokens-reduced.css)). Stuff we've already burned ourselves on is in [`ERRORS.md`](ERRORS.md) — read that before touching lock or screensaver.
 
-```
-themes/Vault.OS/           GTK 2/3 + xfwm4 + notify
-themes/Vault.OS-Reduced/   high-contrast / reduced-effects variant
-icons/Vault.OS/            plate + LED icon set
-source/                    staged assets (panel, lock, lightdm, plymouth, …)
-bin/vault-os               ensure-theme, status, session glue
-bin/vaultos-*              lock, spin, phosphor helpers
-```
-
-## Install (local)
+## Install
 
 ```bash
-# Theme + icons into the user tree
 cp -a themes/Vault.OS ~/.themes/
 cp -a themes/Vault.OS-Reduced ~/.themes/
 cp -a icons/Vault.OS ~/.icons/
 
-# Control plane
-install -m755 bin/vault-os ~/.local/bin/vault-os
-# or: ln -sfn "$(pwd)/bin/vault-os" ~/.local/bin/vault-os
+ln -sfn "$(pwd)/bin/vault-os" ~/.local/bin/vault-os
 
 vault-os ensure-theme
 vault-os status
 ```
 
-Point XFCE Appearance / Window Manager at **Vault.OS**. Reduced mode is conf-opt-in: set `THEME_NAME=Vault.OS-Reduced` in `~/.config/fallout-nv/vault-os.conf`.
+In Appearance / Window Manager, pick **Vault.OS**. For Reduced mode, set `THEME_NAME=Vault.OS-Reduced` in `~/.config/fallout-nv/vault-os.conf`.
 
 ## Lock & screensaver
 
-Theme id `screensavers-vaultos-arch-spin` (stock-shaped `.desktop` under `/usr/share/applications/screensavers/`).  
-Exec: `/usr/lib/xfce4-screensaver/vaultos-arch-spin` → live Arch code-mark spin on vault-black.  
-`LockCommand`: `xfce4-screensaver-command --lock`.
+Uses theme `screensavers-vaultos-arch-spin` with Exec `/usr/lib/xfce4-screensaver/vaultos-arch-spin`. Lock command is just `xfce4-screensaver-command --lock`. Stock floaters stay stock — don't hijack that slot.
 
-Details: [`source/lock/SCREENSAVER.md`](source/lock/SCREENSAVER.md). Do not invent custom theme ids or home-path `Exec` lines — see `ERRORS.md`.
+More detail: [`source/lock/SCREENSAVER.md`](source/lock/SCREENSAVER.md).
 
-## Boot / greeter (optional, needs sudo)
+## Boot / greeter
 
-Staged under `source/plymouth/` and `source/lightdm/`. Steps: [`BOOT.md`](BOOT.md). Do not restart LightDM without an explicit OK.
+Optional. Staged under `source/plymouth/` and `source/lightdm/`. See [`BOOT.md`](BOOT.md). Don't restart LightDM until you're ready.
 
-## Fonts
-
-Install only with operator approval:
+## Fonts (optional)
 
 ```
 extra/otf-overpass
 extra/terminus-font
 aur/ttf-share-tech-mono
-aur/ttf-ultimate-oldschool-pc-font-pack   # PxPlus IBM VGA8
+aur/ttf-ultimate-oldschool-pc-font-pack
 ```
 
-## Status
+## Notes
 
-Working board: [`CONTINUE.md`](CONTINUE.md).  
-Clunk / drift notes: [`CLUNK.md`](CLUNK.md).
-
-## License
-
-See [`LICENSE`](LICENSE).
-
-## Commits
-
-Write like a person shipping an OS skin: one short subject, optional body for *why*. No bullet inventories of every path in the subject line.
+Open work: [`CONTINUE.md`](CONTINUE.md). License: [`LICENSE`](LICENSE).
