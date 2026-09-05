@@ -1,6 +1,6 @@
-/* Vault.OS HUD — HUD-04
+/* Vault.OS HUD — panel / unlock
    Panel, whisker, clock, tasklist LED rail.
-   Consumes VDS-01 CANON tokens. Do not redeclare colors.
+   Consumes CANON tokens. Do not redeclare colors.
    Active tab is a phosphor LED rail, not a highlighter.
    Notify chrome lives in xfce-notify-4.0.
 */
@@ -213,7 +213,7 @@
 }
 
 
-/* HUD-04 a11y focus */
+/* a11y focus */
 .xfce4-panel button:focus,
 .xfce4-panel .toggle:focus {
   box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
