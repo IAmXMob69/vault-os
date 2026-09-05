@@ -1,5 +1,5 @@
 /* XPM */
-/* inactive close STEEL on inset — not rad */
+/* close-inactive */
 static char * close_inactive_xpm[] = {
 "24 24 6 1",
 "L c #050605 s inactive_shadow_1",

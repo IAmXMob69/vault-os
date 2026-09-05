@@ -45,7 +45,7 @@ Derived only: `phos-hot` `#66FF9C`, `phos-white` `#D4EDDD`, `steel-500` `#60665C
 **GTK-02** — `~/.themes/Vault.OS/gtk-2.0|gtk-3.0|gtk-3.20/`
 Import `~/Vault.OS/source/tokens.css`. Map widgets to aliases. Stamp bevel on plates. Font Overpass Mono 9pt. Headerbar 24px `panel-black`. Part number `VAULT-TEC` on header.
 
-**XWM-03** — `~/.themes/Vault.OS/xfwm4/`
+**xfwm4** — `~/.themes/Vault.OS/xfwm4/`
 24px lintel `panel-black`. 1px jamb `bevel-hi` inside, `bevel-lo` outside. 16px square latches. Close hover `rad-red`. Active title `phosphor-primary`. Inactive `steel`. No traffic lights.
 
 **TRM-05** — `~/.config/xfce4/terminal/terminalrc`

@@ -1,5 +1,6 @@
-# Vault.OS xfwm4 — XWM-03 DOOR MECHANIC
-# Density: quiet lintel, 1px focus rail, a11y sizes kept (28/24).
+# Vault.OS — xfwm4
+# Window decorations: 28px titlebar, 24px buttons, 1px focus rail on active.
+# Colors match tokens.css. XPM pixels use "#RRGGBB s symbolic_name".
 
 active_text_color=#1AFF6B
 inactive_text_color=#8A8F86

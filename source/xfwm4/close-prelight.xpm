@@ -1,5 +1,5 @@
 /* XPM */
-/* close hover rad LED on */
+/* close-prelight */
 static char * close_prelight_xpm[] = {
 "24 24 6 1",
 "L c #050605 s active_shadow_1",
