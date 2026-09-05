@@ -1,0 +1,116 @@
+# REDUCED PHOSPHOR — hotter body, effects off
+# Vault.OS GTK-2 — GTK-02
+# Values from VDS-01 tokens. Lintel language + a11y hit sizes.
+# phosphor #66FF9C / panel-black #0C0F0C / vault-black #070807
+# bevel-hi #2A332A / bevel-lo #050605 / steel #B7BEB4
+
+gtk-color-scheme = "fg_color:#66FF9C\nbg_color:#0C0F0C\nbase_color:#070807\ntext_color:#66FF9C\nselected_bg_color:#1AFF6B\nselected_fg_color:#66FF9C\ntooltip_bg_color:#121612\ntooltip_fg_color:#66FF9C"
+
+style "vault-default"
+{
+  GtkWidget::focus-line-width = 2
+  GtkWidget::focus-line-pattern = "\2"
+  GtkWidget::focus-padding = 1
+  GtkWidget::link-color = "#66FF9C"
+  GtkWidget::visited-link-color = "#1AFF6B"
+
+  GtkRange::slider-width = 12
+  GtkRange::trough-border = 0
+  GtkRange::stepper-size = 0
+  GtkScrollbar::has-backward-stepper = 0
+  GtkScrollbar::has-forward-stepper = 0
+  GtkScrollbar::min-slider-length = 24
+  GtkCheckButton::indicator-size = 16
+  GtkCheckMenuItem::indicator-size = 16
+  GtkRadioButton::indicator-size = 16
+
+  GtkButton::inner-border = { 6, 6, 4, 4 }
+  GtkButton::default-border = { 0, 0, 0, 0 }
+  GtkButton::child-displacement-x = 0
+  GtkButton::child-displacement-y = 1
+  GtkButton::shadow-type = GTK_SHADOW_OUT
+
+  GtkEntry::inner-border = { 6, 6, 4, 4 }
+  GtkEntry::shadow-type = GTK_SHADOW_IN
+
+  xthickness = 2
+  ythickness = 2
+
+  fg[NORMAL]      = "#66FF9C"
+  fg[PRELIGHT]    = "#66FF9C"
+  fg[SELECTED]    = "#66FF9C"
+  fg[ACTIVE]      = "#66FF9C"
+  fg[INSENSITIVE] = "#B7BEB4"
+
+  bg[NORMAL]      = "#0C0F0C"
+  bg[PRELIGHT]    = "#121612"
+  bg[SELECTED]    = "#1AFF6B"
+  bg[ACTIVE]      = "#121612"
+  bg[INSENSITIVE] = "#0C0F0C"
+
+  base[NORMAL]      = "#070807"
+  base[PRELIGHT]    = "#070807"
+  base[ACTIVE]      = "#1AFF6B"
+  base[SELECTED]    = "#1AFF6B"
+  base[INSENSITIVE] = "#070807"
+
+  text[NORMAL]      = "#66FF9C"
+  text[PRELIGHT]    = "#66FF9C"
+  text[ACTIVE]      = "#66FF9C"
+  text[SELECTED]    = "#66FF9C"
+  text[INSENSITIVE] = "#B7BEB4"
+}
+
+class "GtkWidget" style "vault-default"
+
+style "vault-button" = "vault-default"
+{
+  bg[NORMAL]   = "#121612"
+  bg[PRELIGHT] = "#2A332A"
+  bg[ACTIVE]   = "#1AFF6B"
+  bg[INSENSITIVE] = "#0C0F0C"
+  GtkButton::shadow-type = GTK_SHADOW_OUT
+}
+class "GtkButton"       style "vault-button"
+class "GtkToggleButton" style "vault-button"
+class "GtkOptionMenu"   style "vault-button"
+
+style "vault-entry" = "vault-default"
+{
+  bg[NORMAL] = "#070807"
+  base[NORMAL] = "#070807"
+  text[NORMAL] = "#66FF9C"
+  GtkEntry::shadow-type = GTK_SHADOW_IN
+}
+class "GtkEntry"      style "vault-entry"
+class "GtkTextView"   style "vault-entry"
+class "GtkSpinButton" style "vault-entry"
+
+style "vault-menu" = "vault-default"
+{
+  bg[NORMAL]   = "#0C0F0C"
+  bg[PRELIGHT] = "#1AFF6B"
+  fg[PRELIGHT] = "#66FF9C"
+  xthickness = 2
+  ythickness = 2
+}
+class "GtkMenu"    style "vault-menu"
+class "GtkMenuBar" style "vault-menu"
+widget_class "*MenuItem*" style "vault-menu"
+
+style "vault-tooltip" = "vault-default"
+{
+  bg[NORMAL] = "#121612"
+  fg[NORMAL] = "#66FF9C"
+}
+widget "gtk-tooltip*" style "vault-tooltip"
+
+style "vault-header" = "vault-default"
+{
+  bg[NORMAL] = "#0C0F0C"
+  fg[NORMAL] = "#66FF9C"
+}
+widget_class "*Header*" style "vault-header"
+class "GtkToolbar" style "vault-header"
+
+gtk-font-name = "Overpass Mono 9"

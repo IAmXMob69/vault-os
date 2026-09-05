@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# vault-os — production control plane for Fallout NV XFCE stack
+# vault-os — production control plane for Vault.OS XFCE stack (HUD-04 panel/notify defaults)
 set -euo pipefail
 
-readonly VERSION="1.5.1"
+readonly VERSION="1.5.14-genius"
 readonly CONF_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
 
 export DISPLAY="${DISPLAY:-:0}"
@@ -12,30 +12,30 @@ export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUN
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 load_config() {
-  THEME_NAME=PipBoy-NV
-  ICON_THEME=FalloutMojave
-  WM_THEME=PipBoy-NV
-  CURSOR_THEME=PipBoy-NV-Cursors
+  THEME_NAME=Vault.OS
+  ICON_THEME=Vault.OS
+  WM_THEME=Vault.OS
+  CURSOR_THEME=Vault.OS
   CURSOR_SIZE=24
   UI_FONT="Share Tech Mono 10"
   MONO_FONT="Share Tech Mono 10"
   TITLE_FONT="Share Tech Mono Bold 10"
-  WALLPAPER="$HOME/.local/share/backgrounds/fnv-mojave-strip-4k.jpg"
-  WALLPAPER_FALLBACK="$HOME/.local/share/backgrounds/fnv-vaultboy-perks-4k.jpg"
+  WALLPAPER="$HOME/.local/share/backgrounds/Vault.OS/vault-111-base.png"
+  WALLPAPER_FALLBACK="$HOME/.local/share/backgrounds/Vault.OS/vault-111.png"
   PANEL1_POSITION="p=6;x=0;y=0"
   PANEL1_LENGTH=100
-  PANEL1_SIZE=30
+  PANEL1_SIZE=28
   PANEL1_AUTOHIDE=0
-  PANEL1_BG_IMAGE="$HOME/.local/share/vault-os/panel/panel-top.png"
+  PANEL1_BG_IMAGE="$HOME/.local/share/backgrounds/Vault.OS/panel-top.png"
   PANEL2_POSITION="p=10;x=0;y=0"
   PANEL2_LENGTH=100
   PANEL2_SIZE=44
   PANEL2_AUTOHIDE=0
-  PANEL2_BG_IMAGE="$HOME/.local/share/vault-os/panel/panel-bg.png"
+  PANEL2_BG_IMAGE="$HOME/.local/share/backgrounds/Vault.OS/panel-dock.png"
   PANEL_BG_STYLE=2
-  PANEL_BG_R=0.024
-  PANEL_BG_G=0.039
-  PANEL_BG_B=0.031
+  PANEL_BG_R=0.047
+  PANEL_BG_G=0.059
+  PANEL_BG_B=0.047
   PANEL_BG_A=1.0
   PANEL1_ICON_SIZE=16
   PANEL2_ICON_SIZE=32
@@ -93,10 +93,46 @@ has_share_tech_mono() {
 
 _panel_num_ok() { awk -v v="${1:-0}" -v m="${2:-0}" 'BEGIN{ exit !(v+0 >= m) }'; }
 
+_xq_vals_equal() {
+  # String match, or numeric match so 100 == 100.000000.
+  local a="$1" b="$2"
+  [[ "$a" == "$b" ]] && return 0
+  [[ "$a" =~ ^-?[0-9]+([.][0-9]+)?$ && "$b" =~ ^-?[0-9]+([.][0-9]+)?$ ]] || return 1
+  awk -v a="$a" -v b="$b" 'BEGIN{exit !(a+0==b+0)}'
+}
+
 xq_set() {
-  # Set in place. Create if missing. Only delete+recreate on a type mismatch.
+  # Set in place. Skip when already equal (avoids xfwm/panel reload storms).
+  # Create if missing. Only delete+recreate on a type mismatch.
   have xfconf-query || return 0
   local ch="$1" prop="$2"; shift 2
+  local vals=() i
+  local raw=("$@")
+  for ((i=0; i<${#raw[@]}; i++)); do
+    if [[ "${raw[i]}" == "-s" ]]; then
+      vals+=("${raw[i+1]}")
+      i=$((i+1))
+    fi
+  done
+  if ((${#vals[@]} > 0)); then
+    local cur=() line
+    while IFS= read -r line; do
+      [[ -z "$line" || "$line" == "Value is an array"* ]] && continue
+      cur+=("$line")
+    done < <(xfconf-query -c "$ch" -p "$prop" 2>/dev/null || true)
+    if ((${#cur[@]} == ${#vals[@]})); then
+      local same=1
+      for i in "${!vals[@]}"; do
+        if ! _xq_vals_equal "${cur[i]}" "${vals[i]}"; then
+          same=0
+          break
+        fi
+      done
+      if ((same)); then
+        return 0
+      fi
+    fi
+  fi
   if xfconf-query -c "$ch" -p "$prop" "$@" 2>/dev/null; then
     return 0
   fi
@@ -117,7 +153,7 @@ write_vault_os_env() {
       "GTK_THEME=${THEME_NAME}" \
       "QT_QPA_PLATFORMTHEME=qt5ct" \
       "QT_STYLE_OVERRIDE=kvantum" \
-      "XCURSOR_THEME=${CURSOR_THEME:-PipBoy-NV-Cursors}" \
+      "XCURSOR_THEME=${CURSOR_THEME:-Vault.OS}" \
       "XCURSOR_SIZE=${CURSOR_SIZE:-24}" \
       "GTK_MODULES=canberra-gtk-module" \
       "LIBVA_DRIVER_NAME=iHD" \
@@ -231,15 +267,28 @@ cmd_apply() {
   xq_set xsettings /Net/IconThemeName -t string -s "$ICON_THEME"
   xq_set xsettings /Gtk/FontName -t string -s "$UI_FONT"
   xq_set xsettings /Gtk/MonospaceFontName -t string -s "$MONO_FONT"
-  xq_set xsettings /Gtk/CursorThemeName -t string -s "${CURSOR_THEME:-Adwaita}"
+  xq_set xsettings /Gtk/CursorThemeName -t string -s "${CURSOR_THEME:-Vault.OS}"
   xq_set xsettings /Gtk/CursorThemeSize -t int -s "${CURSOR_SIZE:-24}"
-  if [[ -d "$HOME/.local/share/sounds/PipBoy-NV" ]]; then
+  # Sound follows Vault.OS (or mute) — do not bind PipBoy-NV audio unless theme is PipBoy-NV
+  if [[ -d "$HOME/.local/share/sounds/Vault.OS" ]]; then
+    xq_set xsettings /Net/SoundThemeName -t string -s "Vault.OS"
+    xq_set xsettings /Net/EnableEventSounds -t bool -s true
+  elif [[ "${THEME_NAME:-Vault.OS}" == "PipBoy-NV" && -d "$HOME/.local/share/sounds/PipBoy-NV" ]]; then
     xq_set xsettings /Net/SoundThemeName -t string -s "PipBoy-NV"
     xq_set xsettings /Net/EnableEventSounds -t bool -s true
   else
     xq_set xsettings /Net/EnableEventSounds -t bool -s false
+    if [[ "$(xq_get xsettings /Net/SoundThemeName | head -1)" == "PipBoy-NV" ]]; then
+      xq_set xsettings /Net/SoundThemeName -t string -s "freedesktop"
+    fi
   fi
   xq_set xsettings /Net/EnableInputFeedbackSounds -t bool -s false
+  # XWM-03: doors follow GTK theme name when Reduced/CANON
+  if [[ "$THEME_NAME" == "Vault.OS-Reduced" ]]; then
+    WM_THEME="Vault.OS-Reduced"
+  elif [[ "$THEME_NAME" == "Vault.OS" ]]; then
+    WM_THEME="Vault.OS"
+  fi
   xq_set xfwm4 /general/theme -t string -s "$WM_THEME"
   xq_set xfwm4 /general/title_font -t string -s "$TITLE_FONT"
   xq_set xfwm4 /general/workspace_names -t string -s "STAT" -t string -s "DATA" -t string -s "ITEM" -t string -s "MAP"
@@ -262,10 +311,13 @@ cmd_apply() {
       xfconf-query -c xfce4-notifyd -p "$bad" -r 2>/dev/null || true
     done
   fi
-  xq_set xfce4-notifyd /theme -t string -s "PipBoy-NV"
-  xq_set xfce4-notifyd /do-fadeout -t bool -s true
-  xq_set xfce4-notifyd /do-slideout -t bool -s true
-  xq_set xfce4-notifyd /initial-opacity -t double -s 0.96
+  # notify chrome lives only under ~/.themes/Vault.OS/xfce-notify-4.0 (no Reduced pack)
+  local notify_theme="Vault.OS"
+  [[ "${THEME_NAME:-Vault.OS}" == "PipBoy-NV" ]] && notify_theme="PipBoy-NV"
+  xq_set xfce4-notifyd /theme -t string -s "$notify_theme"
+  xq_set xfce4-notifyd /do-fadeout -t bool -s false
+  xq_set xfce4-notifyd /do-slideout -t bool -s false
+  xq_set xfce4-notifyd /initial-opacity -t double -s 1.0
   # Modern xfce4-notifyd uses string enum: top-left|bottom-left|top-right|bottom-right
   # Older builds used int — detect and set the correct type for this system.
   if have xfconf-query; then
@@ -308,6 +360,27 @@ cmd_apply() {
     > "$HOME/.config/gtk-3.0/settings.ini"
   cp -f "$HOME/.config/gtk-3.0/settings.ini" "$HOME/.config/gtk-4.0/settings.ini"
 
+
+
+  # GTK user overlays (GTK-02) — HUD import only; never PipBoy; spinner stays in theme
+  local overlay_src="${VAULT_OS_ROOT:-$HOME/Vault.OS}/source/gtk-overlay"
+  local hud_theme="$THEME_NAME"
+  case "$hud_theme" in
+    Vault.OS|Vault.OS-Reduced) ;;
+    *) hud_theme="Vault.OS" ;;
+  esac
+  mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
+  printf '%s
+' \
+    '/* Vault.OS user GTK overlay — import theme HUD only; never PipBoy CSS */' \
+    '/* Spinner fix: theme gtk-3.0/gtk-3.20 only (no fighting user override). */' \
+    "@import url(\"file://$HOME/.themes/${hud_theme}/gtk-3.0/hud.css\");" \
+    > "$HOME/.config/gtk-3.0/gtk.css"
+  if [[ -f "$overlay_src/gtk4.css" ]]; then
+    cp -f "$overlay_src/gtk4.css" "$HOME/.config/gtk-4.0/gtk.css"
+  fi
+
+
   # Flatpak GTK/icon theme alignment
   if have flatpak; then
     flatpak override --user --env=GTK_THEME="$THEME_NAME" 2>/dev/null || true
@@ -343,19 +416,28 @@ cmd_apply() {
 
   write_vault_os_env
 
-  # Terminal — pure Pip-Boy phosphor (no blue/purple drift)
-  if have xfconf-query; then
-    local pal="#070C09;#FF4D4D;#249B4C;#FFB000;#1A4A2A;#249B4C;#249B4C;#33FF6A;#0C1610;#FF6B6B;#33FF6A;#FFC940;#249B4C;#5CFF9A;#C8FFD8;#C8FFD8"
+  # Terminal — TRM-05 CANON via vaultos-terminal-phosphor (no PipBoy #33FF6A)
+  # Modes: full|reduced|clear. Default reduced. See ~/Vault.OS/source/xfce4-terminal/A11Y.md
+  if have vaultos-terminal-phosphor; then
+    local phos_mode
+    phos_mode="$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS/terminal-phosphor" 2>/dev/null || echo reduced)"
+    case "$phos_mode" in full|reduced|clear) ;; *) phos_mode=reduced ;; esac
+    vaultos-terminal-phosphor "$phos_mode" >/dev/null || true
+    xq_set xfce4-terminal /title-initial -t string -s "ROBCO 76"
+    xq_set xfce4-terminal /misc-borders-default -t bool -s true
+  elif have xfconf-query; then
+    # Fallback CANON if dial missing
+    local pal="#070807;#C41E3A;#0E8A3A;#FFB000;#2A332A;#C41E3A;#1AFF6B;#8A8F86;#121612;#C41E3A;#1AFF6B;#FFB000;#8A8F86;#C41E3A;#1AFF6B;#C7C9C5"
     xq_set xfce4-terminal /color-use-theme -t bool -s false
-    xq_set xfce4-terminal /color-foreground -t string -s "#33FF6A"
-    xq_set xfce4-terminal /color-background -t string -s "#070C09"
-    xq_set xfce4-terminal /color-cursor -t string -s "#C8FFD8"
-    xq_set xfce4-terminal /color-bold -t string -s "#C8FFD8"
+    xq_set xfce4-terminal /color-foreground -t string -s "#1AFF6B"
+    xq_set xfce4-terminal /color-background -t string -s "#070807"
+    xq_set xfce4-terminal /color-cursor -t string -s "#1AFF6B"
+    xq_set xfce4-terminal /color-bold -t string -s "#66FF9C"
     xq_set xfce4-terminal /color-palette -t string -s "$pal"
     xq_set xfce4-terminal /background-mode -t string -s "TERMINAL_BACKGROUND_SOLID"
     xq_set xfce4-terminal /misc-borders-default -t bool -s true
     xq_set xfce4-terminal /font-name -t string -s "Share Tech Mono 11"
-    xq_set xfce4-terminal /title-initial -t string -s "ROBCO TERMLINK — PIP-BOY 3000"
+    xq_set xfce4-terminal /title-initial -t string -s "ROBCO 76"
   fi
 
   ensure_xfdesktop || true
@@ -431,6 +513,13 @@ cmd_ensure_panel() {
   xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
   xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
 
+  # HUD-04: keep whisker professional (no 400×505 blob)
+  if xq_get xfce4-panel /plugins/plugin-1 2>/dev/null | grep -qx whiskermenu; then
+    xq_set xfce4-panel /plugins/plugin-1/menu-width -t int -s 320
+    xq_set xfce4-panel /plugins/plugin-1/menu-height -t int -s 420
+    xq_set xfce4-panel /plugins/plugin-1/menu-opacity -t int -s 100
+  fi
+
   if pgrep -x xfce4-panel >/dev/null 2>&1; then
     log "panels OK (pid $(pgrep -x xfce4-panel | head -1))"
     return 0
@@ -495,11 +584,19 @@ cmd_intro_disable() {
 
 
 cmd_ensure_theme() {
-  # Re-assert PipBoy stack if anything (login race, app, settings) flipped to Adwaita/GTK default
-  local want_t="${THEME_NAME:-PipBoy-NV}"
-  local want_i="${ICON_THEME:-FalloutMojave}"
-  local want_w="${WM_THEME:-PipBoy-NV}"
-  local want_c="${CURSOR_THEME:-PipBoy-NV-Cursors}"
+  # Single lock path (VDS-01): conf THEME_NAME wins. Vault.OS-Reduced only if conf says so.
+  load_config
+  local want_t="${THEME_NAME:-Vault.OS}"
+  local want_i="${ICON_THEME:-Vault.OS}"
+  local want_w="${WM_THEME:-Vault.OS}"
+  local want_c="${CURSOR_THEME:-Vault.OS}"
+  case "$want_t" in Vault.OS|Vault.OS-Reduced) ;; *) want_t="Vault.OS" ;; esac
+  # XWM-03: Reduced GTK must not keep CANON doors — follow THEME_NAME for xfwm
+  if [[ "$want_t" == "Vault.OS-Reduced" ]]; then
+    want_w="Vault.OS-Reduced"
+  elif [[ "$want_t" == "Vault.OS" && "$want_w" == "Vault.OS-Reduced" ]]; then
+    want_w="Vault.OS"
+  fi
   local cur_t cur_i cur_w cur_c
   cur_t=$(xq_get xsettings /Net/ThemeName | head -1)
   cur_i=$(xq_get xsettings /Net/IconThemeName | head -1)
@@ -511,48 +608,114 @@ cmd_ensure_theme() {
   [[ "$cur_i" == "$want_i" ]] || bad=1
   [[ "$cur_w" == "$want_w" ]] || bad=1
   [[ "$cur_c" == "$want_c" ]] || bad=1
-
-  # Also catch empty / Adwaita / Greybird defaults
-  case "$cur_t" in
-    Adwaita|Adwaita-dark|Greybird|Default|"" ) bad=1 ;;
-  esac
-  case "$cur_i" in
-    Adwaita|hicolor|"" ) bad=1 ;;
-  esac
+  case "$cur_t" in Adwaita|Adwaita-dark|Greybird|Default|PipBoy-NV|"" ) bad=1 ;; esac
+  case "$cur_w" in Adwaita|Greybird|Default|PipBoy-NV|"" ) bad=1 ;; esac
+  case "$cur_i" in Adwaita|hicolor|FalloutMojave|PipBoy-NV|"" ) bad=1 ;; esac
 
   if [[ "$bad" -eq 1 ]]; then
     warn "theme drift (gtk='$cur_t' icons='$cur_i' wm='$cur_w') — reapplying $want_t"
     cmd_apply
-    # Kick settings daemon + window manager so widgets/titlebars refresh
     pgrep -x xfsettingsd >/dev/null 2>&1 && killall -HUP xfsettingsd 2>/dev/null || true
     if pgrep -x xfwm4 >/dev/null 2>&1; then
-      # soft re-set is enough usually; replace only if theme still wrong after apply
       cur_w=$(xq_get xfwm4 /general/theme | head -1)
       if [[ "$cur_w" != "$want_w" ]]; then
         xq_set xfwm4 /general/theme -t string -s "$want_w"
       fi
     fi
   else
-    # light re-assert without full wallpaper work (cheap, stops drift)
-    xq_set xsettings /Net/ThemeName -t string -s "$want_t"
-    xq_set xsettings /Net/IconThemeName -t string -s "$want_i"
-    xq_set xsettings /Gtk/CursorThemeName -t string -s "$want_c"
-    xq_set xfwm4 /general/theme -t string -s "$want_w"
+    # Values already match. Do not write xfconf — xfwm/panel treat a
+    # same-value set as a theme reload and eventually stop mapping windows.
+    :
   fi
 
-  if [[ -x "$HOME/.local/bin/vault-os-chromium-theme" ]]; then
+  # Pin notify + panel plates only when they drifted (xq_set is a no-op if equal).
+  xq_set xfce4-notifyd /theme -t string -s "Vault.OS"
+  local top="${PANEL1_BG_IMAGE:-$HOME/.local/share/backgrounds/Vault.OS/panel-top.png}"
+  local dock="${PANEL2_BG_IMAGE:-$HOME/.local/share/backgrounds/Vault.OS/panel-dock.png}"
+  xq_set xfce4-panel /panels/panel-1/background-image -t string -s "$top"
+  xq_set xfce4-panel /panels/panel-2/background-image -t string -s "$dock"
+  xq_set xfce4-panel /panels/panel-1/background-style -t int -s "${PANEL_BG_STYLE:-2}"
+  xq_set xfce4-panel /panels/panel-2/background-style -t int -s "${PANEL_BG_STYLE:-2}"
+  xq_set xfce4-panel /panels/panel-1/size -t int -s "${PANEL1_SIZE:-28}"
+  # xfce4-session LockScreen-before-shutdown hangs forever if the saver is wedged.
+  xq_set xfce4-session /shutdown/LockScreen -t bool -s false
+  # Must NOT be "xflock4": stock xflock4 calls Session.Lock which runs LockCommand.
+  xq_set xfce4-session /general/LockCommand -t string -s "xfce4-screensaver-command --lock"
+  # Let logind own the power button so a short press still works when GTK is dead.
+  xq_set xfce4-power-manager /xfce4-power-manager/logind-handle-power-key -t bool -s true
+  # 5-minute blank + 15-minute DPMS locked movies. 0 = never on AC.
+  xq_set xfce4-power-manager /xfce4-power-manager/blank-on-ac -t int -s 0
+  xq_set xfce4-power-manager /xfce4-power-manager/dpms-on-ac-sleep -t int -s 0
+  xq_set xfce4-power-manager /xfce4-power-manager/dpms-on-ac-off -t int -s 0
+  if xq_get xfce4-panel /plugins/plugin-1 2>/dev/null | grep -qx whiskermenu; then
+    local pwr="$HOME/.local/bin/vault-os-power"
+    if [[ -x "$pwr" ]]; then
+      xq_set xfce4-panel /plugins/plugin-1/command-logout -t string -s "$pwr logout"
+      xq_set xfce4-panel /plugins/plugin-1/command-restart -t string -s "$pwr reboot"
+      xq_set xfce4-panel /plugins/plugin-1/command-shutdown -t string -s "$pwr shutdown"
+    fi
+  fi
+  # Custom ~/.local saver .desktops are NOT scanned by xfce4-screensaver.
+  # System desktop vaultos-arch-spin.desktop exists but Hidden=true + missing
+  # /usr/lib binary → (null) command. Until sudo fixes that, pin stock
+  # slideshow to lock-slides spin frames (Y-axis foreshorten sequence).
+  local saver_want="screensavers-vaultos-arch-spin"
+  local saver_cur
+  saver_cur=$(xq_get xfce4-screensaver /saver/themes/list | tail -1)
+  if [[ "$saver_cur" != "$saver_want" ]]; then
+    xfconf-query -c xfce4-screensaver -p /saver/themes/list --force-array -t string -s "$saver_want" 2>/dev/null \
+      || xfconf-query -c xfce4-screensaver -p /saver/themes/list -n -a -t string -s "$saver_want" 2>/dev/null \
+      || true
+  fi
+  xq_set xfce4-screensaver /screensavers/xfce-personal-slideshow/images-location -t string -s "$HOME/.local/share/backgrounds/Vault.OS/lock-spin-frames"
+  xq_set xfce4-screensaver /screensavers/xfce-personal-slideshow/location -t string -s "$HOME/.local/share/backgrounds/Vault.OS/lock-spin-frames"
+  xq_set xfce4-screensaver /lock/enabled -t bool -s true
+  xq_set xfce4-screensaver /lock/saver-activation/enabled -t bool -s true
+  if [[ "$bad" -eq 1 ]] && have vaultos-terminal-phosphor; then
+    local phos_mode
+    phos_mode="$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS/terminal-phosphor" 2>/dev/null || echo reduced)"
+    case "$phos_mode" in full|reduced|clear) ;; *) phos_mode=reduced ;; esac
+    vaultos-terminal-phosphor "$phos_mode" >/dev/null || true
+  fi
+
+
+
+
+  # GTK overlays always (GTK-02) — HUD import only (spinner lives in theme gtk.css)
+  overlay_src="${VAULT_OS_ROOT:-$HOME/Vault.OS}/source/gtk-overlay"
+  hud_theme="$want_t"
+  case "$hud_theme" in Vault.OS|Vault.OS-Reduced) ;; *) hud_theme="Vault.OS" ;; esac
+  mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
+  printf '%s
+' \
+    '/* Vault.OS user GTK overlay — import theme HUD only; never PipBoy CSS */' \
+    '/* Spinner fix: theme gtk-3.0/gtk-3.20 only (no fighting user override). */' \
+    "@import url(\"file://$HOME/.themes/${hud_theme}/gtk-3.0/hud.css\");" \
+    > "$HOME/.config/gtk-3.0/gtk.css"
+  if [[ -f "$overlay_src/gtk4.css" ]]; then
+    cp -f "$overlay_src/gtk4.css" "$HOME/.config/gtk-4.0/gtk.css"
+  fi
+
+
+  if [[ "$bad" -eq 1 && -x "$HOME/.local/bin/vault-os-chromium-theme" ]]; then
     "$HOME/.local/bin/vault-os-chromium-theme" 2>/dev/null || true
   fi
 }
 
 
 cmd_ensure_qt() {
-  log "ensure Qt/Kvantum PipBoy-NV"
+  # Qt/Kvantum: use THEME_NAME if a Kvantum skin exists; else PipBoy-NV (only Qt skin shipped)
+  local kv_theme="${THEME_NAME:-Vault.OS}"
+  [[ "$kv_theme" == "Vault.OS-Reduced" ]] && kv_theme="Vault.OS"
+  if [[ ! -d "$HOME/.config/Kvantum/$kv_theme" ]]; then
+    kv_theme="PipBoy-NV"
+  fi
+  log "ensure Qt/Kvantum $kv_theme (GTK/xfwm stay ${THEME_NAME:-Vault.OS})"
   mkdir -p "$HOME/.config/Kvantum" "$HOME/.config/qt5ct" "$HOME/.config/qt6ct" "$HOME/.config/environment.d"
   if [[ -f "$HOME/.config/Kvantum/kvantum.kvconfig" ]]; then
-    sed -i 's/^theme=.*/theme=PipBoy-NV/' "$HOME/.config/Kvantum/kvantum.kvconfig" 2>/dev/null || true
+    sed -i "s/^theme=.*/theme=${kv_theme}/" "$HOME/.config/Kvantum/kvantum.kvconfig" 2>/dev/null || true
   else
-    printf '[General]\ntheme=PipBoy-NV\n' > "$HOME/.config/Kvantum/kvantum.kvconfig"
+    printf '[General]\ntheme=%s\n' "$kv_theme" > "$HOME/.config/Kvantum/kvantum.kvconfig"
   fi
   for qt in qt5ct qt6ct; do
     local conf="$HOME/.config/$qt/$qt.conf"
@@ -567,10 +730,18 @@ cmd_ensure_qt() {
 cmd_ensure_coverage() {
   log "ensure extended theme coverage"
   cmd_ensure_qt || true
-  # sounds
-  if [[ -d "$HOME/.local/share/sounds/PipBoy-NV" ]]; then
+  # sounds — Vault.OS pack if present; else mute (never force PipBoy under Vault.OS)
+  if [[ -d "$HOME/.local/share/sounds/Vault.OS" ]]; then
+    xq_set xsettings /Net/SoundThemeName -t string -s "Vault.OS"
+    xq_set xsettings /Net/EnableEventSounds -t bool -s true
+  elif [[ "${THEME_NAME:-Vault.OS}" == "PipBoy-NV" && -d "$HOME/.local/share/sounds/PipBoy-NV" ]]; then
     xq_set xsettings /Net/SoundThemeName -t string -s "PipBoy-NV"
     xq_set xsettings /Net/EnableEventSounds -t bool -s true
+  else
+    xq_set xsettings /Net/EnableEventSounds -t bool -s false
+    if [[ "$(xq_get xsettings /Net/SoundThemeName | head -1)" == "PipBoy-NV" ]]; then
+      xq_set xsettings /Net/SoundThemeName -t string -s "freedesktop"
+    fi
   fi
   # chromium theme
   if [[ -x "$HOME/.local/bin/vault-os-chromium-theme" ]]; then
@@ -580,7 +751,7 @@ cmd_ensure_coverage() {
   if have flatpak; then
     flatpak override --user --env=GTK_THEME="$THEME_NAME" 2>/dev/null || true
     flatpak override --user --env=ICON_THEME="$ICON_THEME" 2>/dev/null || true
-    flatpak override --user --env=XCURSOR_THEME="${CURSOR_THEME:-PipBoy-NV-Cursors}" 2>/dev/null || true
+    flatpak override --user --env=XCURSOR_THEME="${CURSOR_THEME:-Vault.OS}" 2>/dev/null || true
   fi
 }
 
@@ -592,7 +763,7 @@ cmd_coverage() {
   ff=$(ls -d "$HOME/.mozilla/firefox/"*/chrome/userChrome.css 2>/dev/null | head -1 || true)
   disc=$(ls "$HOME/.config/Vencord/themes/PipBoyNV.theme.css" \
             "$HOME/.config/BetterDiscord/themes/PipBoyNV.theme.css" 2>/dev/null | head -1 || true)
-  snd=$(ls -d "$HOME/.local/share/sounds/PipBoy-NV" 2>/dev/null || true)
+  snd=$(ls -d "$HOME/.local/share/sounds/Vault.OS" 2>/dev/null || ls -d "$HOME/.local/share/sounds/PipBoy-NV" 2>/dev/null || true)
   printf 'Vault-OS theme coverage\n'
   printf '======================\n'
   printf 'GTK:     %s\n' "$(xq_get xsettings /Net/ThemeName | head -1)"
@@ -608,8 +779,8 @@ cmd_coverage() {
   printf 'Discord: %s\n' "${disc:-missing}"
   local ldm
   ldm=$(grep -E '^theme-name=' /etc/lightdm/lightdm-gtk-greeter.conf 2>/dev/null | cut -d= -f2 || true)
-  if [[ "$ldm" == "PipBoy-NV" ]]; then
-    printf 'LightDM: PipBoy-NV OK\n'
+  if [[ "$ldm" == "Vault.OS" || "$ldm" == "Vault.OS-Reduced" || "$ldm" == "PipBoy-NV" ]]; then
+    printf 'LightDM: %s OK\n' "$ldm"
   else
     printf 'LightDM: missing (run vault-os-install-system-theme)\n'
   fi
@@ -647,6 +818,7 @@ cmd_session_start() {
   cmd_apply
   ensure_xfdesktop || true
   cmd_ensure_panel
+  cmd_ensure_theme
   pgrep -x xfsettingsd >/dev/null 2>&1 && killall -HUP xfsettingsd 2>/dev/null || true
 
   # XFCE/settings often re-assert stock "GTK"/Adwaita shortly after login — fight the race
@@ -729,7 +901,7 @@ cmd_status() {
   else
     printf 'font       Share Tech Mono MISSING\n'
   fi
-  if [[ -d "$HOME/.icons/${CURSOR_THEME:-PipBoy-NV-Cursors}/cursors" || -d "$HOME/.local/share/icons/${CURSOR_THEME:-PipBoy-NV-Cursors}/cursors" ]]; then
+  if [[ -d "$HOME/.icons/${CURSOR_THEME:-Vault.OS}/cursors" || -d "$HOME/.local/share/icons/${CURSOR_THEME:-Vault.OS}/cursors" ]]; then
     printf 'cursor_dir OK\n'
   else
     printf 'cursor_dir MISSING\n'; ec=1
@@ -807,8 +979,8 @@ usage() {
     '  apply           Apply theme, icons, cursor, panels' \
     '  ensure-panel    Repair/restore both panels' \
     '  ensure-desktop  Keep xfdesktop running (does not change wallpaper)' \
-    '  ensure-theme    Re-assert PipBoy GTK/icons/wm if drifted' \
-    '  ensure-qt       Kvantum + qt5ct/qt6ct PipBoy' \
+    '  ensure-theme    Re-assert Vault.OS GTK/icons/wm/panel if drifted' \
+    '  ensure-qt       Kvantum + qt5ct/qt6ct (Vault.OS GTK; Qt skin if present)' \
     '  ensure-coverage Qt/sounds/flatpak/chromium theme extras' \
     '  ensure-all      Theme + coverage + desktop + panel (watch timer)' \
     '  coverage        Print theme integration coverage report' \

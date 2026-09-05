@@ -1,0 +1,152 @@
+/* Vault.OS lock / logout — HUD-04
+   First and last impression. Scanlines allowed here.
+   A11y: 2px phosphor focus, 28px hits, Share Tech Mono.
+   Consumes CANON tokens. Amber = warn only. Shutdown = rad-red.
+*/
+@import url("tokens.css");
+
+/* --- unlock / screensaver dialog --- */
+window.xfce-screensaver-dialog,
+.xfce-screensaver-dialog,
+#lock-dialog,
+dialog.lockscreen {
+  background-color: @vault_black;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  font-family: "Share Tech Mono", "Overpass Mono", "Terminus", monospace;
+}
+
+window.xfce-screensaver-dialog label,
+.xfce-screensaver-dialog label,
+#lock-dialog label {
+  color: @phos;
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+  font-size: 10pt;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 1px @phos;
+}
+
+window.xfce-screensaver-dialog entry,
+.xfce-screensaver-dialog entry,
+#lock-dialog entry {
+  min-height: 28px;
+  min-width: 220px;
+  padding: 4px 8px;
+  background-color: @inset;
+  color: @phos_hot;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 @bevel_lo, 1px 1px 0 @bevel_hi;
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+  font-size: 11pt;
+  caret-color: @phos;
+}
+
+window.xfce-screensaver-dialog entry:focus,
+.xfce-screensaver-dialog entry:focus,
+#lock-dialog entry:focus {
+  box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_lo;
+  outline: none;
+}
+
+window.xfce-screensaver-dialog button,
+.xfce-screensaver-dialog button,
+#lock-dialog button {
+  min-height: 28px;
+  min-width: 88px;
+  padding: 4px 12px;
+  background-color: @panel_black;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+  letter-spacing: 0.08em;
+}
+
+window.xfce-screensaver-dialog button:hover,
+.xfce-screensaver-dialog button:hover {
+  background-color: @phosphor_ghost;
+  color: @phos_hot;
+}
+
+window.xfce-screensaver-dialog button:focus,
+.xfce-screensaver-dialog button:focus,
+#lock-dialog button:focus {
+  box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+}
+
+window.xfce-screensaver-dialog button.default,
+window.xfce-screensaver-dialog button.suggested-action {
+  border-bottom: 2px solid @phos;
+  box-shadow: inset 0 -2px 0 @phos, inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+}
+
+/* --- session logout / power plate --- */
+#xfsm-logout-dialog,
+window.xfsm-logout-dialog,
+.xfsm-logout-dialog {
+  background-color: @panel_black;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+}
+
+#xfsm-logout-dialog label,
+.xfsm-logout-dialog label {
+  color: @phos;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 1px @phos;
+}
+
+#xfsm-logout-dialog button,
+.xfsm-logout-dialog button {
+  min-height: 28px;
+  min-width: 96px;
+  padding: 6px 12px;
+  background-color: @inset;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+  letter-spacing: 0.06em;
+}
+
+#xfsm-logout-dialog button:hover {
+  background-color: @phosphor_ghost;
+  color: @phos_hot;
+}
+
+#xfsm-logout-dialog button:focus {
+  box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+}
+
+#xfsm-logout-dialog #xfsm-logout-button-shutdown,
+#xfsm-logout-dialog button.destructive-action {
+  color: @phos_white;
+  background-color: @rad_red;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+}
+
+#xfsm-logout-dialog #xfsm-logout-button-reboot {
+  border-bottom: 2px solid @amber_warn;
+}
+
+/* --- a11y focus on panel (HUD) --- */
+.xfce4-panel button:focus,
+.xfce4-panel .toggle:focus,
+#whiskermenu-window button:focus,
+#whiskermenu-window entry:focus {
+  box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  outline: none;
+}
+
+.xfce4-panel button,
+.xfce4-panel .toggle {
+  min-height: 28px;
+}

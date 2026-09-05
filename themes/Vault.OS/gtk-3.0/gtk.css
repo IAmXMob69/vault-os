@@ -1,0 +1,1033 @@
+/* Vault.OS GTK-3 — GTK-02
+   Consumes VDS-01 CANON tokens (+ a11y text_/focus_ring/status_*). Do not redeclare colors.
+   xfwm4 is XWM-03. Panel/notify is HUD-04 (hud.css). Terminal well is TRM-05 (terminal.css).
+   Every plate speaks lintel: 2px jamb (bevel-hi in, bevel-lo out) + LED rail on active.
+   A11y: @focus_ring / @text_* / @status_*. Density pass: 24px hits, quieter menus (no shout-case), tighter padding. No blur. No scanlines on widgets.
+*/
+@import url("tokens.css");
+@import url("hud.css");
+@import url("lock.css");
+@import url("terminal.css");
+
+/* --- type + a11y focus base --- */
+* {
+  -gtk-icon-style: symbolic;
+  -gtk-icon-shadow: none;
+  text-shadow: none;
+  outline-color: @focus_ring;
+  outline-offset: -2px;
+  outline-width: 0;
+  border-radius: 0;
+  font-family: "Overpass Mono", "Share Tech Mono", "Terminus", monospace;
+  font-size: 9pt;
+}
+
+*:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+}
+
+*:disabled {
+  color: @text_disabled;
+  opacity: 1;
+  -gtk-icon-effect: dim;
+}
+
+button:disabled,
+entry:disabled {
+  color: @text_disabled;
+  background-color: @vault_black;
+}
+
+/* menuitem:disabled must NOT paint vault_black — Thunar packs an insensitive
+   menubar menuitem for GtkSpinner; solid bg = permanent black square. */
+menuitem:disabled {
+  color: @text_disabled;
+}
+
+/* --- chassis --- */
+.background,
+window,
+dialog,
+messagedialog,
+assistant {
+  background-color: @panel_black;
+  color: @phos;
+  border-radius: 0;
+  background-image: none;
+}
+
+.csd.background,
+.csd decoration {
+  background-color: @panel_black;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+/* --- header plate = door lintel --- */
+headerbar,
+.titlebar,
+.titlebar.default-decoration {
+  min-height: 28px;
+  padding: 0 6px;
+  background-color: @panel_black;
+  background-image: none;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  box-shadow:
+    inset 1px 1px 0 @bevel_hi,
+    inset -1px -1px 0 @bevel_lo,
+    inset 0 -2px 0 @phosphor_primary;
+  font-weight: bold;
+}
+
+headerbar:backdrop,
+.titlebar:backdrop {
+  background-color: @vault_black;
+  color: @steel;
+  box-shadow:
+    inset 2px 2px 0 @bevel_hi,
+    inset -2px -2px 0 @bevel_lo,
+    0 2px 0 @bevel_lo;
+}
+
+headerbar .title,
+headerbar label.title {
+  color: @phos;
+  font-weight: bold;
+  font-size: 9pt;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 1px @phos;
+}
+
+headerbar:backdrop .title,
+headerbar:backdrop label.title {
+  color: @steel;
+  text-shadow: none;
+}
+
+
+
+headerbar button,
+headerbar button.titlebutton,
+headerbar button.image-button {
+  min-height: 20px;
+  min-width: 20px;
+  padding: 0 4px;
+  background-color: @inset;
+  background-image: none;
+  color: @steel;
+  border: none;
+  border-radius: 2px;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+  outline-width: 0;
+}
+
+headerbar button:hover,
+headerbar button.titlebutton:hover {
+  color: @phos;
+  background-color: @inset;
+}
+
+headerbar button:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+}
+
+headerbar button.titlebutton.close {
+  background-color: @status_danger;
+  color: @phos_white;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+headerbar button.titlebutton.close:hover,
+headerbar button.titlebutton.close:active {
+  background-color: @status_danger;
+  color: @phos_white;
+}
+
+headerbar button:disabled {
+  color: @steel;
+  background-color: @panel_black;
+  box-shadow: none;
+}
+
+/* --- stamped buttons + LED --- */
+button {
+  min-height: 24px;
+  min-width: 24px;
+  padding: 2px 8px;
+  background-color: @inset;
+  background-image: none;
+  color: @phos;
+  border: none;
+  border-radius: 2px;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+button:hover {
+  color: @phos_hot;
+  background-color: @inset;
+}
+
+button:active {
+  box-shadow: inset 2px 2px 0 @bevel_lo, 2px 2px 0 @bevel_hi;
+  color: @phos_hot;
+}
+
+button:checked,
+button.toggle:checked {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 2px 2px 0 @bevel_lo, 2px 2px 0 @bevel_hi, inset 3px 0 0 0 @phosphor_primary;
+}
+
+button:disabled {
+  background-color: @panel_black;
+  color: @steel;
+  box-shadow: none;
+}
+
+button:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo, inset 0 0 0 1px @phos;
+}
+
+button.suggested-action {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo, inset 3px 0 0 0 @phosphor_primary;
+}
+
+button.destructive-action {
+  color: @phos_hot;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo, inset 3px 0 0 0 @status_danger;
+}
+
+button.destructive-action:hover {
+  background-color: @status_danger;
+  color: @phos_white;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+button.flat {
+  background-color: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+button.flat:hover {
+  color: @phos_hot;
+  background-color: @inset;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+button.flat:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+}
+
+/* --- recessed wells = lintel language (inset plate + phosphor rail on focus) --- */
+entry,
+spinbutton,
+searchentry {
+  min-height: 24px;
+  background-color: @vault_black;
+  color: @phos_hot;
+  border: none;
+  border-radius: 0;
+  box-shadow:
+    inset 1px 1px 0 @bevel_lo,
+    inset -1px -1px 0 @bevel_hi;
+  padding: 2px 6px;
+  caret-color: @phosphor_primary;
+}
+
+entry:focus,
+spinbutton:focus,
+searchentry:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+  box-shadow:
+    inset 1px 1px 0 @bevel_lo,
+    inset -1px -1px 0 @bevel_hi,
+    inset 0 -2px 0 @phosphor_primary;
+}
+
+entry:disabled,
+spinbutton:disabled {
+  color: @steel;
+  background-color: @panel_black;
+}
+
+entry selection,
+textview selection,
+label selection {
+  background-color: @phosphor_dim;
+  color: @phos_hot;
+}
+
+textview,
+textview text,
+.view,
+treeview,
+list,
+listview,
+iconview {
+  background-color: @vault_black;
+  color: @phos_hot;
+  border-radius: 0;
+}
+
+textview border {
+  background-color: @panel_black;
+}
+
+textview:focus,
+.view:focus,
+treeview:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+}
+
+.view:selected,
+treeview:selected,
+treeview.view:selected,
+row:selected,
+list row:selected {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 3px 0 0 0 @phosphor_primary;
+}
+
+treeview header button {
+  background-color: @inset;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  min-height: 24px;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+scrolledwindow {
+  border: none;
+  background-color: @vault_black;
+  box-shadow: inset 2px 2px 0 @bevel_lo, inset -2px -2px 0 @bevel_hi;
+}
+
+scrolledwindow viewport {
+  background-color: @vault_black;
+}
+
+frame {
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+frame > border,
+frame > label {
+  color: @phos;
+}
+
+/* --- check / radio: 16px LED (a11y hit) --- */
+check,
+radio {
+  min-width: 16px;
+  min-height: 16px;
+  margin: 2px;
+  background-color: @vault_black;
+  background-image: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 2px 2px 0 @bevel_lo, inset -2px -2px 0 @bevel_hi;
+  -gtk-icon-shadow: none;
+  color: @vault_black;
+}
+
+check:hover,
+radio:hover {
+  box-shadow: inset 2px 2px 0 @bevel_lo, inset -2px -2px 0 @bevel_hi, inset 0 0 0 1px @phos;
+}
+
+check:checked,
+check:indeterminate,
+radio:checked {
+  background-color: @phos;
+  color: @vault_black;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+check:focus,
+radio:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: 1px;
+}
+
+check:disabled,
+radio:disabled {
+  background-color: @panel_black;
+  color: @steel;
+  box-shadow: none;
+}
+
+/* --- switch --- */
+switch {
+  min-width: 40px;
+  min-height: 20px;
+  background-color: @inset;
+  background-image: none;
+  border: none;
+  border-radius: 2px;
+  box-shadow: inset 2px 2px 0 @bevel_lo, inset -2px -2px 0 @bevel_hi;
+  color: @steel;
+}
+
+switch:checked {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 2px 2px 0 @bevel_lo, inset -2px -2px 0 @bevel_hi, inset 3px 0 0 0 @phosphor_primary;
+}
+
+switch:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: 1px;
+}
+
+switch slider {
+  min-width: 14px;
+  min-height: 14px;
+  margin: 2px;
+  background-color: @steel;
+  background-image: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+switch:checked slider {
+  background-color: @phos;
+}
+
+/* --- scrollbar: recessed trough + bevelled latch (phosphor only on hover) --- */
+scrollbar {
+  background-color: @vault_black;
+  background-image: none;
+  border: none;
+  border-radius: 0;
+  min-width: 12px;
+  min-height: 12px;
+}
+
+scrollbar trough {
+  background-color: @vault_black;
+  border: none;
+  border-radius: 0;
+  min-width: 12px;
+  min-height: 12px;
+  box-shadow:
+    inset 1px 1px 0 @bevel_lo,
+    inset -1px -1px 0 @bevel_hi;
+}
+
+scrollbar slider {
+  min-width: 12px;
+  min-height: 24px;
+  margin: 1px;
+  background-color: @inset;
+  background-image: none;
+  border: none;
+  border-radius: 0;
+  box-shadow:
+    inset 1px 1px 0 @bevel_hi,
+    inset -1px -1px 0 @bevel_lo;
+}
+
+scrollbar slider:hover {
+  background-color: @inset;
+  box-shadow:
+    inset 1px 1px 0 @bevel_hi,
+    inset -1px -1px 0 @bevel_lo,
+    inset 0 0 0 1px @phosphor_primary;
+}
+
+scrollbar slider:active,
+scrollbar slider:focus {
+  background-color: @phosphor_ghost;
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+  box-shadow:
+    inset 1px 1px 0 @bevel_hi,
+    inset -1px -1px 0 @bevel_lo,
+    inset 0 -2px 0 @phosphor_primary;
+}
+
+scrollbar button,
+scrollbar.horizontal button,
+scrollbar.vertical button {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background-color: @vault_black;
+  box-shadow: none;
+}
+
+overshoot.top, overshoot.bottom, overshoot.left, overshoot.right,
+undershoot.top, undershoot.bottom, undershoot.left, undershoot.right {
+  background-image: none;
+  background-color: transparent;
+}
+
+/* --- scale / progress --- */
+scale trough {
+  min-height: 12px;
+  min-width: 12px;
+  background-color: @inset;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 2px 2px 0 @bevel_lo, inset -2px -2px 0 @bevel_hi;
+}
+
+scale highlight {
+  background-color: @phosphor_dim;
+  border-radius: 0;
+}
+
+scale slider {
+  min-width: 16px;
+  min-height: 16px;
+  background-color: @phos;
+  background-image: none;
+  border: none;
+  border-radius: 2px;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+scale:focus slider {
+  outline: 2px solid @focus_ring;
+  outline-offset: 1px;
+}
+
+progressbar trough,
+levelbar trough {
+  background-color: @inset;
+  border: none;
+  border-radius: 0;
+  min-height: 12px;
+  box-shadow: inset 2px 2px 0 @bevel_lo, inset -2px -2px 0 @bevel_hi;
+}
+
+progressbar progress,
+levelbar block.filled {
+  background-color: @phos;
+  background-image: none;
+  border-radius: 0;
+}
+
+levelbar block.high {
+  background-color: @amber_warn;
+}
+
+levelbar block.low {
+  background-color: @status_danger;
+}
+
+/* --- notebooks: visible lintel tabs + LED rail --- */
+notebook {
+  background-color: @panel_black;
+  border: none;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+notebook > header {
+  background-color: @inset;
+  background-image: none;
+  border: none;
+  min-height: 24px;
+  padding: 0;
+  box-shadow: inset 0 -2px 0 @bevel_lo;
+}
+
+notebook > header.top {
+  box-shadow: inset 0 -2px 0 @bevel_lo;
+}
+
+notebook > header tabs {
+  padding: 0;
+  margin: 0;
+}
+
+notebook > header tabs tab {
+  min-height: 24px;
+  min-width: 40px;
+  padding: 2px 10px;
+  margin: 0 1px 0 0;
+  background-color: @inset;
+  background-image: none;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+  letter-spacing: 0.08em;
+  opacity: 1;
+}
+
+notebook > header tabs tab label {
+  color: @phos;
+  opacity: 1;
+}
+
+notebook > header tabs tab:hover {
+  color: @phos_hot;
+  background-color: @panel_black;
+}
+
+notebook > header tabs tab:hover label {
+  color: @phos_hot;
+}
+
+notebook > header tabs tab:checked {
+  background-color: @panel_black;
+  color: @phos_hot;
+  text-shadow: 0 0 1px @phos;
+  box-shadow: inset 2px 2px 0 @bevel_hi, inset 0 -2px 0 0 @phos;
+}
+
+notebook > header tabs tab:checked label {
+  color: @phos_hot;
+}
+
+notebook > header tabs tab:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+}
+
+notebook > stack {
+  background-color: @panel_black;
+}
+
+/* --- menus: dense + quiet LED rail (no highlighter wash) --- */
+menu,
+.menu,
+.context-menu,
+popover,
+popover.background,
+combobox window.popup {
+  background-color: @panel_black;
+  color: @phosphor_primary;
+  border: none;
+  border-radius: 0;
+  padding: 1px 0;
+  box-shadow:
+    inset 1px 1px 0 @bevel_hi,
+    inset -1px -1px 0 @bevel_lo;
+}
+
+menuitem,
+modelbutton,
+popover modelbutton,
+combobox menu menuitem {
+  min-height: 20px;
+  padding: 1px 8px;
+  background-color: transparent;
+  color: @phosphor_primary;
+  border-radius: 0;
+  letter-spacing: 0;
+}
+
+menuitem:hover,
+menuitem:selected,
+modelbutton:hover,
+.menuitem:hover {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 2px 0 0 0 @phosphor_primary;
+}
+
+menuitem:focus,
+modelbutton:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+}
+
+menuitem:disabled {
+  color: @steel;
+}
+
+separator,
+menu separator,
+popover separator {
+  min-height: 1px;
+  background-color: @bevel_hi;
+  border: none;
+}
+
+arrow, menuitem arrow {
+  color: @phos;
+}
+
+/* --- toolbar / status --- */
+toolbar,
+.toolbar {
+  background-color: @panel_black;
+  background-image: none;
+  border: none;
+  padding: 1px;
+  min-height: 24px;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 0 2px 0 @bevel_lo;
+}
+
+statusbar {
+  background-color: @panel_black;
+  color: @steel;
+  border: none;
+  min-height: 24px;
+  box-shadow: inset 2px 0 0 @bevel_hi, 0 -2px 0 @bevel_lo;
+  font-size: 8pt;
+  letter-spacing: 0.08em;
+}
+
+
+/* --- sidebar --- */
+.sidebar,
+placessidebar,
+stacksidebar,
+filechooser .sidebar {
+  background-color: @panel_black;
+  border: none;
+  box-shadow: inset 2px 0 0 @bevel_hi, 2px 0 0 @bevel_lo;
+}
+
+.sidebar row,
+placessidebar row {
+  min-height: 22px;
+  color: @phos;
+}
+
+.sidebar row:selected,
+placessidebar row:selected {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 3px 0 0 0 @phosphor_primary;
+}
+
+.sidebar row:focus,
+placessidebar row:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+}
+
+/* --- tooltip --- */
+tooltip,
+tooltip.background,
+.tooltip {
+  background-color: @inset;
+  background-image: none;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+  padding: 3px 6px;
+}
+
+tooltip label {
+  color: @phos;
+  font-size: 9pt;
+}
+
+/* --- infobar --- */
+infobar {
+  background-image: none;
+  border: none;
+  border-radius: 0;
+  min-height: 24px;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+infobar.info {
+  background-color: @inset;
+  color: @phos;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo, inset 3px 0 0 0 @phos;
+}
+
+infobar.warning {
+  background-color: @inset;
+  color: @amber_warn;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo, inset 3px 0 0 0 @amber_warn;
+}
+
+infobar.error {
+  background-color: @inset;
+  color: @rad_red;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo, inset 3px 0 0 0 @status_danger;
+}
+
+infobar.question {
+  background-color: @inset;
+  color: @phos;
+}
+
+/* --- links --- */
+*:link,
+link,
+.markup-link {
+  color: @phos;
+  text-decoration: underline;
+}
+
+*:visited {
+  color: @phosphor_dim;
+}
+
+*:link:hover {
+  color: @phos_hot;
+}
+
+*:link:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: 1px;
+}
+
+/* --- paned / expander --- */
+paned > separator {
+  background-color: @bevel_hi;
+  min-width: 4px;
+  min-height: 4px;
+  background-image: none;
+}
+
+expander title {
+  color: @phos;
+  letter-spacing: 0;
+  min-height: 22px;
+}
+
+expander:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+}
+
+/* --- calendar --- */
+calendar {
+  background-color: @vault_black;
+  color: @phos_hot;
+  border: none;
+  box-shadow: inset 2px 2px 0 @bevel_lo, inset -2px -2px 0 @bevel_hi;
+}
+
+calendar:selected {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 3px 0 0 0 @phosphor_primary;
+}
+
+calendar.header {
+  background-color: @inset;
+  color: @phos;
+}
+
+/* --- spin / combo --- */
+spinbutton button {
+  background-color: @inset;
+  min-height: 14px;
+  min-width: 20px;
+  padding: 0 4px;
+  border-radius: 0;
+}
+
+combobox button,
+combobox box {
+  border-radius: 2px;
+  min-height: 24px;
+}
+
+/* --- dialog actions --- */
+dialog .dialog-action-box,
+messagedialog .dialog-action-box {
+  background-color: @panel_black;
+  padding: 4px;
+  box-shadow: inset 0 2px 0 @bevel_hi;
+}
+
+/* --- rubberband --- */
+.rubberband,
+rubberband {
+  background-color: alpha(@phosphor_dim, 0.35);
+  border: 2px solid @phos;
+}
+
+list row {
+  min-height: 22px;
+  color: @phos;
+}
+
+list row:hover {
+  background-color: @inset;
+}
+
+list row:focus {
+  outline: 2px solid @focus_ring;
+  outline-offset: -2px;
+}
+
+pathbar button,
+.path-bar button {
+  background-color: @inset;
+  border: none;
+  color: @phos;
+  border-radius: 2px;
+  min-height: 24px;
+  padding: 2px 6px;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+}
+
+pathbar button:checked,
+.path-bar button:checked {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 2px 2px 0 @bevel_lo, 2px 2px 0 @bevel_hi, inset 0 -2px 0 0 @phosphor_primary;
+}
+
+/* --- menubar --- */
+menubar {
+  background-color: @panel_black;
+  color: @phos;
+  box-shadow: inset 2px 2px 0 @bevel_hi, 0 2px 0 @bevel_lo;
+  min-height: 24px;
+}
+
+menubar > menuitem {
+  min-height: 20px;
+  padding: 1px 8px;
+  letter-spacing: 0;
+}
+
+menubar > menuitem:hover,
+menubar > menuitem:selected {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 0 -2px 0 0 @phosphor_primary;
+}
+
+undershoot, overshoot { background: none; }
+
+/* --- panel / tasklist: do not let global a11y mins hide window tabs --- */
+.xfce4-panel button,
+.xfce4-panel .flat,
+.xfce4-panel .tasklist button,
+.xfce4-panel wnck-tasklist button {
+  min-height: 24px;
+  min-width: 24px;
+  padding: 0 6px;
+  outline-width: 0;
+}
+
+.xfce4-panel .tasklist button label,
+.xfce4-panel wnck-tasklist button label {
+  color: @phos;
+  opacity: 1;
+}
+
+.xfce4-panel .tasklist button:checked,
+.xfce4-panel wnck-tasklist button:checked {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 2px 2px 0 @bevel_lo, inset 0 -2px 0 0 @phosphor_primary;
+}
+
+.xfce4-panel .tasklist button:checked label {
+  color: @theme_selected_fg_color;
+}
+
+/* --- spinner: hide idle Thunar menubar throbber (no black square) ---
+   GTK 3.24 loads gtk-3.20/ — keep identical in gtk-3.0 + gtk-3.20.
+   Thunar: right-justified insensitive menuitem + always-visible GtkSpinner;
+   active binds to spinner:checked (with :disabled on the host).
+   DO NOT opacity:0 the host menuitem — child busy glyph cannot paint through it.
+   Idle plate fix: transparent host + collapse spinner allocation via negative margin.
+   VDS: lasting home is theme gtk.css; overlay stays HUD-import only. */
+@keyframes vaultos-spin {
+  to { -gtk-icon-transform: rotate(1turn); }
+}
+
+menubar > menuitem:disabled,
+.thunar menubar > menuitem:disabled,
+.thunar menubar > menuitem:last-child,
+window.thunar menubar > menuitem:disabled,
+window.thunar menubar > menuitem:last-child {
+  background-color: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  min-height: 0;
+  color: transparent;
+  -gtk-icon-effect: none;
+}
+
+menubar > menuitem:disabled > *,
+.thunar menubar > menuitem:disabled > *,
+.thunar menubar > menuitem:last-child > * {
+  padding: 0;
+}
+
+spinner {
+  background-color: transparent;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  opacity: 0;
+  color: transparent;
+  -gtk-icon-source: none;
+  -gtk-icon-transform: scale(0);
+  min-height: 0;
+  min-width: 0;
+  padding: 0;
+  /* GtkSpinner keeps ~16px requisition; pull it out of layout when idle */
+  margin: 0 -20px 0 0;
+  animation-name: none;
+}
+
+spinner:checked,
+spinner.active {
+  opacity: 1;
+  color: @phosphor_primary;
+  min-height: 16px;
+  min-width: 16px;
+  margin: 0 6px;
+  -gtk-icon-source: -gtk-icontheme("process-working-symbolic");
+  -gtk-icon-transform: none;
+  animation: vaultos-spin 1s linear infinite;
+}
+
+spinner:disabled {
+  opacity: 0;
+  color: transparent;
+  -gtk-icon-source: none;
+  -gtk-icon-transform: scale(0);
+  min-height: 0;
+  min-width: 0;
+  margin: 0 -20px 0 0;
+  animation-name: none;
+}
+
+spinner:disabled:checked,
+spinner:disabled.active {
+  opacity: 1;
+  color: @phosphor_primary;
+  min-height: 16px;
+  min-width: 16px;
+  margin: 0 6px;
+  -gtk-icon-source: -gtk-icontheme("process-working-symbolic");
+  -gtk-icon-transform: none;
+  animation: vaultos-spin 1s linear infinite;
+}

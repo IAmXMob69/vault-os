@@ -1,0 +1,80 @@
+/* Vault.OS tokens — REDUCED PHOSPHOR / CLEAR TERMINAL
+   VDS-01 first-class a11y variant. Import INSTEAD of tokens.css when
+   Blaine wants CRT/bloom/spin down and maximum readable chrome.
+   Same hue family. No freelance greens.
+*/
+
+@define-color phosphor_primary #66FF9C; /* hotter = clearer body */
+@define-color phosphor_dim     #1AFF6B; /* former primary — still AA+ */
+@define-color phosphor_ghost   #0E8A3A;
+@define-color amber_warn       #FFB000;
+@define-color rad_red          #E94D5A; /* lifted for small-text AA */
+@define-color steel            #B7BEB4; /* AAA secondary */
+@define-color vault_black      #070807;
+@define-color panel_black      #0C0F0C;
+@define-color inset            #121612;
+@define-color bevel_hi         #3A463A;
+@define-color bevel_lo         #050605;
+
+@define-color phos_hot   #D4EDDD;
+@define-color phos_white #F2F7F2;
+@define-color phos       @phosphor_primary;
+@define-color phos_dim   @phosphor_dim;
+@define-color phos_mid   @phosphor_dim;
+@define-color phos_bg    @vault_black;
+@define-color phos_bg_raised @phosphor_ghost;
+@define-color phos_black @bevel_lo;
+
+@define-color steel_950 @vault_black;
+@define-color steel_900 @panel_black;
+@define-color steel_800 @inset;
+@define-color steel_700 @bevel_hi;
+@define-color steel_600 @bevel_hi;
+@define-color steel_500 #7A8478;
+@define-color steel_400 @steel;
+@define-color steel_300 #D5DAD4;
+@define-color steel_200 #E8ECE8;
+
+@define-color gold     @amber_warn;
+@define-color gold_hot @amber_warn;
+@define-color gold_dim @amber_warn;
+@define-color rad      @rad_red;
+@define-color rad_hot  @rad_red;
+@define-color blood    @rad_red;
+@define-color blood_hot @rad_red;
+@define-color info     @steel;
+@define-color info_hot @steel;
+
+@define-color text_primary   @phosphor_primary;
+@define-color text_secondary @steel;
+@define-color text_muted     #8A8F86;
+@define-color text_disabled  #60665C;
+@define-color focus_ring     @phosphor_primary;
+
+@define-color status_ok     @phosphor_primary;
+@define-color status_warn   @amber_warn;
+@define-color status_danger @rad_red;
+
+@define-color theme_bg_color           @panel_black;
+@define-color theme_fg_color           @phosphor_primary;
+@define-color theme_base_color         @inset;
+@define-color theme_text_color         @phos_hot;
+@define-color theme_selected_bg_color  @inset;
+@define-color theme_selected_fg_color  @phosphor_primary;
+@define-color theme_unfocused_bg_color @panel_black;
+@define-color theme_unfocused_fg_color @steel;
+@define-color borders                  @bevel_hi;
+@define-color warning_color            @amber_warn;
+@define-color error_color              @rad_red;
+@define-color success_color            @phosphor_primary;
+@define-color destructive_color        @rad_red;
+@define-color link_color               @phosphor_primary;
+
+/* Effects OFF — enforceable hooks for craft CSS / overlays */
+:root {
+  --glow: none;
+  --bloom: 0;
+  --scanline-opacity: 0;
+  --spin: 0;
+  --reduced-phosphor: 1;
+}

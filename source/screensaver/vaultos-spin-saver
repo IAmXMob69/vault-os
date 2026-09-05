@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+"""Vault.OS screensaver / lock background — Arch code mark, Y-axis spin.
+xfce4-screensaver sets XSCREENSAVER_WINDOW; we paint into that XID.
+Always spins unless reduced phosphor (ThemeName Vault.OS-Reduced / state file).
+"""
+import math
+import os
+import signal
+import subprocess
+import sys
+
+import cairo
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gtk, Gdk, GLib
+
+try:
+    gi.require_version("GdkX11", "3.0")
+    from gi.repository import GdkX11
+except Exception:
+    GdkX11 = None
+
+LOGO = os.path.expanduser("~/.local/share/backgrounds/Vault.OS/arch-logo-code.png")
+PERIOD = 8.0
+PHOSPHOR_STATE = os.path.expanduser("~/.config/Vault.OS/terminal-phosphor")
+VAULT_BLACK = (7 / 255, 8 / 255, 7 / 255, 1.0)
+
+
+def phosphor_mode():
+    try:
+        return open(PHOSPHOR_STATE).read().strip().lower() or "reduced"
+    except Exception:
+        return "reduced"
+
+
+def theme_name():
+    try:
+        return subprocess.check_output(
+            ["xfconf-query", "-c", "xsettings", "-p", "/Net/ThemeName"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+    except Exception:
+        return ""
+
+
+def effects_off(force_reduced: bool) -> bool:
+    if force_reduced:
+        return True
+    if os.environ.get("VAULTOS_SAVER_FULL", "").strip() in ("1", "true", "yes"):
+        return False
+    mode = phosphor_mode()
+    if mode in ("reduced", "clear"):
+        return True
+    if theme_name() == "Vault.OS-Reduced":
+        return True
+    # Screensaver default: spin (user asked). Desktop reduced still wins above.
+    return False
+
+
+class Saver(Gtk.Window):
+    def __init__(self, animate: bool, embed_xid=None):
+        super().__init__()
+        self.animate = animate
+        self.embed_xid = embed_xid
+        self.angle = 0.0
+        self.set_title("Vault.OS Arch Saver")
+        self.set_decorated(False)
+        self.set_app_paintable(True)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_accept_focus(False)
+        self.set_focus_on_map(False)
+        self.surface = cairo.ImageSurface.create_from_png(LOGO)
+        self.lw = self.surface.get_width()
+        self.lh = self.surface.get_height()
+        self.connect("draw", self.on_draw)
+        self.connect("realize", self.on_realize)
+        self.connect("delete-event", Gtk.main_quit)
+        if self.animate:
+            GLib.timeout_add(33, self.tick)
+
+        if embed_xid is None:
+            # Standalone preview / debug: fullscreen primary
+            self.fullscreen()
+            screen = self.get_screen()
+            visual = screen.get_rgba_visual()
+            if visual is not None:
+                self.set_visual(visual)
+
+    def on_realize(self, *_):
+        if self.embed_xid is None or GdkX11 is None:
+            return
+        try:
+            display = Gdk.Display.get_default()
+            parent = GdkX11.X11Window.foreign_new_for_display(display, self.embed_xid)
+            child = self.get_window()
+            # Match parent geometry
+            geo = parent.get_geometry()
+            w, h = geo.width, geo.height
+            if w < 2 or h < 2:
+                # fallback: monitor size
+                mon = display.get_primary_monitor()
+                g = mon.get_geometry()
+                w, h = g.width, g.height
+            self.set_default_size(w, h)
+            self.resize(w, h)
+            child.reparent(parent, 0, 0)
+            child.resize(w, h)
+            child.show()
+        except Exception as e:
+            print("embed failed:", e, file=sys.stderr)
+
+    def tick(self):
+        self.angle = (self.angle + (2 * math.pi) * (0.033 / PERIOD)) % (2 * math.pi)
+        self.queue_draw()
+        return True
+
+    def on_draw(self, _w, cr):
+        cr.set_operator(cairo.OPERATOR_SOURCE)
+        cr.set_source_rgba(*VAULT_BLACK)
+        cr.paint()
+        cr.set_operator(cairo.OPERATOR_OVER)
+        alloc = self.get_allocation()
+        cx = alloc.width / 2
+        cy = alloc.height / 2
+        target = min(alloc.width, alloc.height) * 0.28
+        scale = target / max(self.lw, self.lh)
+        cr.save()
+        cr.translate(cx, cy)
+        if self.animate:
+            sx = math.cos(self.angle)
+            cr.scale(max(0.08, abs(sx)) * scale, scale)
+            if sx < 0:
+                cr.scale(-1, 1)
+        else:
+            cr.scale(scale, scale)
+        cr.set_source_surface(self.surface, -self.lw / 2, -self.lh / 2)
+        cr.paint()
+        cr.restore()
+        cr.select_font_face("Share Tech Mono", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
+        cr.set_font_size(14)
+        cr.set_source_rgba(0x8A / 255, 0x8F / 255, 0x86 / 255, 1.0)
+        label = "VAULT.OS"
+        extents = cr.text_extents(label)
+        tw = extents[2]
+        cr.move_to(cx - tw / 2, cy + target / 2 + 36)
+        cr.show_text(label)
+        return False
+
+
+def main():
+    force_reduced = "--reduced-phosphor" in sys.argv
+    force_full = "--full" in sys.argv or "--force-spin" in sys.argv
+    if not os.path.isfile(LOGO):
+        print("missing", LOGO, file=sys.stderr)
+        return 1
+
+    if force_full:
+        animate = True
+    else:
+        animate = not effects_off(force_reduced)
+
+    xid = None
+    env = os.environ.get("XSCREENSAVER_WINDOW", "").strip()
+    if env:
+        try:
+            xid = int(env, 0)
+        except ValueError:
+            xid = None
+
+    # Preview without embed: vaultos-spin-saver --preview
+    if "--preview" in sys.argv:
+        xid = None
+
+    print(
+        f"vaultos-spin-saver animate={animate} xid={xid} phosphor={phosphor_mode()} theme={theme_name() or '?'}",
+        flush=True,
+    )
+
+    def cleanup(*_a):
+        try:
+            Gtk.main_quit()
+        except Exception:
+            pass
+
+    signal.signal(signal.SIGTERM, cleanup)
+    signal.signal(signal.SIGINT, cleanup)
+
+    win = Saver(animate=animate, embed_xid=xid)
+    win.show_all()
+    Gtk.main()
+    return 0
+
+
+if __name__ == "__main__":
+    # Fix label positioning bug: recompute target in on_draw
+    sys.exit(main())

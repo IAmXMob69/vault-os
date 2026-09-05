@@ -1,0 +1,76 @@
+/* Vault.OS notify — HUD-04
+   xfce-notify-4.0 theme. Separate GTK context; import CANON tokens.
+   280x80 panel-black plate, bevel stamp. Amber is warn, not chrome.
+*/
+@import url("tokens.css");
+
+#XfceNotifyWindow {
+  background-color: @panel_black;
+  background-image: none;
+  border: none;
+  border-radius: 0;
+  padding: 8px;
+  min-width: 280px;
+  min-height: 80px;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+}
+
+#XfceNotifyWindow:hover {
+  background-color: @panel_black;
+}
+
+#XfceNotifyWindow label,
+#XfceNotifyWindow image {
+  color: @phos;
+}
+
+#XfceNotifyWindow label#summary {
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+  font-size: 9pt;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  color: @phos;
+  text-shadow: 0 0 1px @phos;
+}
+
+#XfceNotifyWindow label#body,
+#XfceNotifyWindow label#appname {
+  font-family: "Overpass Mono", "Share Tech Mono", "Terminus", monospace;
+  font-size: 10pt;
+  color: @phos_hot;
+}
+
+#XfceNotifyWindow button {
+  border: none;
+  border-radius: 2px;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  background-image: none;
+  background-color: @inset;
+  color: @phos;
+  min-height: 24px;
+  font-family: "Overpass Mono", "Share Tech Mono", monospace;
+}
+
+#XfceNotifyWindow button:hover {
+  color: @phos_hot;
+  background-color: @phosphor_dim;
+}
+
+#XfceNotifyWindow progressbar {
+  min-height: 4px;
+  border-radius: 0;
+}
+
+#XfceNotifyWindow progressbar progress {
+  background-image: none;
+  background-color: @phos;
+  border-radius: 0;
+}
+
+#XfceNotifyWindow progressbar trough {
+  background-image: none;
+  background-color: @vault_black;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 @bevel_lo, 1px 1px 0 @bevel_hi;
+}

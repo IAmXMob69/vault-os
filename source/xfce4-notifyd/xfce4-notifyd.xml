@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<channel name="xfce4-notifyd" version="1.0">
+  <property name="theme" type="string" value="Vault.OS"/>
+  <property name="notify-location" type="uint" value="2"/>
+  <property name="initial-opacity" type="double" value="1"/>
+  <property name="expire-timeout-enabled" type="bool" value="true"/>
+  <property name="expire-timeout" type="int" value="4"/>
+  <property name="expire-timeout-allow-override" type="bool" value="false"/>
+  <property name="do-fadeout" type="bool" value="false"/>
+  <property name="do-slideout" type="bool" value="false"/>
+  <property name="min-width-enabled" type="bool" value="true"/>
+  <property name="min-width" type="uint" value="280"/>
+  <property name="do-not-disturb" type="bool" value="false"/>
+  <property name="gauge-ignores-dnd" type="bool" value="false"/>
+  <property name="show-notifications-on" type="string" value="active-monitor"/>
+</channel>

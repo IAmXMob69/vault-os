@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+"""Vault.OS — Arch logo MADE OF CODE, spinning in place (Y-axis). VDS-01 / TRM-05.
+
+Honors reduced phosphor (a11y):
+  --reduced-phosphor          force effects off (static mark; PERIOD unused)
+  or ~/.config/Vault.OS/terminal-phosphor in {reduced,clear}
+  or xsettings ThemeName == Vault.OS-Reduced
+
+PERIOD stays 8.0. Spin/bloom are opt-in; reduced/clear set them off.
+111 spinner stays Hidden (separate autostart).
+Desktop canon: --full --instance desktop (never --reduced-phosphor on that instance).
+"""
+import argparse
+import math
+import os
+import signal
+import subprocess
+import sys
+
+import cairo
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+from gi.repository import Gtk, Gdk, GLib
+
+
+LOGO = os.path.expanduser("~/.local/share/backgrounds/Vault.OS/arch-logo-code.png")
+PERIOD = 8.0  # seconds per full spin — snappy, still readable
+PHOSPHOR_STATE = os.path.expanduser("~/.config/Vault.OS/terminal-phosphor")
+
+
+def phosphor_mode():
+    try:
+        return open(PHOSPHOR_STATE).read().strip().lower() or "reduced"
+    except Exception:
+        return "reduced"
+
+
+def theme_name():
+    try:
+        out = subprocess.check_output(
+            ["xfconf-query", "-c", "xsettings", "-p", "/Net/ThemeName"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+        return out
+    except Exception:
+        return ""
+
+
+def effects_off(force_flag: bool) -> bool:
+    """True when CRT/spin effects must stay off (reduced phosphor)."""
+    if force_flag:
+        return True
+    spin = os.path.expanduser("~/.config/Vault.OS/spin")
+    if os.path.isfile(spin):
+        val = open(spin).read().strip().lower()
+        if val in ("0", "off", "false", "no"):
+            return True
+    mode = phosphor_mode()
+    if mode in ("reduced", "clear"):
+        return True
+    if theme_name() == "Vault.OS-Reduced":
+        return True
+    return False
+
+
+class Spin(Gtk.Window):
+    def __init__(self, animate: bool):
+        super().__init__()
+        self.animate = animate
+        self.set_title("Vault.OS Arch Code")
+        self.set_decorated(False)
+        self.set_app_paintable(True)
+        self.set_resizable(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
+        self.set_accept_focus(False)
+        self.set_focus_on_map(False)
+        self.set_keep_below(True)
+        self.stick()
+        # DOCK fullscreen starved Xorg; DESKTOP can sink under wallpaper. keep_below is enough.
+        # NORMAL, logo-sized: a fullscreen DOCK window at 30fps starved Xorg
+        # until new apps (including the terminal) stopped mapping.
+        screen = self.get_screen()
+        visual = screen.get_rgba_visual()
+        if visual is not None and screen.is_composited():
+            self.set_visual(visual)
+        self.angle = 0.0
+        src = cairo.ImageSurface.create_from_png(LOGO)
+        sw, sh = src.get_width(), src.get_height()
+        target = 360
+        if sw > target:
+            scale = target / float(sw)
+            img = cairo.ImageSurface(cairo.FORMAT_ARGB32, target, int(sh * scale))
+            cr = cairo.Context(img)
+            cr.scale(scale, scale)
+            cr.set_source_surface(src, 0, 0)
+            cr.paint()
+            self.surface = img
+        else:
+            self.surface = src
+        self.lw = self.surface.get_width()
+        self.lh = self.surface.get_height()
+        display = Gdk.Display.get_default()
+        mon = display.get_primary_monitor()
+        geo = mon.get_geometry()
+        self.set_default_size(self.lw, self.lh)
+        self.move(
+            geo.x + (geo.width - self.lw) // 2,
+            geo.y + (geo.height - self.lh) // 2 - 40,
+        )
+        self.connect("draw", self.on_draw)
+        self.connect("realize", self.on_realize)
+        self.connect("delete-event", Gtk.main_quit)
+        if self.animate:
+            GLib.timeout_add(66, self.tick)
+
+    def on_realize(self, *_):
+        region = cairo.Region()
+        self.input_shape_combine_region(region)
+        try:
+            self.get_window().set_pass_through(True)
+        except Exception:
+            pass
+
+    def tick(self):
+        # Y-axis spin in place (full phosphor only). 66ms ≈ 15fps — smooth without starving Xorg.
+        self.angle = (self.angle + (2 * math.pi) * (0.066 / PERIOD)) % (2 * math.pi)
+        self.queue_draw()
+        return True
+
+    def on_draw(self, _w, cr):
+        cr.set_operator(cairo.OPERATOR_SOURCE)
+        cr.set_source_rgba(0, 0, 0, 0)
+        cr.paint()
+        cr.set_operator(cairo.OPERATOR_OVER)
+        alloc = self.get_allocation()
+        # Window is logo-sized; center in the widget (screen offset is set in move()).
+        cx = alloc.width / 2
+        cy = alloc.height / 2
+        cr.save()
+        cr.translate(cx, cy)
+        if self.animate:
+            # perspective Y-spin: scale X by cos(angle); stay fixed at center
+            sx = math.cos(self.angle)
+            cr.scale(max(0.08, abs(sx)), 1.0)
+            if sx < 0:
+                cr.scale(-1, 1)  # show back as mirror — still "in place"
+        # reduced/clear: static face-on mark, PERIOD unused, no foreshorten
+        cr.set_source_surface(self.surface, -self.lw / 2, -self.lh / 2)
+        cr.paint()
+        cr.restore()
+        return False
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Vault.OS Arch code mark (Y-axis spin)")
+    ap.add_argument(
+        "--reduced-phosphor",
+        action="store_true",
+        help="Effects off: static mark (also auto when terminal-phosphor is reduced/clear or ThemeName Vault.OS-Reduced)",
+    )
+    ap.add_argument(
+        "--full",
+        action="store_true",
+        help="Force spin on (ignore reduced state) — opt-in CRT only",
+    )
+    ap.add_argument(
+        "--instance",
+        default="desktop",
+        help="Single-instance lock name (desktop vs screensaver)",
+    )
+    args = ap.parse_args()
+
+    if not os.path.isfile(LOGO):
+        print("missing", LOGO, file=sys.stderr)
+        return 1
+
+    if args.full:
+        animate = True
+    else:
+        animate = not effects_off(args.reduced_phosphor)
+
+    inst = "".join(c if c.isalnum() or c in "-_" else "-" for c in (args.instance or "desktop"))
+    lock = os.path.expanduser(f"~/.cache/vaultos-spin-arch-{inst}.lock")
+    os.makedirs(os.path.dirname(lock), exist_ok=True)
+    if os.path.exists(lock):
+        try:
+            old = int(open(lock).read().strip() or "0")
+            os.kill(old, 0)
+            print("already running", old)
+            return 0
+        except Exception:
+            os.remove(lock)
+    open(lock, "w").write(str(os.getpid()))
+
+    def cleanup(*_a):
+        try:
+            os.remove(lock)
+        except Exception:
+            pass
+        try:
+            Gtk.main_quit()
+        except Exception:
+            pass
+
+    signal.signal(signal.SIGTERM, cleanup)
+    signal.signal(signal.SIGINT, cleanup)
+    try:
+        Gdk.set_program_class("vaultos-spin-arch")
+    except Exception:
+        pass
+    mode = phosphor_mode()
+    print(
+        f"vaultos-spin-arch animate={animate} phosphor={mode} theme={theme_name() or '?'}",
+        flush=True,
+    )
+    win = Spin(animate=animate)
+    win.show_all()
+    Gtk.main()
+    cleanup()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
