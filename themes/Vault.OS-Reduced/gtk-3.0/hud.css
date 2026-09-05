@@ -1,6 +1,6 @@
-/* Vault.OS HUD — HUD-04
+/* Vault.OS HUD — HUD
    Panel, whisker, clock, tasklist LED rail.
-   Consumes VDS-01 CANON tokens. Do not redeclare colors.
+   Consumes CANON tokens. Do not redeclare colors.
    Active tab is a phosphor LED rail, not a highlighter.
    Notify chrome lives in xfce-notify-4.0.
 */

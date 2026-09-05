@@ -1,6 +1,6 @@
-/* Vault.OS GTK-3 — GTK-02
+/* Vault.OS GTK-3 — GTK
    REDUCED PHOSPHOR variant. tokens.css here IS tokens-reduced.css. Effects off.
-   xfwm4 is XWM-03. Panel/notify is HUD-04 (hud.css). Terminal well is TRM-05 (terminal.css).
+   Window decorations are xfwm4. Panel/notify is hud.css. Terminal well is terminal.css.
    Every plate speaks lintel: 2px jamb (bevel-hi in, bevel-lo out) + LED rail on active.
    A11y: @focus_ring / @text_* / @status_*. Density pass: 24px hits, quieter menus (no shout-case), tighter padding. No blur. No scanlines on widgets.
 */
@@ -946,7 +946,7 @@ undershoot, overshoot { background: none; }
   color: @theme_selected_fg_color;
 }
 
-/* --- a11y selected contrast (Accessability Bot) --- */
+/* --- a11y selected contrast (accessibility) --- */
 .view:selected:focus,
 treeview:selected:focus {
   background-color: @theme_selected_bg_color;
@@ -954,13 +954,13 @@ treeview:selected:focus {
   box-shadow: inset 3px 0 0 0 @phosphor_primary;
 }
 
-/* --- spinner: hide idle Thunar menubar throbber (no black square) ---
+/* --- spinner: hide idle Thunar menubar indicator (no black square) ---
    GTK 3.24 loads gtk-3.20/ — keep identical in gtk-3.0 + gtk-3.20.
    Thunar: right-justified insensitive menuitem + always-visible GtkSpinner;
    active binds to spinner:checked (with :disabled on the host).
    DO NOT opacity:0 the host menuitem — child busy glyph cannot paint through it.
    Idle plate fix: transparent host + collapse spinner allocation via negative margin.
-   VDS: lasting home is theme gtk.css; overlay stays HUD-import only. */
+   Lasting home is theme gtk.css; overlay stays HUD-import only. */
 @keyframes vaultos-spin {
   to { -gtk-icon-transform: rotate(1turn); }
 }
