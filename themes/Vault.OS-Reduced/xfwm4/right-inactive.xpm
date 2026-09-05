@@ -1,0 +1,8 @@
+/* XPM */
+/* right-inactive */
+static char * right_inactive_xpm[] = {
+"2 1 2 1",
+"L c #050605 s inactive_shadow_1",
+"H c #3A463A s inactive_highlight_1",
+"HL"
+};

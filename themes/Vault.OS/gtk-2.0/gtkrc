@@ -1,0 +1,110 @@
+# Vault.OS GTK-2 — GTK-02
+# Color values consumed from VDS-01 tokens.css. Do not invent greens.
+# phosphor #1AFF6B / steel-900 #0C0F0C / well #070807 / seam #394139
+
+gtk-color-scheme = "fg_color:#1AFF6B\nbg_color:#0C0F0C\nbase_color:#070807\ntext_color:#66FF9C\nselected_bg_color:#0E8A3A\nselected_fg_color:#66FF9C\ntooltip_bg_color:#121612\ntooltip_fg_color:#1AFF6B"
+
+style "vault-default"
+{
+  GtkWidget::focus-line-width = 2
+  GtkWidget::focus-line-pattern = "\1"
+  GtkWidget::focus-padding = 0
+  GtkWidget::link-color = "#8A8F86"
+  GtkWidget::visited-link-color = "#8A8F86"
+
+  GtkRange::slider-width = 8
+  GtkRange::trough-border = 0
+  GtkRange::stepper-size = 0
+  GtkScrollbar::has-backward-stepper = 0
+  GtkScrollbar::has-forward-stepper = 0
+  GtkScrollbar::min-slider-length = 16
+  GtkCheckButton::indicator-size = 12
+  GtkCheckMenuItem::indicator-size = 12
+  GtkRadioButton::indicator-size = 12
+
+  GtkButton::inner-border = { 4, 4, 2, 2 }
+  GtkButton::default-border = { 0, 0, 0, 0 }
+  GtkButton::child-displacement-x = 0
+  GtkButton::child-displacement-y = 0
+
+  GtkEntry::inner-border = { 4, 4, 2, 2 }
+
+  xthickness = 1
+  ythickness = 1
+
+  fg[NORMAL]      = "#1AFF6B"
+  fg[PRELIGHT]    = "#66FF9C"
+  fg[SELECTED]    = "#66FF9C"
+  fg[ACTIVE]      = "#1AFF6B"
+  fg[INSENSITIVE] = "#7E8C7D"
+
+  bg[NORMAL]      = "#0C0F0C"
+  bg[PRELIGHT]    = "#121612"
+  bg[SELECTED]    = "#0E8A3A"
+  bg[ACTIVE]      = "#121612"
+  bg[INSENSITIVE] = "#0C0F0C"
+
+  base[NORMAL]      = "#070807"
+  base[PRELIGHT]    = "#070807"
+  base[ACTIVE]      = "#0E8A3A"
+  base[SELECTED]    = "#0E8A3A"
+  base[INSENSITIVE] = "#070807"
+
+  text[NORMAL]      = "#66FF9C"
+  text[PRELIGHT]    = "#66FF9C"
+  text[ACTIVE]      = "#66FF9C"
+  text[SELECTED]    = "#66FF9C"
+  text[INSENSITIVE] = "#7E8C7D"
+}
+
+class "GtkWidget" style "vault-default"
+
+style "vault-button" = "vault-default"
+{
+  bg[NORMAL]   = "#121612"
+  bg[PRELIGHT] = "#262C26"
+  bg[ACTIVE]   = "#0E8A3A"
+  bg[INSENSITIVE] = "#0C0F0C"
+}
+class "GtkButton"      style "vault-button"
+class "GtkToggleButton" style "vault-button"
+class "GtkOptionMenu"  style "vault-button"
+
+style "vault-entry" = "vault-default"
+{
+  bg[NORMAL] = "#070807"
+  base[NORMAL] = "#070807"
+  text[NORMAL] = "#66FF9C"
+}
+class "GtkEntry"    style "vault-entry"
+class "GtkTextView" style "vault-entry"
+class "GtkSpinButton" style "vault-entry"
+
+style "vault-menu" = "vault-default"
+{
+  bg[NORMAL]   = "#0C0F0C"
+  bg[PRELIGHT] = "#0E8A3A"
+  fg[PRELIGHT] = "#66FF9C"
+  xthickness = 1
+  ythickness = 1
+}
+class "GtkMenu"     style "vault-menu"
+class "GtkMenuBar"  style "vault-menu"
+widget_class "*MenuItem*" style "vault-menu"
+
+style "vault-tooltip" = "vault-default"
+{
+  bg[NORMAL] = "#121612"
+  fg[NORMAL] = "#1AFF6B"
+}
+widget "gtk-tooltip*" style "vault-tooltip"
+
+style "vault-header" = "vault-default"
+{
+  bg[NORMAL] = "#121612"
+  fg[NORMAL] = "#1AFF6B"
+}
+widget_class "*Header*" style "vault-header"
+class "GtkToolbar" style "vault-header"
+
+gtk-font-name = "Share Tech Mono 10"

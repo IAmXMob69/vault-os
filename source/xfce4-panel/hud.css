@@ -1,0 +1,232 @@
+/* Vault.OS HUD — HUD-04
+   Panel, whisker, clock, tasklist LED rail.
+   Consumes VDS-01 CANON tokens. Do not redeclare colors.
+   Active tab is a phosphor LED rail, not a highlighter.
+   Notify chrome lives in xfce-notify-4.0.
+*/
+@import url("tokens.css");
+
+/* --- panel chassis --- */
+.xfce4-panel,
+.xfce4-panel.background {
+  background-color: @panel_black;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  -gtk-icon-shadow: none;
+  font-family: "Share Tech Mono", "Overpass Mono", "Terminus", monospace;
+  font-size: 9pt;
+  font-weight: bold;
+  min-height: 28px;
+}
+
+.xfce4-panel * {
+  -gtk-icon-shadow: none;
+  outline-width: 0;
+}
+
+.xfce4-panel label {
+  color: @phos;
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+  font-size: 9pt;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 1px @phos;
+}
+
+/* stamped plate, LED off */
+.xfce4-panel button,
+.xfce4-panel button.flat,
+.xfce4-panel .toggle {
+  background-color: transparent;
+  background-image: none;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  padding: 0 6px;
+  min-height: 22px;
+}
+
+.xfce4-panel button:hover,
+.xfce4-panel .toggle:hover {
+  background-color: alpha(@phosphor_ghost, 0.55);
+  color: @phos_hot;
+}
+
+/* LED rail — not a fill highlighter */
+.xfce4-panel button:checked,
+.xfce4-panel button:active,
+.xfce4-panel .toggle:checked {
+  background-color: alpha(@phosphor_ghost, 0.35);
+  color: @phos_hot;
+  border-bottom: 2px solid @phos;
+  box-shadow: inset 1px 1px 0 @bevel_hi, inset 0 -2px 0 @phos, 1px 1px 0 @bevel_lo;
+}
+
+.xfce4-panel button:disabled,
+.xfce4-panel label:disabled {
+  color: @steel;
+  text-shadow: none;
+  border-bottom-color: transparent;
+}
+
+
+/* --- tasklist: LED rail (protected — do not crush labels) --- */
+.xfce4-panel .tasklist,
+.xfce4-panel .tasklist * {
+  min-height: 0;
+}
+
+.xfce4-panel .tasklist button,
+.xfce4-panel .tasklist .toggle,
+.xfce4-panel wnck-pager {
+  min-height: 22px;
+  min-width: 48px;
+  padding: 0 8px;
+  background-color: transparent;
+  border-bottom: 2px solid transparent;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+}
+
+.xfce4-panel .tasklist button label,
+.xfce4-panel .tasklist .toggle label {
+  color: @phos;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 1px @phos;
+  opacity: 1;
+}
+
+.xfce4-panel .tasklist button:checked,
+.xfce4-panel .tasklist .toggle:checked {
+  background-color: transparent;
+  background-image: none;
+  border-bottom: 2px solid @phos;
+  box-shadow: inset 1px 1px 0 @bevel_hi, inset 0 -2px 0 @phos;
+  color: @phos_hot;
+}
+
+.xfce4-panel .tasklist button:checked label,
+.xfce4-panel .tasklist .toggle:checked label {
+  color: @phos_hot;
+  text-shadow: 0 0 1px @phos;
+  opacity: 1;
+}
+
+.xfce4-panel .tasklist button.urgent,
+.xfce4-panel button.urgent,
+.xfce4-panel .urgent label {
+  color: @rad_red;
+  border-bottom: 2px solid @rad_red;
+  text-shadow: 0 0 1px @rad_red;
+}
+
+/* --- clock readout --- */
+.xfce4-panel .clock-plugin,
+.xfce4-panel .clock-plugin label,
+.xfce4-panel #clock-button,
+.xfce4-panel #clock-button label {
+  font-family: "Share Tech Mono", "Overpass Mono", "Terminus", monospace;
+  font-size: 10pt;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  color: @phos;
+  text-shadow: 0 0 1px @phos;
+  border-bottom: none;
+  box-shadow: none;
+}
+
+/* --- launcher popup / whisker --- */
+.xfce4-panel menu,
+.xfce4-panel .menu,
+/* --- whisker (tight plate — 320×420, no opacity theater) --- */
+#whiskermenu-window {
+  background-color: @panel_black;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+  opacity: 1;
+}
+
+#whiskermenu-window * {
+  -gtk-icon-shadow: none;
+}
+
+#whiskermenu-window .view,
+#whiskermenu-window treeview,
+#whiskermenu-window list,
+#whiskermenu-window list row {
+  background-color: @panel_black;
+  color: @phos;
+  min-height: 22px;
+  padding: 0 6px;
+}
+
+#whiskermenu-window .view:selected,
+#whiskermenu-window treeview:selected,
+#whiskermenu-window row:selected,
+#whiskermenu-window list row:selected,
+#whiskermenu-window list row:hover {
+  background-color: alpha(@phosphor_ghost, 0.45);
+  color: @phos_hot;
+  min-height: 22px;
+  box-shadow: inset 2px 0 0 @phos;
+}
+
+#whiskermenu-window entry {
+  background-color: @vault_black;
+  color: @phos_hot;
+  border: none;
+  min-height: 24px;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 @bevel_lo, 1px 1px 0 @bevel_hi;
+  padding: 2px 6px;
+}
+
+#whiskermenu-window entry:focus {
+  box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_lo;
+}
+
+#whiskermenu-window button {
+  border-radius: 0;
+  min-height: 24px;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+}
+
+#whiskermenu-window button:hover {
+  background-color: alpha(@phosphor_ghost, 0.55);
+  color: @phos_hot;
+}
+
+#whiskermenu-window button:checked {
+  border-bottom: 2px solid @phos;
+  box-shadow: inset 0 -2px 0 @phos, inset 1px 1px 0 @bevel_hi;
+}
+
+#whiskermenu-window button:focus {
+  box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+}
+
+
+/* HUD-04 a11y focus */
+.xfce4-panel button:focus,
+.xfce4-panel .toggle:focus {
+  box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  outline: none;
+}
+
+/* a11y hits: panel chrome only — tasklist keeps 22px floor */
+.xfce4-panel .applicationsmenu-button,
+.xfce4-panel #clock-button,
+.xfce4-panel .systray,
+.xfce4-panel .notification-plugin,
+.xfce4-panel .actions-button,
+.xfce4-panel .launcher button,
+.xfce4-panel .directorymenu-button {
+  min-height: 28px;
+}

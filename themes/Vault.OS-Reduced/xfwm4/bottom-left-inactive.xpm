@@ -1,0 +1,9 @@
+/* XPM */
+/* bottom-left-inactive */
+static char * bottom_left_inactive_xpm[] = {
+"2 2 2 1",
+"L c #050605 s inactive_shadow_1",
+"H c #3A463A s inactive_highlight_1",
+"LH",
+"LL"
+};

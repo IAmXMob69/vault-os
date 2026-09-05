@@ -1,0 +1,15 @@
+/* Vault.OS terminal well — TRM-05 FULL
+   Bloom + recessed well. Scanlines = tiled PNG via terminalrc.
+*/
+@import url("tokens.css");
+
+vte-terminal {
+  padding: 10px 12px;
+  background-color: @vault_black;
+  color: @phos;
+  caret-color: @phos;
+  box-shadow:
+    inset 1px 1px 0 @bevel_lo,
+    inset -1px -1px 0 @bevel_hi,
+    inset 0 0 1px @phos;
+}

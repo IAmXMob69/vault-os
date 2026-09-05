@@ -1,0 +1,338 @@
+/* Vault.OS GTK4 user overlay — GTK-02
+   Live: ~/.config/gtk-4.0/gtk.css
+   CANON only. No PipBoy #33FF6A / #44FF3D.
+   Dense, quiet, stamped metal — not flat neon.
+*/
+
+/* --- VTE / terminal --- */
+VteTerminal, vte-terminal {
+  padding: 10px 12px;
+  color: #1AFF6B;
+  background-color: #070807;
+}
+
+/* --- Window chrome --- */
+window {
+  background-color: #070807;
+  color: #1AFF6B;
+}
+
+/* --- Buttons: stamped plate, 24px hit --- */
+button {
+  min-height: 24px;
+  min-width: 24px;
+  padding: 2px 10px;
+  border-radius: 0;
+  border: 1px solid #050605;
+  background-color: #121612;
+  color: #1AFF6B;
+  box-shadow:
+    inset 1px 1px 0 #2A332A,
+    inset -1px -1px 0 #050605;
+  outline: none;
+}
+
+button:hover {
+  background-color: #16301E;
+  color: #66FF9C;
+}
+
+button:active,
+button:checked {
+  background-color: #121612;
+  color: #1AFF6B;
+  box-shadow:
+    inset 1px 1px 0 #050605,
+    inset -1px -1px 0 #2A332A,
+    inset 0 -2px 0 #1AFF6B;
+}
+
+button:disabled {
+  background-color: #070807;
+  color: #8A8F86;
+  box-shadow: none;
+}
+
+button.destructive-action {
+  color: #C41E3A;
+  box-shadow:
+    inset 1px 1px 0 #2A332A,
+    inset -1px -1px 0 #050605,
+    inset 0 -2px 0 #C41E3A;
+}
+
+button:focus-visible {
+  outline: 2px solid #1AFF6B;
+  outline-offset: -2px;
+}
+
+/* --- Entries: recessed well --- */
+entry,
+searchentry,
+spinbutton,
+passwordentry {
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 0;
+  border: 1px solid #050605;
+  background-color: #070807;
+  color: #1AFF6B;
+  box-shadow:
+    inset 1px 1px 0 #050605,
+    inset -1px -1px 0 #2A332A;
+  caret-color: #1AFF6B;
+}
+
+entry:focus,
+searchentry:focus,
+spinbutton:focus,
+passwordentry:focus {
+  box-shadow:
+    inset 1px 1px 0 #050605,
+    inset -1px -1px 0 #2A332A,
+    inset 0 -2px 0 #1AFF6B;
+  outline: 2px solid #1AFF6B;
+  outline-offset: -2px;
+}
+
+entry:disabled {
+  color: #8A8F86;
+  background-color: #070807;
+}
+
+/* --- Headerbar / titlebar lintel --- */
+headerbar,
+.windowhandle {
+  min-height: 28px;
+  padding: 0 6px;
+  border-radius: 0;
+  background-color: #0C100C;
+  color: #1AFF6B;
+  border-bottom: 1px solid #050605;
+  box-shadow:
+    inset 0 2px 0 #2A332A,
+    inset 0 -2px 0 #050605,
+    inset 0 -2px 0 #1AFF6B;
+}
+
+headerbar:backdrop {
+  box-shadow:
+    inset 0 2px 0 #2A332A,
+    inset 0 -2px 0 #050605;
+  color: #8A8F86;
+}
+
+headerbar button {
+  min-height: 20px;
+  min-width: 20px;
+  padding: 1px 6px;
+}
+
+headerbar button.close:hover,
+headerbar button.close:active {
+  background-color: #121612;
+  color: #C41E3A;
+  box-shadow:
+    inset 1px 1px 0 #2A332A,
+    inset -1px -1px 0 #050605,
+    inset 0 -2px 0 #C41E3A;
+}
+
+/* --- Menus / popovers: dense 20px, quiet hover --- */
+popover,
+popover.background,
+menu {
+  border-radius: 0;
+  border: 1px solid #050605;
+  background-color: #0C100C;
+  color: #1AFF6B;
+  box-shadow:
+    inset 1px 1px 0 #2A332A,
+    inset -1px -1px 0 #050605;
+  padding: 2px 0;
+}
+
+popover contents {
+  background-color: #0C100C;
+  padding: 2px 0;
+}
+
+menuitem,
+popover modelbutton,
+.menu menuitem {
+  min-height: 20px;
+  padding: 1px 10px;
+  border-radius: 0;
+  color: #1AFF6B;
+}
+
+menuitem:hover,
+menuitem:selected,
+popover modelbutton:hover,
+popover modelbutton:selected {
+  background-color: #121612;
+  color: #1AFF6B;
+  box-shadow: inset 2px 0 0 #1AFF6B;
+}
+
+/* --- Lists / views selected: AAA inset + phosphor --- */
+listview row:selected,
+listview row:selected:focus,
+columnview row:selected,
+gridview child:selected,
+treeview:selected,
+.view:selected {
+  background-color: #121612;
+  color: #1AFF6B;
+}
+
+listview row:hover,
+columnview row:hover {
+  background-color: #0C1810;
+}
+
+/* --- Notebook tabs --- */
+notebook > header tab {
+  min-height: 22px;
+  padding: 2px 10px;
+  border-radius: 0;
+  background-color: #0C100C;
+  color: #8A8F86;
+  border: 1px solid #050605;
+  box-shadow: inset 1px 1px 0 #2A332A;
+}
+
+notebook > header tab:checked,
+notebook > header tab:selected {
+  background-color: #121612;
+  color: #1AFF6B;
+  box-shadow:
+    inset 1px 1px 0 #2A332A,
+    inset 0 -2px 0 #1AFF6B;
+}
+
+/* --- Scrollbars: recessed trough --- */
+scrollbar {
+  background-color: #070807;
+}
+
+scrollbar slider {
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 0;
+  background-color: #2A332A;
+  border: 1px solid #050605;
+  box-shadow:
+    inset 1px 1px 0 #2A332A,
+    inset -1px -1px 0 #050605;
+}
+
+scrollbar slider:hover,
+scrollbar slider:active {
+  background-color: #1AFF6B;
+}
+
+scrollbar trough {
+  background-color: #070807;
+  border: 1px solid #050605;
+  box-shadow: inset 1px 1px 0 #050605;
+}
+
+/* --- Progress / level bar --- */
+progressbar trough,
+levelbar trough {
+  min-height: 8px;
+  border-radius: 0;
+  background-color: #070807;
+  border: 1px solid #050605;
+}
+
+progressbar progress,
+levelbar block.filled {
+  border-radius: 0;
+  background-color: #1AFF6B;
+}
+
+/* --- Check / radio / switch --- */
+check,
+radio {
+  min-width: 14px;
+  min-height: 14px;
+  border-radius: 0;
+  border: 1px solid #050605;
+  background-color: #070807;
+  box-shadow: inset 1px 1px 0 #050605;
+  color: #1AFF6B;
+}
+
+check:checked,
+radio:checked {
+  background-color: #121612;
+  color: #1AFF6B;
+  box-shadow:
+    inset 1px 1px 0 #050605,
+    inset 0 0 0 2px #1AFF6B;
+}
+
+switch {
+  border-radius: 0;
+  border: 1px solid #050605;
+  background-color: #070807;
+  min-width: 40px;
+  min-height: 20px;
+}
+
+switch:checked {
+  background-color: #121612;
+  color: #1AFF6B;
+  box-shadow: inset 0 -2px 0 #1AFF6B;
+}
+
+switch slider {
+  border-radius: 0;
+  background-color: #2A332A;
+  border: 1px solid #050605;
+}
+
+switch:checked slider {
+  background-color: #1AFF6B;
+}
+
+/* --- Tooltip / infobar --- */
+tooltip,
+tooltip.background {
+  border-radius: 0;
+  border: 1px solid #1AFF6B;
+  background-color: #070807;
+  color: #1AFF6B;
+  padding: 4px 8px;
+}
+
+infobar {
+  border-radius: 0;
+  background-color: #121612;
+  color: #1AFF6B;
+  border: 1px solid #050605;
+}
+
+infobar.error {
+  color: #C41E3A;
+  box-shadow: inset 0 -2px 0 #C41E3A;
+}
+
+/* --- Links --- */
+link {
+  color: #1AFF6B;
+}
+link:visited {
+  color: #0E8A3A;
+}
+link:hover {
+  color: #66FF9C;
+}
+
+/* --- Selection --- */
+selection {
+  background-color: #121612;
+  color: #1AFF6B;
+}

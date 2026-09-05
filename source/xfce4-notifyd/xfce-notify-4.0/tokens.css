@@ -1,0 +1,166 @@
+/* Vault.OS tokens — VDS-01  (CANON)
+   Phosphor hue locked at 141°. Primary #1AFF6B.
+   If it is not in this file, it does not ship.
+   GTK3: @define-color. GTK-02 / HUD-04 import this file. Do not redeclare.
+*/
+
+/* --- CANON --- */
+@define-color phosphor_primary #1AFF6B;
+@define-color phosphor_dim     #0E8A3A;
+@define-color phosphor_ghost   #06381A;
+@define-color amber_warn       #FFB000;
+@define-color rad_red          #C41E3A;
+@define-color steel            #8A8F86;
+@define-color vault_black      #070807;
+@define-color panel_black      #0C0F0C;
+@define-color inset            #121612;
+@define-color bevel_hi         #2A332A;
+@define-color bevel_lo         #050605;
+
+/* derived phosphor stops — same hue 141, lightness only */
+@define-color phos_hot   #66FF9C;
+@define-color phos_white #D4EDDD;
+
+/* --- aliases (existing gtk/xfwm/hud names) --- */
+@define-color phos           @phosphor_primary;
+@define-color phos_dim       @phosphor_dim;
+@define-color phos_mid       @phosphor_dim;
+@define-color phos_bg        @vault_black;
+@define-color phos_bg_raised @phosphor_ghost;
+@define-color phos_black     @bevel_lo;
+
+@define-color steel_950 @vault_black;
+@define-color steel_900 @panel_black;
+@define-color steel_800 @inset;
+@define-color steel_700 @bevel_hi;
+@define-color steel_600 @bevel_hi;
+@define-color steel_500 #60665C;
+@define-color steel_400 @steel;
+@define-color steel_300 #C7C9C5;
+@define-color steel_200 #C7C9C5;
+
+@define-color gold     @amber_warn;
+@define-color gold_hot @amber_warn;
+@define-color gold_dim @amber_warn;
+@define-color rad      @rad_red;
+@define-color rad_hot  @rad_red;
+@define-color blood    @rad_red;
+@define-color blood_hot @rad_red;
+@define-color info     @steel;
+@define-color info_hot @steel;
+
+@define-color theme_bg_color           @panel_black;
+@define-color theme_fg_color           @phosphor_primary;
+@define-color theme_base_color         @inset;
+@define-color theme_text_color         @phos_hot;
+@define-color theme_selected_bg_color  @phosphor_dim;
+@define-color theme_selected_fg_color  @phosphor_primary;
+@define-color theme_unfocused_bg_color @panel_black;
+@define-color theme_unfocused_fg_color @steel;
+@define-color borders                  @bevel_hi;
+@define-color warning_color            @amber_warn;
+@define-color error_color              @rad_red;
+@define-color success_color            @phosphor_primary;
+@define-color destructive_color        @rad_red;
+@define-color link_color               @phosphor_dim;
+
+/* ANSI 16 — four inks only: vault-black, phosphor, amber-warn, rad-red, steel/bevel.
+   Cyan is phosphor. Magenta is rad-red. No sky blue. No copper. */
+@define-color ansi_0  #070807;
+@define-color ansi_1  #C41E3A;
+@define-color ansi_2  #0E8A3A;
+@define-color ansi_3  #FFB000;
+@define-color ansi_4  #2A332A;
+@define-color ansi_5  #C41E3A;
+@define-color ansi_6  #1AFF6B;
+@define-color ansi_7  #8A8F86;
+@define-color ansi_8  #121612;
+@define-color ansi_9  #C41E3A;
+@define-color ansi_10 #1AFF6B;
+@define-color ansi_11 #FFB000;
+@define-color ansi_12 #8A8F86;
+@define-color ansi_13 #C41E3A;
+@define-color ansi_14 #1AFF6B;
+@define-color ansi_15 #C7C9C5;
+
+:root {
+  --phos-hue: 141;
+
+  --phosphor-primary: #1AFF6B;
+  --phosphor-dim: #0E8A3A;
+  --phosphor-ghost: #06381A;
+  --amber-warn: #FFB000;
+  --rad-red: #C41E3A;
+  --steel: #8A8F86;
+  --vault-black: #070807;
+  --panel-black: #0C0F0C;
+  --inset: #121612;
+  --bevel-hi: #2A332A;
+  --bevel-lo: #050605;
+  --phos-hot: #66FF9C;
+  --phos-white: #D4EDDD;
+
+  --phos: #1AFF6B;
+  --phos-dim: #0E8A3A;
+  --phos-mid: #0E8A3A;
+  --phos-bg: #070807;
+  --phos-bg-raised: #06381A;
+  --phos-black: #050605;
+
+  --steel-950: #070807;
+  --steel-900: #0C0F0C;
+  --steel-800: #121612;
+  --steel-700: #2A332A;
+  --steel-600: #2A332A;
+  --steel-500: #60665C;
+  --steel-400: #8A8F86;
+  --steel-300: #C7C9C5;
+  --steel-200: #C7C9C5;
+
+  --gold: #FFB000;
+  --gold-hot: #FFB000;
+  --gold-dim: #FFB000;
+  --rad: #C41E3A;
+  --blood: #C41E3A;
+  --info: #8A8F86;
+
+  --ansi-0: #070807;
+  --ansi-1: #C41E3A;
+  --ansi-2: #0E8A3A;
+  --ansi-3: #FFB000;
+  --ansi-4: #2A332A;
+  --ansi-5: #C41E3A;
+  --ansi-6: #1AFF6B;
+  --ansi-7: #8A8F86;
+  --ansi-8: #121612;
+  --ansi-9: #C41E3A;
+  --ansi-10: #1AFF6B;
+  --ansi-11: #FFB000;
+  --ansi-12: #8A8F86;
+  --ansi-13: #C41E3A;
+  --ansi-14: #1AFF6B;
+  --ansi-15: #C7C9C5;
+
+  --font-ui: "Overpass Mono", "Share Tech Mono", "Terminus", monospace;
+  --font-mono: "PxPlus IBM VGA8", "Terminus", "Share Tech Mono", monospace;
+  --font-display: "Share Tech Mono", "Overpass Mono", monospace;
+  --font-size-ui: 9pt;
+  --font-size-mono: 10pt;
+  --font-size-title: 9pt;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius: 0px;
+  --radius-stamp: 2px;
+  --border: 1px;
+  --panel-height: 28px;
+  --titlebar-height: 24px;
+
+  --bevel: inset 1px 1px 0 #2A332A, 1px 1px 0 #050605;
+  --glow: 0 0 1px #1AFF6B;
+}

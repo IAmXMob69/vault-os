@@ -1,0 +1,16 @@
+/* Vault.OS terminal well — TRM-05
+   Phosphor bloom + recessed well only. Scanlines are the tiled PNG, not CSS.
+   Tokens only. No freelance green. No blur soup.
+*/
+@import url("tokens.css"); /* reduced pack */
+
+vte-terminal {
+  padding: 8px 10px;
+  background-color: @vault_black;
+  color: @phos;
+  caret-color: @phos;
+  box-shadow:
+    inset 1px 1px 0 @bevel_lo,
+    inset -1px -1px 0 @bevel_hi,
+    /* bloom off in reduced */
+}

@@ -1,0 +1,13 @@
+/* Vault.OS terminal well — TRM-05 CLEAR / a11y
+   Sharp phosphor on vault-black. No bloom. No scanlines.
+   Readable without CRT effects.
+*/
+@import url("tokens.css");
+
+vte-terminal {
+  padding: 10px 12px;
+  background-color: @vault_black;
+  color: @phos;
+  caret-color: @phos;
+  box-shadow: none;
+}
