@@ -4,4 +4,4 @@
 
 [`~/Vault.OS/ERRORS.md`](../../ERRORS.md)
 
-(Accessability Bot + Genius — single source of truth.)
+(Project pitfalls — keep in sync with root ERRORS.md.)

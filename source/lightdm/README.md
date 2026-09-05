@@ -1,13 +1,17 @@
-# HUD-04 lock / greeter
+# LightDM greeter
 
-## Live without root
-- Lock/logout CSS: `~/.themes/Vault.OS/gtk-3.0/lock.css` (imported by gtk.css)
-- Screensaver: personal slideshow on `vault-111.png`
-- A11y: 2px phosphor focus, 28px hits on panel + lock plates
+Vault.OS login greeter config and CSS. Requires a one-time system install.
 
-## Needs human (sudo once)
+## Without root
+
+Session lock uses the XFCE unlock plate (`../lock/lock.css`). Screensaver and lock behavior are documented in `../lock/SCREENSAVER.md`.
+
+## With root (once)
+
+```bash
+sudo cp ~/Projects/vault-os/source/lightdm/lightdm-gtk-greeter.conf \
+  /etc/lightdm/lightdm-gtk-greeter.conf
+# Restart LightDM only when ready to end the current session
 ```
-sudo cp ~/Vault.OS/source/lightdm/lightdm-gtk-greeter.conf /etc/lightdm/lightdm-gtk-greeter.conf
-sudo systemctl restart lightdm   # ends session — do at logout
-```
-Greeter CSS rides ThemeName=Vault.OS + `greeter.css` in the theme.
+
+Set `theme-name=Vault.OS` and the Vault.OS wallpaper path in the conf. Greeter CSS rides the Vault.OS GTK theme; `greeter.css` is the craft reference.
