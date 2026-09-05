@@ -1,7 +1,7 @@
-/* Vault.OS tokens — VDS-01  (CANON)
+/* Vault.OS tokens (CANON)
    Phosphor hue locked at 141°. Primary #1AFF6B.
    If it is not in this file, it does not ship.
-   GTK3: @define-color. GTK-02 / HUD-04 import this file. Do not redeclare.
+   GTK3: @define-color. Theme and HUD CSS import this file. Do not redeclare.
 */
 
 /* --- CANON --- */
@@ -83,7 +83,7 @@
 @define-color ansi_14 #1AFF6B;
 @define-color ansi_15 #C7C9C5;
 
-/* --- A11Y CANON (VDS-01 + Accessability Bot) ---
+/* --- Accessibility CANON ---
    Measured contrast on vault-black #070807:
    phosphor_primary 14.86 AAA | phos_hot 15.62 AAA | phos_white 16.20 AAA
    steel 6.07 AA | phosphor_dim 4.50 AA (borderline — chrome/LED only, not body)

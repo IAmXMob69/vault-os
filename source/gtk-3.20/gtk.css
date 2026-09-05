@@ -1,6 +1,6 @@
-/* Vault.OS GTK-3 — GTK-02
-   Consumes VDS-01 CANON tokens (+ a11y text_/focus_ring/status_*). Do not redeclare colors.
-   xfwm4 is XWM-03. Panel/notify is HUD-04 (hud.css). Terminal well is TRM-05 (terminal.css).
+/* Vault.OS GTK 3
+   Consumes CANON tokens (including a11y text_/focus_ring/status_*). Do not redeclare colors.
+   Window decorations are xfwm4. Panel/notify is hud.css. Terminal well is terminal.css.
    Every plate speaks lintel: 2px jamb (bevel-hi in, bevel-lo out) + LED rail on active.
    A11y: @focus_ring / @text_* / @status_*. Density pass: 24px hits, quieter menus (no shout-case), tighter padding. No blur. No scanlines on widgets.
 */
@@ -945,13 +945,13 @@ undershoot, overshoot { background: none; }
   color: @phos_hot;
 }
 
-/* --- spinner: hide idle Thunar menubar throbber (no black square) ---
+/* --- spinner: hide idle Thunar menubar indicator (no black square) ---
    GTK 3.24 loads gtk-3.20/ — keep identical in gtk-3.0 + gtk-3.20.
    Thunar: right-justified insensitive menuitem + always-visible GtkSpinner;
    active binds to spinner:checked (with :disabled on the host).
    DO NOT opacity:0 the host menuitem — child busy glyph cannot paint through it.
    Idle plate fix: transparent host + collapse spinner allocation via negative margin.
-   VDS: lasting home is theme gtk.css; overlay stays HUD-import only. */
+   Lasting home is theme gtk.css; overlay stays HUD-import only. */
 @keyframes vaultos-spin {
   to { -gtk-icon-transform: rotate(1turn); }
 }
