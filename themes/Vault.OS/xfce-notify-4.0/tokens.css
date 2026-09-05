@@ -1,7 +1,7 @@
-/* Vault.OS tokens — VDS-01  (CANON)
+/* Vault.OS tokens — (CANON)
    Phosphor hue locked at 141°. Primary #1AFF6B.
    If it is not in this file, it does not ship.
-   GTK3: @define-color. GTK-02 / HUD-04 import this file. Do not redeclare.
+   GTK3: @define-color. GTK themes import this file. Do not redeclare.
 */
 
 /* --- CANON --- */
@@ -54,7 +54,7 @@
 @define-color theme_base_color         @inset;
 @define-color theme_text_color         @phos_hot;
 @define-color theme_selected_bg_color  @phosphor_dim;
-@define-color theme_selected_fg_color  @phos_hot;
+@define-color theme_selected_fg_color  @phosphor_primary;
 @define-color theme_unfocused_bg_color @panel_black;
 @define-color theme_unfocused_fg_color @steel;
 @define-color borders                  @bevel_hi;
@@ -83,20 +83,84 @@
 @define-color ansi_14 #1AFF6B;
 @define-color ansi_15 #C7C9C5;
 
+:root {
+  --phos-hue: 141;
 
-/* --- A11Y CANON (VDS-01 + Accessability Bot) ---
-   Measured contrast on vault-black #070807:
-   phosphor_primary 14.86 AAA | phos_hot 15.62 AAA | phos_white 16.20 AAA
-   steel 6.07 AA | phosphor_dim 4.50 AA (borderline — chrome/LED only, not body)
-   amber_warn 10.95 AAA | rad_red 3.43 AA-large ONLY (never small body text alone)
-*/
-@define-color text_primary   @phosphor_primary;
-@define-color text_secondary #B7BEB4; /* AAA on vault-black */
-@define-color text_muted     @steel;  /* AA — labels/meta, not paragraphs */
-@define-color text_disabled  #60665C;
-@define-color focus_ring     @phosphor_primary;
+  --phosphor-primary: #1AFF6B;
+  --phosphor-dim: #0E8A3A;
+  --phosphor-ghost: #06381A;
+  --amber-warn: #FFB000;
+  --rad-red: #C41E3A;
+  --steel: #8A8F86;
+  --vault-black: #070807;
+  --panel-black: #0C0F0C;
+  --inset: #121612;
+  --bevel-hi: #2A332A;
+  --bevel-lo: #050605;
+  --phos-hot: #66FF9C;
+  --phos-white: #D4EDDD;
 
-/* Status: color is never the sole cue — pair with icon/label/shape */
-@define-color status_ok      @phosphor_primary;
-@define-color status_warn    @amber_warn;
-@define-color status_danger  @rad_red;
+  --phos: #1AFF6B;
+  --phos-dim: #0E8A3A;
+  --phos-mid: #0E8A3A;
+  --phos-bg: #070807;
+  --phos-bg-raised: #06381A;
+  --phos-black: #050605;
+
+  --steel-950: #070807;
+  --steel-900: #0C0F0C;
+  --steel-800: #121612;
+  --steel-700: #2A332A;
+  --steel-600: #2A332A;
+  --steel-500: #60665C;
+  --steel-400: #8A8F86;
+  --steel-300: #C7C9C5;
+  --steel-200: #C7C9C5;
+
+  --gold: #FFB000;
+  --gold-hot: #FFB000;
+  --gold-dim: #FFB000;
+  --rad: #C41E3A;
+  --blood: #C41E3A;
+  --info: #8A8F86;
+
+  --ansi-0: #070807;
+  --ansi-1: #C41E3A;
+  --ansi-2: #0E8A3A;
+  --ansi-3: #FFB000;
+  --ansi-4: #2A332A;
+  --ansi-5: #C41E3A;
+  --ansi-6: #1AFF6B;
+  --ansi-7: #8A8F86;
+  --ansi-8: #121612;
+  --ansi-9: #C41E3A;
+  --ansi-10: #1AFF6B;
+  --ansi-11: #FFB000;
+  --ansi-12: #8A8F86;
+  --ansi-13: #C41E3A;
+  --ansi-14: #1AFF6B;
+  --ansi-15: #C7C9C5;
+
+  --font-ui: "Overpass Mono", "Share Tech Mono", "Terminus", monospace;
+  --font-mono: "PxPlus IBM VGA8", "Terminus", "Share Tech Mono", monospace;
+  --font-display: "Share Tech Mono", "Overpass Mono", monospace;
+  --font-size-ui: 9pt;
+  --font-size-mono: 10pt;
+  --font-size-title: 9pt;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius: 0px;
+  --radius-stamp: 2px;
+  --border: 1px;
+  --panel-height: 28px;
+  --titlebar-height: 24px;
+
+  --bevel: inset 1px 1px 0 #2A332A, 1px 1px 0 #050605;
+  --glow: 0 0 1px #1AFF6B;
+}
