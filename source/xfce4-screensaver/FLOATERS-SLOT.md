@@ -1,5 +1,4 @@
-# SUPERSEDED (VDS-01 STOP)
+# Do not hijack floaters
 
-Do **not** hijack xfce-floaters. Use `screensavers-vaultos-arch-spin` + full metadata desktop.
-
-See UNHIDE.md / install-system.sh.
+Use theme id `screensavers-vaultos-arch-spin` with the stock-shaped wrapper under
+`/usr/lib/xfce4-screensaver/`. See `README.md` and `INSTALL-SYSTEM.md`.

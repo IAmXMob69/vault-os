@@ -1,6 +1,4 @@
-/* Vault.OS terminal well — TRM-05 FULL
-   Bloom + recessed well. Scanlines = tiled PNG via terminalrc.
-*/
+/* Vault.OS terminal VTE — full CRT bloom. Tokens only. */
 @import url("tokens.css");
 
 vte-terminal {
