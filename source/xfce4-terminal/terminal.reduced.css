@@ -1,6 +1,4 @@
-/* Vault.OS terminal well — TRM-05 REDUCED
-   Recessed bevel only. No bloom glow. No scanlines (rc solid).
-*/
+/* Vault.OS terminal VTE — reduced well. Tokens only. */
 @import url("tokens.css");
 
 vte-terminal {
