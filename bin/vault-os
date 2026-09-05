@@ -986,6 +986,15 @@ cmd_install() {
   cp -a "$root/themes/Vault.OS" "$HOME/.themes/"
   cp -a "$root/themes/Vault.OS-Reduced" "$HOME/.themes/"
   cp -a "$root/icons/Vault.OS" "$HOME/.icons/"
+  if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f "$HOME/.icons/Vault.OS" 2>/dev/null || true
+  fi
+
+  # Dock plates (panel launchers may point here)
+  if [[ -d "$root/source/icons/dock" ]]; then
+    mkdir -p "$HOME/.icons/vault-dock"
+    cp -a "$root/source/icons/dock/"dock-*.png "$HOME/.icons/vault-dock/" 2>/dev/null || true
+  fi
 
   # Wallpapers / panel plates
   if [[ -d "$root/source/wallpapers" ]]; then
