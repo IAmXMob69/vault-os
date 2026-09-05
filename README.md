@@ -75,3 +75,7 @@ Clunk / drift notes: [`CLUNK.md`](CLUNK.md).
 ## License
 
 See [`LICENSE`](LICENSE).
+
+## Commits
+
+Write like a person shipping an OS skin: one short subject, optional body for *why*. No bullet inventories of every path in the subject line.
