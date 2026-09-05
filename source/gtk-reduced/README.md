@@ -1,11 +1,11 @@
 # Vault.OS-Reduced
 
-High-contrast GTK theme with reduced CRT effects. Token file in this tree mirrors `tokens-reduced.css` at the repo root (hotter phosphor, lifted contrast, glow/bloom off).
+High-contrast GTK theme with the CRT effects dialed down. Tokens here match `tokens-reduced.css` at the repo root.
 
-Enable:
+Turn it on:
 
 ```
 xfconf-query -c xsettings -p /Net/ThemeName -s Vault.OS-Reduced
 ```
 
-Also set `THEME_NAME=Vault.OS-Reduced` in `~/.config/fallout-nv/vault-os.conf` so `ensure-theme` keeps it. Pair the window manager theme to `Vault.OS-Reduced` when Reduced is active. Terminal phosphor: `vaultos-terminal-phosphor reduced` or `clear`.
+Set `THEME_NAME=Vault.OS-Reduced` in `~/.config/fallout-nv/vault-os.conf` so `ensure-theme` keeps it, and use the matching `Vault.OS-Reduced` window theme. For the terminal, run `vaultos-terminal-phosphor reduced` or `clear`.
