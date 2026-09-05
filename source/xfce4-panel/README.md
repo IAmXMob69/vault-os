@@ -1,24 +1,24 @@
 # Panel, notifications, and launcher
 
-XFCE panel chrome for Vault.OS: top bar, Whisker menu sizing, tasklist LED rail, and clock readout.
+XFCE panel chrome for Vault.OS — top bar, Whisker menu, tasklist, and clock.
 
 ## Layout
 
-- Top panel height **28px**, Vault.OS plate art under `~/.local/share/backgrounds/Vault.OS/`
-- Whisker menu **320×420**, full opacity (no translucent menu)
-- Tasklist active tab is a phosphor LED rail, not a filled highlight
-- Clock uses Share Tech Mono; urgent states use rad with a label, not color alone
+- Top panel is **28px** with plate art under `~/.local/share/backgrounds/Vault.OS/`
+- Whisker menu is **320×420** at full opacity
+- Active tasklist tabs use a phosphor LED rail instead of a filled highlight
+- Clock uses Share Tech Mono; urgent states pair rad with a label, not color alone
 
 ## Files
 
 | Path | Role |
 |------|------|
-| `hud.css` | Panel / Whisker / clock styles (imported by the GTK theme) |
+| `hud.css` | Panel, Whisker, and clock styles (imported by the GTK theme) |
 | `xfce4-panel.xml` | Reference panel channel (apply carefully on a live session) |
 | `whiskermenu-1.rc` | Optional Whisker settings snapshot |
 
-Live theme copies live under `~/.themes/Vault.OS/gtk-3.0/hud.css` (and `gtk-3.20/`). Notifications use `../xfce4-notifyd/`.
+Live copies land in `~/.themes/Vault.OS/gtk-3.0/hud.css` (and `gtk-3.20/`). Notification chrome lives under `../xfce4-notifyd/`.
 
-## Rules
+## Notes
 
-See root `ERRORS.md` (panel / notify / unlock plate). Do not use web-only CSS properties in GTK themes. Do not force 28px minimum height on tasklist buttons.
+Stick to GTK CSS — web-only properties will fail to parse. Keep tasklist button minimum height at 22px so labels are not crushed; chrome controls can stay at 28px.
