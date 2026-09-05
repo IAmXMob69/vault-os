@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Vault.OS-Reduced
+Comment=Vault.OS high-contrast / reduced-phosphor. GTK-02 + XWM-03 reduced doors.
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=Vault.OS-Reduced
+MetacityTheme=Vault.OS-Reduced
+IconTheme=Vault.OS
+CursorTheme=Vault.OS
+ButtonLayout=:minimize,maximize,close

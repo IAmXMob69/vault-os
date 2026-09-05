@@ -1,0 +1,14 @@
+#!/bin/bash
+# Vault.OS session lock — live Arch spin face + xfce unlock dialog
+set -euo pipefail
+export DISPLAY="${DISPLAY:-:0.0}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+# Live spinner (fullscreen fallback when no XSCREENSAVER_WINDOW)
+pkill -f '/home/xmob/.local/bin/vaultos-spin-lock' 2>/dev/null || true
+/home/xmob/.local/bin/vaultos-spin-lock-run >/tmp/vaultos-spin-lock.log 2>&1 &
+SPIN=$!
+# Give spinner a beat to map, then lock (unlock dialog on top)
+sleep 0.3
+xfce4-screensaver-command --lock || true
+# When unlock finishes, screensaver deactivates; reap spinner
+wait "$SPIN" 2>/dev/null || true

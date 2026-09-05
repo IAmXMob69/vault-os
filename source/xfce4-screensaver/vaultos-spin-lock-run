@@ -1,0 +1,11 @@
+#!/bin/bash
+# Lock/screensaver entry. Ignores leftover floaters xfconf args.
+set -euo pipefail
+export DISPLAY="${DISPLAY:-:0.0}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+BIN="$HOME/.local/bin/vaultos-spin-lock"
+THEME="$(xfconf-query -c xsettings -p /Net/ThemeName 2>/dev/null || echo Vault.OS)"
+if [[ "$THEME" == "Vault.OS-Reduced" ]]; then
+  exec "$BIN" --reduced-phosphor
+fi
+exec "$BIN" --full

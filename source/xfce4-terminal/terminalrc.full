@@ -1,0 +1,44 @@
+# Vault.OS — TRM-05 Phosphor Warden (full)
+# CANON ANSI from ~/Vault.OS/tokens.css. #1AFF6B on #070807.
+# FULL CRT: scanlines + well bevel. Bloom via terminal.css.
+# Toggle: vaultos-terminal-phosphor {full|reduced|clear}
+
+[Configuration]
+Font=Share Tech Mono 11
+FontUseSystem=FALSE
+FontAllowBold=TRUE
+ColorUseTheme=FALSE
+ColorForeground=#1AFF6B
+ColorBackground=#070807
+ColorCursor=#1AFF6B
+ColorCursorForeground=#070807
+ColorCursorUseDefault=FALSE
+ColorBold=#66FF9C
+ColorBoldUseDefault=FALSE
+ColorBoldIsBright=TRUE
+ColorSelection=#66FF9C
+ColorSelectionBackground=#0E8A3A
+ColorSelectionUseDefault=FALSE
+ColorPalette=#070807;#C41E3A;#0E8A3A;#FFB000;#2A332A;#C41E3A;#1AFF6B;#8A8F86;#121612;#C41E3A;#1AFF6B;#FFB000;#8A8F86;#C41E3A;#1AFF6B;#C7C9C5
+MiscCursorShape=TERMINAL_CURSOR_SHAPE_BLOCK
+MiscCursorBlinks=FALSE
+MiscMenubarDefault=FALSE
+MiscToolbarDefault=FALSE
+MiscBell=FALSE
+MiscBellUrgent=TRUE
+MiscDefaultGeometry=100x32
+MiscMouseAutohide=FALSE
+MiscSlimTabs=FALSE
+MiscTabCloseButtons=TRUE
+ScrollingBar=TERMINAL_SCROLLBAR_RIGHT
+ScrollingOnOutput=FALSE
+ScrollingOnKeystroke=TRUE
+ScrollingLines=10000
+TabActivityColor=#C41E3A
+TitleInitial=ROBCO 76
+TitleMode=TERMINAL_TITLE_REPLACE
+BackgroundMode=TERMINAL_BACKGROUND_IMAGE
+BackgroundImageFile=/home/xmob/Vault.OS/source/xfce4-terminal/scanline.png
+BackgroundImageStyle=TERMINAL_BACKGROUND_STYLE_TILED
+BackgroundImageShading=1.000000
+BackgroundDarkness=1.000000

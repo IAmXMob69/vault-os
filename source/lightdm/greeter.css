@@ -1,0 +1,142 @@
+/* Vault.OS LightDM greeter — HUD-04
+   First impression. Scanlines via wallpaper grid. Tokens inlined for greeter context.
+*/
+@define-color phos #1AFF6B;
+@define-color phos_hot #66FF9C;
+@define-color phos_dim #0E8A3A;
+@define-color phosphor_ghost #06381A;
+@define-color amber_warn #FFB000;
+@define-color rad_red #C41E3A;
+@define-color steel #8A8F86;
+@define-color vault_black #070807;
+@define-color panel_black #0C0F0C;
+@define-color inset #121612;
+@define-color bevel_hi #2A332A;
+@define-color bevel_lo #050605;
+
+.lightdm-gtk-greeter {
+  background-color: @vault_black;
+  color: @phos;
+  font-family: "Share Tech Mono", "Overpass Mono", "Terminus", monospace;
+}
+
+#panel_window {
+  background-color: @panel_black;
+  color: @phos;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 1px @phos;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  min-height: 28px;
+}
+
+#panel_window .menubar,
+#panel_window .menubar > .menuitem {
+  background-color: transparent;
+  color: @phos;
+  font-weight: bold;
+  min-height: 28px;
+}
+
+#panel_window .menubar .menuitem:hover,
+#panel_window .menubar .menuitem:selected {
+  background-color: @phosphor_ghost;
+  color: @phos_hot;
+  box-shadow: inset 0 -2px 0 @phos;
+}
+
+#login_window,
+#shutdown_dialog,
+#restart_dialog {
+  border-style: none;
+  border-radius: 0;
+  background-color: @panel_black;
+  color: @phos;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+}
+
+#content_frame {
+  padding: 16px;
+}
+
+#login_window #user_combobox {
+  color: @phos;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+#login_window entry,
+#login_window .entry {
+  min-height: 28px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 0;
+  background-color: @inset;
+  color: @phos_hot;
+  box-shadow: inset 1px 1px 0 @bevel_lo, 1px 1px 0 @bevel_hi;
+  caret-color: @phos;
+  font-size: 12px;
+}
+
+#login_window entry:focus,
+#login_window .entry:focus {
+  box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_lo;
+}
+
+#login_window button,
+#shutdown_dialog button,
+#restart_dialog button {
+  min-height: 28px;
+  min-width: 96px;
+  padding: 4px 14px;
+  border: none;
+  border-radius: 0;
+  background-color: @inset;
+  color: @phos;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  letter-spacing: 0.08em;
+}
+
+#login_window button:hover,
+#shutdown_dialog button:hover,
+#restart_dialog button:hover {
+  background-color: @phosphor_ghost;
+  color: @phos_hot;
+}
+
+#login_window button:focus,
+#login_window button.default {
+  box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  border-bottom: 2px solid @phos;
+}
+
+#shutdown_button.button {
+  background-color: @rad_red;
+  color: #D4EDDD;
+}
+
+#restart_button.button {
+  border-bottom: 2px solid @amber_warn;
+}
+
+#user_image,
+#user_image_border {
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  background-color: @inset;
+}
+
+#buttonbox_frame {
+  background-color: @panel_black;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 @bevel_hi;
+  padding-top: 12px;
+}
+
+#greeter_infobar {
+  background-color: @rad_red;
+  color: #D4EDDD;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+}

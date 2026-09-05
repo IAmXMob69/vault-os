@@ -1,0 +1,82 @@
+#!/bin/bash
+# Vault.OS — TRM-05 phosphor dial
+# Usage: vaultos-terminal-phosphor {full|reduced|clear|status}
+# HUD/GTK/a11y may call this. Default readable: clear/reduced.
+set -euo pipefail
+MODE="${1:-status}"
+HOME="${HOME:-/home/xmob}"
+SRC="$HOME/Vault.OS/source/xfce4-terminal"
+LIVE="$HOME/.config/xfce4/terminal/terminalrc"
+STATE="$HOME/.config/Vault.OS/terminal-phosphor"
+export DISPLAY="${DISPLAY:-:0.0}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+
+apply_xfconf() {
+  local mode="$1"
+  xfconf-query -c xfce4-terminal -p /color-foreground -s "#1AFF6B"
+  xfconf-query -c xfce4-terminal -p /color-background -s "#070807"
+  xfconf-query -c xfce4-terminal -p /color-cursor -s "#1AFF6B"
+  xfconf-query -c xfce4-terminal -p /color-cursor-foreground -s "#070807"
+  xfconf-query -c xfce4-terminal -p /color-bold -s "#66FF9C"
+  xfconf-query -c xfce4-terminal -p /color-selection -s "#66FF9C"
+  xfconf-query -c xfce4-terminal -p /color-selection-background -s "#0E8A3A"
+  xfconf-query -c xfce4-terminal -p /color-palette -s "#070807;#C41E3A;#0E8A3A;#FFB000;#2A332A;#C41E3A;#1AFF6B;#8A8F86;#121612;#C41E3A;#1AFF6B;#FFB000;#8A8F86;#C41E3A;#1AFF6B;#C7C9C5"
+  xfconf-query -c xfce4-terminal -p /color-use-theme -s false
+  xfconf-query -c xfce4-terminal -p /font-name -s "Share Tech Mono 11" 2>/dev/null || true
+  xfconf-query -c xfce4-terminal -p /misc-cursor-blinks -s false
+  xfconf-query -c xfce4-terminal -p /misc-cursor-shape -s TERMINAL_CURSOR_SHAPE_BLOCK
+  xfconf-query -c xfce4-terminal -p /scrolling-bar -s TERMINAL_SCROLLBAR_RIGHT
+  case "$mode" in
+    full)
+      xfconf-query -c xfce4-terminal -p /background-mode -s TERMINAL_BACKGROUND_IMAGE
+      xfconf-query -c xfce4-terminal -p /background-image-file -s "$SRC/scanline.png"
+      xfconf-query -c xfce4-terminal -p /background-image-style -s TERMINAL_BACKGROUND_STYLE_TILED 2>/dev/null || true
+      ;;
+    reduced|clear)
+      xfconf-query -c xfce4-terminal -p /background-mode -s TERMINAL_BACKGROUND_SOLID
+      ;;
+  esac
+}
+
+apply_css() {
+  local mode="$1"
+  for d in "$HOME/.themes/Vault.OS/gtk-3.0" "$HOME/.themes/Vault.OS/gtk-3.20" \
+           "$HOME/Vault.OS/source/gtk-3.0" "$HOME/Vault.OS/source/gtk-3.20"; do
+    [ -d "$d" ] || continue
+    cp -f "$SRC/terminal.${mode}.css" "$d/terminal.css"
+  done
+  cp -f "$SRC/terminal.${mode}.css" "$SRC/terminal.css"
+}
+
+case "$MODE" in
+  status)
+    echo "phosphor=$(cat "$STATE" 2>/dev/null || echo unknown)"
+    exit 0
+    ;;
+  full|reduced|clear)
+    ;;
+  *)
+    echo "usage: vaultos-terminal-phosphor {full|reduced|clear|status}" >&2
+    exit 2
+    ;;
+esac
+
+# Rewriting xfconf/terminalrc on a healthy terminal makes the D-Bus
+# single-instance server stop accepting new windows after a few hours.
+if [[ -f "$STATE" && "$(cat "$STATE" 2>/dev/null)" == "$MODE" ]] \
+   && [[ -f "$LIVE" && -f "$SRC/terminalrc.${MODE}" ]] \
+   && cmp -s "$LIVE" "$SRC/terminalrc.${MODE}"; then
+  cur_fg="$(xfconf-query -c xfce4-terminal -p /color-foreground 2>/dev/null || true)"
+  if [[ "$cur_fg" == "#1AFF6B" ]]; then
+    echo "Vault.OS terminal phosphor already $MODE"
+    exit 0
+  fi
+fi
+
+cp -f "$SRC/terminalrc.${MODE}" "$SRC/terminalrc"
+cp -f "$SRC/terminalrc.${MODE}" "$LIVE"
+apply_css "$MODE"
+apply_xfconf "$MODE"
+mkdir -p "$(dirname "$STATE")"
+echo "$MODE" > "$STATE"
+echo "Vault.OS terminal phosphor → $MODE (reopen Terminal to paint CSS)"

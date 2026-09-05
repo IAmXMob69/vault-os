@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Vault.OS
+Description=Vault-Tec phosphor boot — VDS-01 / HUD-04
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/Vault.OS
+ScriptFile=/usr/share/plymouth/themes/Vault.OS/Vault.OS.script

@@ -1,0 +1,8 @@
+/* XPM */
+/* left-active */
+static char * left_active_xpm[] = {
+"2 1 2 1",
+"L c #050605 s active_shadow_1",
+"H c #2A332A s active_highlight_1",
+"LH"
+};

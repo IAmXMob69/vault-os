@@ -1,0 +1,22 @@
+#!/bin/bash
+# Drift watch — VDS-01: only call vault-os ensure-theme (15s)
+export DISPLAY="${DISPLAY:-:0.0}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+HOME="${HOME:-/home/xmob}"
+LOCK="$HOME/.cache/vaultos-watch.lock"
+VO="$HOME/.local/bin/vault-os"
+mkdir -p "$HOME/.cache"
+if [[ -f "$LOCK" ]]; then
+  old=$(cat "$LOCK" 2>/dev/null || echo 0)
+  if kill -0 "$old" 2>/dev/null; then
+    echo "watch already $old"; exit 0
+  fi
+fi
+echo $$ >"$LOCK"
+while true; do
+  if [[ -x "$VO" ]]; then
+    "$VO" ensure-theme >/dev/null 2>&1 || true
+  fi
+  # 15s used to rewrite xfwm/panel xfconf every tick and freeze new windows.
+  sleep 600
+done
