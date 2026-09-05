@@ -1,7 +1,8 @@
-/* Vault.OS lock / logout — HUD
+/* Vault.OS lock / logout
    First and last impression. Scanlines allowed here.
    A11y: 2px phosphor focus, 28px hits, Share Tech Mono.
    Consumes CANON tokens. Amber = warn only. Shutdown = rad-red.
+   Spinning Arch saver/lock backdrop OK behind this plate — keep plate opaque.
 */
 @import url("tokens.css");
 
@@ -11,6 +12,8 @@ window.xfce-screensaver-dialog,
 #lock-dialog,
 dialog.lockscreen {
   background-color: @vault_black;
+  background-image: none;
+  opacity: 1;
   color: @phos;
   border: none;
   border-radius: 0;
