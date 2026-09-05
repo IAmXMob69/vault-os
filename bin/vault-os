@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# vault-os — production control plane for Vault.OS XFCE stack (HUD-04 panel/notify defaults)
+# vault-os — production control plane for Vault.OS XFCE stack
 set -euo pipefail
 
 readonly VERSION="1.5.15"
@@ -523,7 +523,7 @@ cmd_ensure_panel() {
   xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
   xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
 
-  # HUD-04: keep whisker professional (no 400×505 blob)
+  # Keep Whisker sizing professional (no oversized menu)
   if xq_get xfce4-panel /plugins/plugin-1 2>/dev/null | grep -qx whiskermenu; then
     xq_set xfce4-panel /plugins/plugin-1/menu-width -t int -s 320
     xq_set xfce4-panel /plugins/plugin-1/menu-height -t int -s 420
