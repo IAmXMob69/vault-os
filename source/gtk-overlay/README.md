@@ -1,24 +1,23 @@
 # GTK user overlay
 
-Target: `~/.config/gtk-3.0/gtk.css`
+User CSS that rides on top of the active Vault.OS GTK theme.
 
-## Law
-- Import **only** Vault.OS `hud.css` (or the Reduced tree’s hud when ThemeName is Vault.OS-Reduced).
-- Do **not** import PipBoy-NV CSS, FNV panel skins, or absolute theme paths that point at PipBoy.
-- Do **not** put Thunar spinner / black-square rules here (VDS): lasting home is theme `gtk-3.0`/`gtk-3.20` `gtk.css`. No fighting user override.
-- `vault-os ensure-theme` / `vaultos-lock` write HUD `@import` only. Allowlist ThemeName: `Vault.OS|Vault.OS-Reduced`.
+## GTK 3
 
-## Check
+Installed path: `~/.config/gtk-3.0/gtk.css`
+
+This file should only `@import` the theme’s `hud.css` (Vault.OS or Vault.OS-Reduced, matching `ThemeName`). Do not pull in legacy theme CSS, Fallout panel skins, or absolute paths outside the active Vault.OS theme tree.
+
+Thunar idle-spinner / menubar plate rules belong in the theme’s `gtk-3.0` / `gtk-3.20` `gtk.css`, not here. `vault-os ensure-theme` rewrites this overlay as a HUD import only. Allowed theme names: `Vault.OS`, `Vault.OS-Reduced`.
+
+Quick drift check (expect no matches outside intentional comments):
+
 ```
-rg -n 'PipBoy|33FF6A|44FF3D' ~/.config/gtk-3.0/gtk.css ~/.themes/Vault.OS/gtk-3.0/gtk.css ~/.themes/Vault.OS/gtk-3.20/gtk.css
+rg -n '33FF6A|44FF3D|PipBoy' ~/.config/gtk-3.0/gtk.css ~/.themes/Vault.OS/gtk-3.0/gtk.css ~/.themes/Vault.OS/gtk-3.20/gtk.css
 ```
-Expect: no matches (comments mentioning PipBoy OK).
 
-## GTK4 overlay
+## GTK 4
 
-Target: `~/.config/gtk-4.0/gtk.css` (+ `settings.ini`)
+Installed path: `~/.config/gtk-4.0/gtk.css` (and `settings.ini`)
 
-- Source: `~/Vault.OS/source/gtk-overlay/gtk4.css`
-- CANON phosphor `#1AFF6B` only. Never PipBoy `#33FF6A`.
-- Dense menus (20px), recessed entries, stamped buttons, AAA selected (`#121612` / `#1AFF6B`).
-- `ensure-theme` should copy gtk4.css + settings.ini.gtk4 → `~/.config/gtk-4.0/`.
+Source: `source/gtk-overlay/gtk4.css`. Phosphor is CANON `#1AFF6B`. Dense menus, recessed entries, stamped buttons, selected text `#1AFF6B` on `#121612`. `ensure-theme` copies `gtk4.css` and `settings.ini.gtk4` into `~/.config/gtk-4.0/`.
