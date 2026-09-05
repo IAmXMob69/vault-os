@@ -1,23 +1,17 @@
 # GTK user overlay
 
-User CSS that rides on top of the active Vault.OS GTK theme.
+Extra CSS that sits on top of the active Vault.OS GTK theme.
 
 ## GTK 3
 
-Installed path: `~/.config/gtk-3.0/gtk.css`
+Path: `~/.config/gtk-3.0/gtk.css`
 
-This file should only `@import` the theme’s `hud.css` (Vault.OS or Vault.OS-Reduced, matching `ThemeName`). Do not pull in legacy theme CSS, Fallout panel skins, or absolute paths outside the active Vault.OS theme tree.
+Import only the theme’s `hud.css` for whichever theme is active (`Vault.OS` or `Vault.OS-Reduced`). Don’t point this file at other theme trees.
 
-Thunar idle-spinner / menubar plate rules belong in the theme’s `gtk-3.0` / `gtk-3.20` `gtk.css`, not here. `vault-os ensure-theme` rewrites this overlay as a HUD import only. Allowed theme names: `Vault.OS`, `Vault.OS-Reduced`.
-
-Quick drift check (expect no matches outside intentional comments):
-
-```
-rg -n '33FF6A|44FF3D|PipBoy' ~/.config/gtk-3.0/gtk.css ~/.themes/Vault.OS/gtk-3.0/gtk.css ~/.themes/Vault.OS/gtk-3.20/gtk.css
-```
+Spinner and menubar rules stay in the theme’s own `gtk-3.0` / `gtk-3.20` `gtk.css`. `vault-os ensure-theme` rewrites this overlay as a HUD import only.
 
 ## GTK 4
 
-Installed path: `~/.config/gtk-4.0/gtk.css` (and `settings.ini`)
+Path: `~/.config/gtk-4.0/gtk.css` (plus `settings.ini`)
 
-Source: `source/gtk-overlay/gtk4.css`. Phosphor is CANON `#1AFF6B`. Dense menus, recessed entries, stamped buttons, selected text `#1AFF6B` on `#121612`. `ensure-theme` copies `gtk4.css` and `settings.ini.gtk4` into `~/.config/gtk-4.0/`.
+Source file: `gtk4.css` in this folder. Phosphor green is `#1AFF6B`. `ensure-theme` copies it into `~/.config/gtk-4.0/`.
