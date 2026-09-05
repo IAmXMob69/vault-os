@@ -9,8 +9,8 @@ Session lock uses the XFCE unlock plate (`../lock/lock.css`). Screensaver and lo
 ## With root (once)
 
 ```bash
-sudo cp ~/Projects/vault-os/source/lightdm/lightdm-gtk-greeter.conf \
-  /etc/lightdm/lightdm-gtk-greeter.conf
+# from the vault-os checkout
+sudo cp source/lightdm/lightdm-gtk-greeter.conf /etc/lightdm/lightdm-gtk-greeter.conf
 # Restart LightDM only when ready to end the current session
 ```
 
