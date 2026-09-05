@@ -158,7 +158,7 @@ Owners: whole team. Accessability Bot maintains a11y + lock/spin; Genius owns co
 ### DO NOT leave xfwm on `Vault.OS` when GTK is `Vault.OS-Reduced`
 - **Symptom:** Reduced GTK with CANON doors (wrong phosphor/rad plates).
 - **Do instead:** When `THEME_NAME=Vault.OS-Reduced`, set `xfwm4 /general/theme` to `Vault.OS-Reduced` (own plates `#66FF9C` / `#E94D5A` / `#B7BEB4`). CANON mode keeps WM `Vault.OS`.
-- **Owner:** Genius ensure-theme + XWM-03 plates. **Logged:** 2026-09-05 XWM / VDS-01
+- **Fix:** ensure-theme must set xfwm4 `/general/theme` with the GTK theme. Logged 2026-09-05.
 
 ---
 
@@ -306,8 +306,8 @@ Owners: whole team. Accessability Bot maintains a11y + lock/spin; Genius owns co
 - Stock `xfce-floaters.desktop` stays stock — **do not** slot-hijack.
 - Obsolete: “stock ids only resolve / hijack floaters” guidance.
 
-## XWM-03 — addendum
-- Never leave a mixed xfwm tree: some XPMs hex+`s`, others symbolic-only. xfwm will look half-Default. Replace the whole `xfwm4/` dir, don’t patch one latch.
+## xfwm4 — mixed decoration trees
+- Do not leave a mixed xfwm tree: some XPMs hex+`s`, others symbolic-only. xfwm will look half-Default. Replace the whole `xfwm4/` dir, don’t patch one latch.
 
 ## GTK / Thunar — idle menubar spinner (2026-09-05) — VDS DESIGN CALL
 - **DO NOT** leave idle spinner visible on Thunar menubar.
