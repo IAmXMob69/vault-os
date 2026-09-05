@@ -1,16 +1,19 @@
-# HUD-04 lock / greeter
+# Lock and logout plates
 
-## Live without root
-- Lock/logout CSS: `~/.themes/Vault.OS/gtk-3.0/lock.css` (imported by gtk.css)
-- Screensaver: personal slideshow on `vault-111.png`
-- A11y: 2px phosphor focus, 28px hits on panel + lock plates
+Unlock dialog and session-logout styling for Vault.OS. The spinning Arch mark on the saver surface is separate; this plate stays opaque over it.
 
-## Needs human (sudo once)
-```
-sudo cp ~/Vault.OS/source/lightdm/lightdm-gtk-greeter.conf /etc/lightdm/lightdm-gtk-greeter.conf
-sudo systemctl restart lightdm   # ends session — do at logout
-```
-Greeter CSS rides ThemeName=Vault.OS + `greeter.css` in the theme.
+## Behavior
 
-## Screensaver / lock face
-See SCREENSAVER.md — Arch spin (`--full`) for saver+lock.
+- Opaque `vault-black` plate, bevel stamp, Share Tech Mono
+- Focus ring 2px phosphor; controls at least 28px tall
+- Amber is warning only — never the dialog frame
+
+## Files
+
+| Path | Role |
+|------|------|
+| `lock.css` | Imported by `~/.themes/Vault.OS/gtk-3.0/gtk.css` |
+| `SCREENSAVER.md` | How idle lock and Arch spin are wired |
+| `ERRORS.md` | Pointer into the project pitfalls log |
+
+Greeter install (needs root once) is under `../lightdm/`.
