@@ -1,7 +1,7 @@
-# Vault.OS — TRM-05 Phosphor Warden (reduced)
-# CANON ANSI from ~/Vault.OS/tokens.css. #1AFF6B on #070807.
-# REDUCED: solid well, no scanlines. Soft bevel, no bloom glow.
-# Toggle: vaultos-terminal-phosphor {full|reduced|clear}
+# Vault.OS xfce4-terminal
+# ANSI 0–15 from tokens.css — foreground #1AFF6B, background #070807.
+# REDUCED: solid well, no scanlines/bloom.
+# Mode: vaultos-terminal-phosphor {full|reduced|clear}
 
 [Configuration]
 Font=Share Tech Mono 11

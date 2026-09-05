@@ -1,4 +1,3 @@
 #!/bin/bash
-# System screensaver entry — always spin unless ThemeName is Vault.OS-Reduced
-# (terminal phosphor dial must NOT freeze lock).
+# Vault.OS screensaver entry → spin lock painter
 exec /home/xmob/.local/bin/vaultos-spin-lock-run "$@"

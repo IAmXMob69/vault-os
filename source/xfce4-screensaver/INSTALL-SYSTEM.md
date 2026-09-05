@@ -1,30 +1,17 @@
-# Install real spinning Arch lock (needs sudo once)
-
-System desktop is already at `/usr/share/applications/screensavers/vaultos-arch-spin.desktop`
-but it points at a missing binary and is `Hidden=true`.
+# Install the Arch spin screensaver (root once)
 
 ```bash
-sudo tee /usr/lib/xfce4-screensaver/vaultos-arch-spin >/dev/null <<'SH'
-#!/bin/bash
-exec /home/xmob/.local/bin/vaultos-spin-lock-run "$@"
-SH
-sudo chmod 755 /usr/lib/xfce4-screensaver/vaultos-arch-spin
+sudo ./source/xfce4-screensaver/install-system.sh
+# or:
+sudo install -m 755 source/xfce4-screensaver/vaultos-arch-spin.wrapper \
+  /usr/lib/xfce4-screensaver/vaultos-arch-spin
+sudo install -m 644 source/xfce4-screensaver/vaultos-arch-spin.desktop \
+  /usr/share/applications/screensavers/vaultos-arch-spin.desktop
+sudo sed -i '/^Hidden=/d' /usr/share/applications/screensavers/vaultos-arch-spin.desktop
 
-sudo tee /usr/share/applications/screensavers/vaultos-arch-spin.desktop >/dev/null <<'DESK'
-[Desktop Entry]
-Type=Application
-Name=Vault.OS Arch Spin
-Comment=Y-axis Arch code mark on vault-black
-Exec=/usr/lib/xfce4-screensaver/vaultos-arch-spin
-TryExec=/usr/lib/xfce4-screensaver/vaultos-arch-spin
-Categories=Screensaver;
-OnlyShowIn=XFCE;
-StartupNotify=false
-Terminal=false
-DESK
-
-xfconf-query -c xfce4-screensaver -p /saver/themes/list --force-array -t string -s screensavers-vaultos-arch-spin
-# Then patch vault-os ensure-theme saver_want to screensavers-vaultos-arch-spin
+xfconf-query -c xfce4-screensaver -p /saver/themes/list \
+  --force-array -t string -s screensavers-vaultos-arch-spin
 ```
 
-Until then: slideshow uses foreshortened spin frames in `~/.local/share/backgrounds/Vault.OS/lock-slides/`.
+Restart `xfce4-screensaver` after installing. LockCommand should be
+`xfce4-screensaver-command --lock` (see session config).
