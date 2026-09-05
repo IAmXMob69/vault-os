@@ -1,4 +1,3 @@
-# Do not hijack floaters
+# Floaters stay stock
 
-Use theme id `screensavers-vaultos-arch-spin` with the stock-shaped wrapper under
-`/usr/lib/xfce4-screensaver/`. See `README.md` and `INSTALL-SYSTEM.md`.
+Theme id is `screensavers-vaultos-arch-spin`, with the wrapper under `/usr/lib/xfce4-screensaver/`. Details in `README.md` and `INSTALL-SYSTEM.md`.
