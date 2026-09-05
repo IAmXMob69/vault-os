@@ -128,11 +128,20 @@ mkdir -p "$CFG/gtk-3.0" "$CFG/gtk-4.0" "$CFG/fontconfig" \
   "$CFG/Vencord/themes" "$CFG/BetterDiscord/themes" \
   "$DATA/chromium-extensions/pipboy-nv-theme"
 
-cp -f "$ROOT/config/gtk-3.0/gtk.css" "$CFG/gtk-3.0/gtk.css"
+# GTK overlays: CANON HUD import + gtk4.css (never legacy PipBoy neon)
+if [[ -f "$ROOT/source/gtk-overlay/gtk.css" ]]; then
+  sed "s|\\$HOME|$HOME|g; s|file://.*/.themes/|file://$HOME/.themes/|"     "$ROOT/source/gtk-overlay/gtk.css" > "$CFG/gtk-3.0/gtk.css" 2>/dev/null     || printf '%s\n' "/* Vault.OS overlay */" "@import url(\"file://$HOME/.themes/Vault.OS/gtk-3.0/hud.css\");"       > "$CFG/gtk-3.0/gtk.css"
+else
+  sed "s|\\$HOME|$HOME|g" "$ROOT/config/gtk-3.0/gtk.css" > "$CFG/gtk-3.0/gtk.css"
+fi
 cp -f "$ROOT/config/gtk-3.0/settings.ini" "$CFG/gtk-3.0/settings.ini"
-cp -f "$ROOT/config/gtk-4.0/gtk.css" "$CFG/gtk-4.0/gtk.css"
+if [[ -f "$ROOT/source/gtk-overlay/gtk4.css" ]]; then
+  cp -f "$ROOT/source/gtk-overlay/gtk4.css" "$CFG/gtk-4.0/gtk.css"
+else
+  cp -f "$ROOT/config/gtk-4.0/gtk.css" "$CFG/gtk-4.0/gtk.css"
+fi
 cp -f "$ROOT/config/gtk-4.0/settings.ini" "$CFG/gtk-4.0/settings.ini"
-cp -f "$ROOT/config/gtkrc-2.0" "$HOME/.gtkrc-2.0"
+[[ -f "$ROOT/config/gtkrc-2.0" ]] && cp -f "$ROOT/config/gtkrc-2.0" "$HOME/.gtkrc-2.0"
 cp -f "$ROOT/config/picom.conf" "$CFG/picom.conf"
 cp -f "$ROOT/config/fontconfig/fonts.conf" "$CFG/fontconfig/fonts.conf"
 rsync -a "$ROOT/config/Kvantum/" "$CFG/Kvantum/"

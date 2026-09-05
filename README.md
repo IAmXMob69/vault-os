@@ -8,37 +8,55 @@ Phosphor is `#1AFF6B`. Typefaces are Share Tech Mono, Overpass Mono, and Terminu
 
 - `themes/Vault.OS` — GTK, xfwm4, notifications
 - `themes/Vault.OS-Reduced` — high-contrast / reduced motion
-- `icons/Vault.OS` — plate icons
+- `icons/Vault.OS` — plate icons + cursors
 - `source/` — panel, lock, greeter, Plymouth staging
-- `bin/vault-os` — `ensure-theme`, `status`, session glue
+- `bin/vault-os` — install, ensure-theme, status, session glue
 - `bin/vaultos-*` — lock, Arch spin mark, terminal phosphor
 
-Design rules live in [`DESIGN.md`](DESIGN.md). Color tokens are [`tokens.css`](tokens.css) (and [`tokens-reduced.css`](tokens-reduced.css)). Stuff we've already burned ourselves on is in [`ERRORS.md`](ERRORS.md) — read that before touching lock or screensaver.
+Design rules: [`DESIGN.md`](DESIGN.md). Tokens: [`tokens.css`](tokens.css). Pitfalls: [`ERRORS.md`](ERRORS.md).
 
-## Install
+## Install (user session, no sudo)
+
+From a clone of this repo:
 
 ```bash
-cp -a themes/Vault.OS ~/.themes/
-cp -a themes/Vault.OS-Reduced ~/.themes/
-cp -a icons/Vault.OS ~/.icons/
-
-ln -sfn "$(pwd)/bin/vault-os" ~/.local/bin/vault-os
-
-vault-os ensure-theme
+./bin/vault-os install
 vault-os status
 ```
 
-In Appearance / Window Manager, pick **Vault.OS**. For Reduced mode, set `THEME_NAME=Vault.OS-Reduced` in `~/.config/fallout-nv/vault-os.conf`.
+That copies themes, icons, wallpapers/panel plates, and helpers into `~/.themes`, `~/.icons`, `~/.local/share/backgrounds/Vault.OS`, and `~/.local/bin`, seeds `~/.config/fallout-nv/vault-os.conf`, then runs `ensure-theme`.
+
+Manual equivalent if you prefer:
+
+```bash
+cp -a themes/Vault.OS themes/Vault.OS-Reduced ~/.themes/
+cp -a icons/Vault.OS ~/.icons/
+mkdir -p ~/.local/share/backgrounds/Vault.OS ~/.local/bin
+cp -a source/wallpapers/. ~/.local/share/backgrounds/Vault.OS/
+install -m755 bin/vault-os bin/vaultos-* ~/.local/bin/
+cp -f config/fallout-nv/vault-os.conf ~/.config/fallout-nv/vault-os.conf
+vault-os ensure-theme
+```
+
+Pick **Vault.OS** under Appearance / Window Manager. Reduced mode: set `THEME_NAME=Vault.OS-Reduced` in the conf file above.
 
 ## Lock & screensaver
 
-Uses theme `screensavers-vaultos-arch-spin` with Exec `/usr/lib/xfce4-screensaver/vaultos-arch-spin`. Lock command is just `xfce4-screensaver-command --lock`. Stock floaters stay stock — don't hijack that slot.
+Theme id: `screensavers-vaultos-arch-spin`.  
+`LockCommand`: `xfce4-screensaver-command --lock`.  
+Stock floaters stay stock.
 
-More detail: [`source/lock/SCREENSAVER.md`](source/lock/SCREENSAVER.md).
+Optional (sudo once) so the daemon has a real Exec:
 
-## Boot / greeter
+```bash
+sudo ./source/xfce4-screensaver/install-system.sh
+```
 
-Optional. Staged under `source/plymouth/` and `source/lightdm/`. See [`BOOT.md`](BOOT.md). Don't restart LightDM until you're ready.
+That installs `/usr/lib/xfce4-screensaver/vaultos-arch-spin` (wrapper) and the stock-shaped `.desktop`. Until then, idle may use the slideshow frames under `lock-spin-frames`. Details: [`source/lock/SCREENSAVER.md`](source/lock/SCREENSAVER.md).
+
+## Boot / greeter (optional, sudo)
+
+Staged under `source/plymouth/` and `source/lightdm/`. Steps: [`BOOT.md`](BOOT.md). Do not restart LightDM until you're ready.
 
 ## Fonts (optional)
 

@@ -1,17 +1,22 @@
-# Vault.OS screensaver / lock face
+# Vault.OS screensaver / lock
 
-## Idle screensaver
-- Theme: `screensavers-xfce-personal-slideshow`
-- Frames: `~/.local/share/backgrounds/Vault.OS/lock-spin-frames/frame-*.png` (24-step Y-spin on vault-black)
-- Why slideshow: xfce4-screensaver only reliably resolves stock theme Exec without root
+## Canon
 
-## Lock (Ctrl+Alt+L / panel)
-- `LockCommand` = `~/.local/bin/vaultos-session-lock`
-- Starts live `vaultos-spin-lock --full`, then `xfce4-screensaver-command --lock`
-- Unlock dialog sits on top of the spinning Arch face
+- Theme id: `screensavers-vaultos-arch-spin`
+- System Exec: `/usr/lib/xfce4-screensaver/vaultos-arch-spin` → `vaultos-spin-lock-run` (always `--full` unless GTK theme is Vault.OS-Reduced)
+- `LockCommand`: `xfce4-screensaver-command --lock`
+- Stock `xfce-floaters` stays stock — do not hijack that slot
+- Desktop mark: `vaultos-spin-arch --full --instance desktop` (separate from the saver)
 
-## Desktop mark
-- `vaultos-spin-arch --full --instance desktop` (always spins)
+## Install system entry (sudo once)
+
+```bash
+sudo ./source/xfce4-screensaver/install-system.sh
+```
+
+Until that lands, `ensure-theme` still pins the theme id and keeps slideshow frames at  
+`~/.local/share/backgrounds/Vault.OS/lock-spin-frames` as a fallback face.
 
 ## Pitfalls
-- See [ERRORS.md](ERRORS.md) (pointer) and team canon [`~/Vault.OS/ERRORS.md`](../../ERRORS.md) — do not repeat those mistakes.
+
+See [`ERRORS.md`](../../ERRORS.md) — especially null Exec from `Hidden=true` or home-path Exec lines.
