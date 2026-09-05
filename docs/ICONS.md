@@ -1,17 +1,5 @@
-# FalloutMojave icons
+# Icons
 
-CRT badge icon theme shipped with Vault-OS. It is original work, not extracted
-*Fallout: New Vegas* game files.
+Plate language: inset stamp, 1px bevel, phosphor LED rail. Close / destructive affordances use rad-red with a non-color cue (shape), not hue alone.
 
-## Location
-- `~/.local/share/icons/FalloutMojave`
-- symlink: `~/.icons/FalloutMojave`
-- Inherits `Papirus-Dark` for anything not remapped
-
-## Apply
-```bash
-vault-os apply
-```
-
-## Dock extras
-Custom dock glyphs live in `extras/dock/` and install to `~/.icons/vault-dock/`.
+Tree: `icons/Vault.OS/`. Inherits `hicolor`. Do not fall back to FalloutMojave or PipBoy icon names in launchers — see [`ERRORS.md`](../ERRORS.md).
