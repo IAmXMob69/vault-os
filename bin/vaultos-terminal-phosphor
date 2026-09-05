@@ -4,7 +4,7 @@
 # HUD/GTK/a11y may call this. Default readable: clear/reduced.
 set -euo pipefail
 MODE="${1:-status}"
-HOME="${HOME:-/home/xmob}"
+HOME="${HOME:-$(getent passwd "$(id -un)" | cut -d: -f6)}"
 SRC="$HOME/Vault.OS/source/xfce4-terminal"
 LIVE="$HOME/.config/xfce4/terminal/terminalrc"
 STATE="$HOME/.config/Vault.OS/terminal-phosphor"

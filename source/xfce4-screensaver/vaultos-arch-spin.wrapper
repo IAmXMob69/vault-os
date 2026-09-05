@@ -1,3 +1,15 @@
-#!/bin/bash
-# Vault.OS screensaver entry → spin lock painter
-exec /home/xmob/.local/bin/vaultos-spin-lock-run "$@"
+#!/bin/sh
+# Installed to /usr/lib/xfce4-screensaver/vaultos-arch-spin
+HOME="${HOME:-$(getent passwd "$(id -un)" | cut -d: -f6)}"
+for b in \
+  "${HOME}/.local/bin/vaultos-spin-lock-run" \
+  /usr/local/bin/vaultos-spin-lock-run \
+  vaultos-spin-lock-run
+do
+  case "$b" in
+    /*) [ -x "$b" ] && exec "$b" "$@" ;;
+    *) command -v "$b" >/dev/null 2>&1 && exec "$b" "$@" ;;
+  esac
+done
+echo "vaultos-spin-lock-run not found on PATH or ~/.local/bin" >&2
+exit 1

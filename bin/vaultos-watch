@@ -2,7 +2,7 @@
 # Drift watch — VDS-01: only call vault-os ensure-theme (15s)
 export DISPLAY="${DISPLAY:-:0.0}"
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
-HOME="${HOME:-/home/xmob}"
+HOME="${HOME:-$(getent passwd "$(id -un)" | cut -d: -f6)}"
 LOCK="$HOME/.cache/vaultos-watch.lock"
 VO="$HOME/.local/bin/vault-os"
 mkdir -p "$HOME/.cache"

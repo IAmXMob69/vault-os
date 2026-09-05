@@ -32,7 +32,7 @@ sudo grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
 Do **not** run step 3 until `plymouth` is installed.
-Do **not** restart LightDM until Blaine explicitly OKs.
+Do **not** restart LightDM until you explicitly OK.
 
 ## Status (2026-09-04)
 - `vault-os` doctor: session ThemeName/icons/wm/cursor/notify/font/wallpaper/panel all Vault.OS OK.

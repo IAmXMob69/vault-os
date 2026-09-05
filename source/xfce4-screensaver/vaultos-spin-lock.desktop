@@ -1,11 +1,7 @@
 [Desktop Entry]
-Name=Vault.OS Arch Spin
-Comment=Y-axis Arch code mark on vault-black — lock + idle (same as desktop)
-Exec=/home/xmob/.local/bin/vaultos-spin-lock-run
-TryExec=/home/xmob/.local/bin/vaultos-spin-lock-run
-StartupNotify=false
-Terminal=false
+Name=Vault.OS Arch Spin (helper)
+Comment=Y-axis Arch code mark for lock/screensaver
+Exec=vaultos-spin-lock-run
+TryExec=vaultos-spin-lock-run
 Type=Application
-Categories=Screensaver;
-OnlyShowIn=XFCE;
-Hidden=true
+NoDisplay=true

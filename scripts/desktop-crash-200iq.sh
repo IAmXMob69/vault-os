@@ -399,7 +399,7 @@ cpu_line="$(awk -F: '/model name/{print $2; exit}' /proc/cpuinfo | sed 's/^ //')
   echo '```bash'
   echo "$HOME/.local/bin/desktop-crash-200iq"
   echo '# or'
-  echo "/home/xmob/Projects/vault-os/scripts/desktop-crash-200iq.sh"
+  echo "$PWD/scripts/desktop-crash-200iq.sh"
   echo '```'
 } > "$REPORT"
 

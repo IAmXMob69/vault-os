@@ -8,3 +8,11 @@ Thumbs.db
 .idea/
 .vscode/
 __pycache__/
+
+# Local / private — never ship
+*.bak
+*.bak-*
+bin/*.bak*
+config/xorg.conf.d/
+extras/cursors-src/anim/preview-*.png
+extras/cursors-src/anim/video-sheet.png

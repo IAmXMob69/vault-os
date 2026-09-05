@@ -17,7 +17,7 @@ Owners: whole team. Accessability Bot maintains a11y + lock/spin; Genius owns co
 ### DO NOT use SessionManager / `xflock4` as the only lock path if it hangs
 - **Symptom:** Top-left/right lock buttons and Super+L appear dead; xflock4 dbus-calls `org.xfce.Session.Manager.Lock`, which can hang.
 - **Do instead:** `vaultos-session-lock` or `xfce4-screensaver-command --lock`. Never point Super+L / panel lock at bare `xflock4`.
-- **Wire:** `xfconf-query -c xfce4-session -p /general/LockCommand` → `/home/xmob/.local/bin/vaultos-session-lock`
+- **Wire:** `xfconf-query -c xfce4-session -p /general/LockCommand` → `~/.local/bin/vaultos-session-lock`
 - **Logged:** 2026-09-05 Genius / VDS-01
 
 ### DO NOT let terminal phosphor dial freeze desktop or lock spin
@@ -112,7 +112,7 @@ Owners: whole team. Accessability Bot maintains a11y + lock/spin; Genius owns co
 - Pair with shape/label/LED rail (close latch stop-octagon + X; emblem-important bang triangle; destructive LED rail).
 
 ### DO NOT require bloom/scanlines/spin to read UI
-- CRT effects optional; Reduced / clear-terminal paths exist. Desktop/lock spin is Blaine preference via `--full`, separate from CRT dial.
+- CRT effects optional; Reduced / clear-terminal paths exist. Desktop/lock spin is operator preference via `--full`, separate from CRT dial.
 
 ---
 
