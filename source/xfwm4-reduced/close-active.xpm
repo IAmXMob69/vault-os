@@ -1,5 +1,5 @@
 /* XPM */
-/* reduced active rad close */
+/* close-active */
 static char * close_active_xpm[] = {
 "24 24 6 1",
 "L c #050605 s active_shadow_1",
