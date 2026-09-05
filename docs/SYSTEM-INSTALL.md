@@ -1,13 +1,9 @@
-# Vault-OS system-level theme (needs sudo)
+# System install (sudo)
 
-## LightDM greeter + GRUB
-```bash
-vault-os-install-system-theme
-```
+User-session theming does not need root. Greeter and Plymouth do.
 
-## Plymouth (optional, package-dependent)
-```bash
-sudo pacman -S plymouth
-# then install a theme and:
-# sudo plymouth-set-default-theme -R details
-```
+1. Read [`BOOT.md`](../BOOT.md).
+2. Install staged LightDM GTK greeter conf and Plymouth theme from `source/lightdm/` and `source/plymouth/`.
+3. Do **not** restart LightDM until the operator confirms.
+
+Optional helper (if present): `bin/vault-os-install-system-theme`.

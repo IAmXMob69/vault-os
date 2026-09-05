@@ -1,10 +1,10 @@
-# Theme notes
+# Docs
 
-Install from the top-level [README](../README.md).
+| Doc | Purpose |
+|-----|---------|
+| [`THEME-COVERAGE.md`](THEME-COVERAGE.md) | What the theme owns |
+| [`CURSORS.md`](CURSORS.md) | Cursor theme |
+| [`ICONS.md`](ICONS.md) | Icon plates |
+| [`SYSTEM-INSTALL.md`](SYSTEM-INSTALL.md) | Greeter / Plymouth (sudo) |
 
-| Doc | What it covers |
-| --- | --- |
-| [THEME-COVERAGE.md](THEME-COVERAGE.md) | GTK / Qt / apps / greeter |
-| [CURSORS.md](CURSORS.md) | Cursor set |
-| [ICONS.md](ICONS.md) | FalloutMojave icons |
-| [SYSTEM-INSTALL.md](SYSTEM-INSTALL.md) | LightDM + GRUB |
+Canon and pitfalls live at the repo root: `DESIGN.md`, `ERRORS.md`, `CONTINUE.md`.

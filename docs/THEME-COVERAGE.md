@@ -1,46 +1,25 @@
-# Vault-OS Theme Integration Coverage
+# Theme coverage
 
-## Applied (user session)
+What Vault.OS owns in a normal Arch + XFCE session.
 
-| Area | Implementation |
-|------|----------------|
-| GTK 2/3/4 | PipBoy-NV |
-| Icons | FalloutMojave (~10k) |
-| WM | PipBoy-NV xfwm4 |
-| Cursors | PipBoy-NV-Cursors |
-| Notifications | PipBoy-NV |
-| Panels | Neon dock + map/trash |
-| Qt5/Qt6 | Kvantum **PipBoy-NV** via qt5ct/qt6ct |
-| Sounds | PipBoy-NV beep pack |
-| VS Code OSS | Pip-Boy color customizations |
-| Firefox | userChrome.css + user.js (profile vault-os.default) |
-| Discord | CSS theme file (enable in Vencord/BetterDiscord) |
-| Chromium | Pip-Boy theme extension + flags |
-| Flatpak | GTK/icon/cursor/Qt env overrides |
-| Lock | `vault-os-lock` helper |
-| Guards | login autostart + optional 30s systemd watch (no wallpaper writes) |
+| Layer | Theme / path |
+|-------|----------------|
+| GTK 2/3 | `themes/Vault.OS` (Reduced: `themes/Vault.OS-Reduced`) |
+| Window manager | `themes/Vault.OS/xfwm4` (Reduced doors when `THEME_NAME=Vault.OS-Reduced`) |
+| Icons | `icons/Vault.OS` |
+| Cursors | `Vault.OS` cursor theme (see [`CURSORS.md`](CURSORS.md)) |
+| Notifications | `themes/Vault.OS/xfce-notify-4.0` |
+| Panel / HUD | `source/xfce4-panel/`, plates under backgrounds |
+| Terminal | CANON phosphor via `vaultos-terminal-phosphor` |
+| Lock / screensaver | `screensavers-vaultos-arch-spin` — see `source/lock/SCREENSAVER.md` |
+| Qt (Kvantum) | Prefer Vault.OS skin when present; otherwise legacy PipBoy-NV Qt only |
 
-## Needs sudo once
+## Operator commands
 
 ```bash
-vault-os-install-system-theme
+vault-os status
+vault-os ensure-theme
+vault-os doctor
 ```
 
-- LightDM greeter → PipBoy-NV + Mojave wallpaper
-- System-wide theme/icon install for greeter
-- Optional GRUB background
-
-## Discord
-
-1. Install Vencord or BetterDiscord
-2. Enable theme: `~/.config/Vencord/themes/PipBoyNV.theme.css`
-   or `~/.config/BetterDiscord/themes/PipBoyNV.theme.css`
-
-## Commands
-
-```bash
-vault-os coverage          # report
-vault-os ensure-coverage   # re-apply Qt/sounds/flatpak/chromium
-vault-os doctor            # full repair
-vault-os-install-system-theme  # LightDM/GRUB (sudo)
-```
+System greeter / Plymouth need sudo once — [`BOOT.md`](../BOOT.md), [`SYSTEM-INSTALL.md`](SYSTEM-INSTALL.md).
