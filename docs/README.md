@@ -7,4 +7,4 @@
 | [`ICONS.md`](ICONS.md) | Icon plates |
 | [`SYSTEM-INSTALL.md`](SYSTEM-INSTALL.md) | Greeter / Plymouth (sudo) |
 
-Canon and pitfalls live at the repo root: `DESIGN.md`, `ERRORS.md`, `CONTINUE.md`.
+Design rules are in the root [`DESIGN.md`](../DESIGN.md).
