@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-"""ICO-06 ASSET ARMORER — Vault.OS P0 icons, cursor, wallpaper.
-Tokens only. phos glyph on steel-800 plate, 1px steel-600 bevel.
-Cursor: 24px steel-950 fill, phos outline. Gold not used on cursor.
-Wallpaper: steel-950, 8px phos grid @ 8%, 111 mark in gold-dim.
+"""Vault.OS icon / cursor / wallpaper generator.
+Phosphor on inset plates, bevel stamp, cursor without amber chrome.
 """
 from __future__ import annotations
 
@@ -774,7 +772,7 @@ def write_index(root: Path, dirs: list[str]) -> None:
     lines = [
         "[Icon Theme]",
         "Name=Vault.OS",
-        "Comment=Vault-Tec stamped plates — ICO-06",
+        "Comment=Vault.OS stamped plates",
         "Inherits=hicolor",
         "Example=folder",
         "DisplayDepth=32",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ICO-06 — five matching dock plates. CANON tokens only."""
+"""Vault.OS dock plates — matching stamp language, CANON tokens only."""
 from pathlib import Path
 from PIL import Image, ImageDraw
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ICO-06 — desktop plates matching dock stamp. CANON tokens. Size-safe 16–48."""
+"""Vault.OS desktop plates (Home, Trash, drives) matching the dock stamp."""
 from pathlib import Path
 from PIL import Image, ImageDraw
 

@@ -1,5 +1,7 @@
 # Icons
 
-Plate language: inset stamp, 1px bevel, phosphor LED rail. Close / destructive affordances use rad-red with a non-color cue (shape), not hue alone.
+Live theme: `~/.icons/Vault.OS` (source under `source/icons/`, packaged copy under `icons/Vault.OS/`).
 
-Tree: `icons/Vault.OS/`. Inherits `hicolor`. Do not fall back to FalloutMojave or PipBoy icon names in launchers — see [`ERRORS.md`](../ERRORS.md).
+Plates use inset fill, a 1px bevel, and phosphor ink (`#1AFF6B`). Rad and amber always ride with shape. The theme inherits `hicolor` only — session launchers must not pin FalloutMojave or PipBoy-NV; see [ERRORS.md](../ERRORS.md).
+
+Cursor theme ships beside the icons (`cursors/`, 24px). Wallpaper: `source/wallpapers/vault-111.png`.
