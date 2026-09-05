@@ -1,5 +1,5 @@
 /* XPM */
-/* reduced close pressed */
+/* close-pressed */
 static char * close_pressed_xpm[] = {
 "24 24 6 1",
 "L c #050605 s active_shadow_1",

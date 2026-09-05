@@ -1,5 +1,6 @@
-# Vault.OS-Reduced xfwm4 — XWM-03
-# High-contrast / reduced-phosphor doors. Hexes from tokens-reduced.css.
+# Vault.OS-Reduced — xfwm4
+# High-contrast decorations for reduced-phosphor mode (tokens-reduced.css).
+# Same layout as Vault.OS; hotter phosphor and raised rad/steel.
 
 active_text_color=#66FF9C
 inactive_text_color=#B7BEB4
