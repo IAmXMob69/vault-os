@@ -87,7 +87,7 @@ Human paste wins. Spec mock: `~/Vault.OS/screenshots/spec-frame.png`
 Freelance greens. Blur soup. Material pills. Scanlines on GTK. Amber used as chrome. Sky-blue ANSI. Inter/Roboto/Segoe. New packages without a listed wait.
 
 ## Pitfalls
-Living do-not-repeat log: `ERRORS.md`.
+
 
 ## Accessibility (CANON)
 Team baseline with Accessability Bot. Craft still Vault-Tec; usable with keyboard, low vision, CRT down/off.

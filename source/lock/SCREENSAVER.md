@@ -16,7 +16,3 @@ sudo ./source/xfce4-screensaver/install-system.sh
 
 Until that lands, `ensure-theme` still pins the theme id and keeps slideshow frames at  
 `~/.local/share/backgrounds/Vault.OS/lock-spin-frames` as a fallback face.
-
-## Pitfalls
-
-See [`ERRORS.md`](../../ERRORS.md) — especially null Exec from `Hidden=true` or home-path Exec lines.

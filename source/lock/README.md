@@ -14,6 +14,6 @@ Unlock dialog and session-logout styling for Vault.OS. The spinning Arch mark on
 |------|------|
 | `lock.css` | Imported by `~/.themes/Vault.OS/gtk-3.0/gtk.css` |
 | `SCREENSAVER.md` | How idle lock and Arch spin are wired |
-| `ERRORS.md` | Pointer into the project pitfalls log |
+| `ERRORS.md` | Internal notes |
 
 Greeter install (needs root once) is under `../lightdm/`.
