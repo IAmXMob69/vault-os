@@ -8,6 +8,7 @@
 @import url("hud.css");
 @import url("lock.css");
 @import url("terminal.css");
+@import url("a11y.css");
 
 /* --- type + a11y focus base --- */
 * {
@@ -137,15 +138,16 @@ headerbar button:focus {
 }
 
 headerbar button.titlebutton.close {
-  background-color: @status_danger;
-  color: @phos_white;
-  box-shadow: inset 2px 2px 0 @bevel_hi, 2px 2px 0 @bevel_lo;
+  background-color: @inset;
+  color: @status_danger;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo, inset 0 -2px 0 @status_danger;
 }
 
 headerbar button.titlebutton.close:hover,
 headerbar button.titlebutton.close:active {
   background-color: @status_danger;
   color: @phos_white;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
 }
 
 headerbar button:disabled {
@@ -242,7 +244,7 @@ searchentry {
   box-shadow:
     inset 1px 1px 0 @bevel_lo,
     inset -1px -1px 0 @bevel_hi;
-  padding: 2px 6px;
+  padding: 1px 6px;
   caret-color: @phosphor_primary;
 }
 
@@ -421,24 +423,24 @@ scrollbar {
   background-image: none;
   border: none;
   border-radius: 0;
-  min-width: 12px;
-  min-height: 12px;
+  min-width: 10px;
+  min-height: 10px;
 }
 
 scrollbar trough {
   background-color: @vault_black;
   border: none;
   border-radius: 0;
-  min-width: 12px;
-  min-height: 12px;
+  min-width: 10px;
+  min-height: 10px;
   box-shadow:
     inset 1px 1px 0 @bevel_lo,
     inset -1px -1px 0 @bevel_hi;
 }
 
 scrollbar slider {
-  min-width: 12px;
-  min-height: 24px;
+  min-width: 10px;
+  min-height: 20px;
   margin: 1px;
   background-color: @inset;
   background-image: none;
@@ -624,7 +626,7 @@ combobox window.popup {
   color: @phosphor_primary;
   border: none;
   border-radius: 0;
-  padding: 1px 0;
+  padding: 0;
   box-shadow:
     inset 1px 1px 0 @bevel_hi,
     inset -1px -1px 0 @bevel_lo;
@@ -634,8 +636,8 @@ menuitem,
 modelbutton,
 popover modelbutton,
 combobox menu menuitem {
-  min-height: 20px;
-  padding: 1px 8px;
+  min-height: 18px;
+  padding: 0 8px;
   background-color: transparent;
   color: @phosphor_primary;
   border-radius: 0;
@@ -904,8 +906,8 @@ menubar {
 }
 
 menubar > menuitem {
-  min-height: 20px;
-  padding: 1px 8px;
+  min-height: 18px;
+  padding: 0 8px;
   letter-spacing: 0;
 }
 
