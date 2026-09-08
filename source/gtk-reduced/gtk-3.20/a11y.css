@@ -1,0 +1,64 @@
+/* Vault.OS-Reduced density overlay
+   Import after gtk.css. Hotter tokens already live in tokens-reduced.css.
+   Larger type, thicker focus, bigger hits. Do not raise .xfce4-panel .tasklist
+   min-height (28px floor hides window tabs).
+   GTK CssProvider rejects web-style importance flags — specificity only.
+*/
+
+window,
+dialog,
+messagedialog,
+assistant,
+menu,
+popover,
+.background {
+  font-size: 11pt;
+}
+
+*:focus {
+  outline: 3px solid @focus_ring;
+  outline-offset: 1px;
+}
+
+.xfce4-panel *:focus {
+  outline-width: 2px;
+  outline-offset: -2px;
+}
+
+/* hits: 28px chrome; panel tasklist stays 24px */
+button,
+entry,
+spinbutton,
+searchentry,
+combobox,
+combobox > box.linked > button.combo {
+  min-height: 28px;
+}
+
+headerbar,
+.titlebar {
+  min-height: 28px;
+}
+
+.xfce4-panel button,
+.xfce4-panel .flat,
+.xfce4-panel .tasklist button,
+.xfce4-panel wnck-tasklist button {
+  min-height: 24px;
+  min-width: 24px;
+}
+
+switch {
+  min-height: 22px;
+  min-width: 44px;
+}
+
+check,
+radio {
+  min-width: 16px;
+  min-height: 16px;
+}
+
+notebook > header tabs tab {
+  min-height: 24px;
+}
