@@ -3,36 +3,38 @@
 set -euo pipefail
 
 HOME="${HOME:-/home/$USER}"
-ROOT_THEME_SRC="$HOME/.themes/PipBoy-NV"
-ROOT_ICON_SRC="${XDG_DATA_HOME:-$HOME/.local/share}/icons/FalloutMojave"
-ROOT_CURSOR_SRC="$HOME/.icons/PipBoy-NV-Cursors"
-WALL="${XDG_DATA_HOME:-$HOME/.local/share}/backgrounds/fnv-mojave-strip-4k.jpg"
-PIPBOY_ICON="$ROOT_ICON_SRC/128x128/apps/pipboy.png"
+ROOT_THEME_SRC="$HOME/.themes/Vault.OS"
+ROOT_ICON_SRC="${XDG_DATA_HOME:-$HOME/.local/share}/icons/Vault.OS"
+ROOT_CURSOR_SRC="$HOME/.icons/Vault.OS"
+WALL="${XDG_DATA_HOME:-$HOME/.local/share}/backgrounds/Vault.OS/vault-111.png"
+MARK_ICON="$ROOT_ICON_SRC/128x128/apps/vaultos.png"
+# fall back if mark name differs
+[[ -f "$MARK_ICON" ]] || MARK_ICON=$(find "$ROOT_ICON_SRC" -name "vault*.png" 2>/dev/null | head -1 || true)
 
 echo "[vault-os] Installing system greeter theme (needs sudo)..."
 sudo mkdir -p /usr/share/themes /usr/share/icons /etc/lightdm
 
 if [[ -d "$ROOT_THEME_SRC" ]]; then
-  sudo rsync -a --delete "$ROOT_THEME_SRC/" /usr/share/themes/PipBoy-NV/
+  sudo rsync -a --delete "$ROOT_THEME_SRC/" /usr/share/themes/Vault.OS/
 fi
 if [[ -d "$ROOT_ICON_SRC" ]]; then
-  sudo rsync -a --delete --exclude 'icon-theme.cache' "$ROOT_ICON_SRC/" /usr/share/icons/FalloutMojave/
+  sudo rsync -a --delete --exclude 'icon-theme.cache' "$ROOT_ICON_SRC/" /usr/share/icons/Vault.OS/
 fi
 if [[ -d "$ROOT_CURSOR_SRC" ]]; then
-  sudo rsync -a --delete "$ROOT_CURSOR_SRC/" /usr/share/icons/PipBoy-NV-Cursors/ || true
+  sudo rsync -a --delete "$ROOT_CURSOR_SRC/" /usr/share/icons/Vault.OS/ || true
 fi
 
 tmp="$(mktemp)"
 printf '%s\n' \
   '[greeter]' \
-  'theme-name=PipBoy-NV' \
-  'icon-theme-name=FalloutMojave' \
-  'cursor-theme-name=PipBoy-NV-Cursors' \
+  'theme-name=Vault.OS' \
+  'icon-theme-name=Vault.OS' \
+  'cursor-theme-name=Vault.OS' \
   'cursor-theme-size=24' \
   'font-name=Share Tech Mono 11' \
   "background=$WALL" \
   'user-background=false' \
-  "default-user-image=$PIPBOY_ICON" \
+  "default-user-image=${MARK_ICON:-}" \
   'hide-user-image=false' \
   'clock-format=%H:%M' \
   'indicators=~host;~spacer;~clock;~spacer;~session;~power' \

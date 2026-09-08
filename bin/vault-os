@@ -2,7 +2,7 @@
 # vault-os — production control plane for Vault.OS XFCE stack
 set -euo pipefail
 
-readonly VERSION="1.5.15"
+readonly VERSION="1.5.17"
 readonly CONF_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
 
 export DISPLAY="${DISPLAY:-:0}"
@@ -44,6 +44,9 @@ load_config() {
   INTRO_ENABLED=0
   LOG_FILE="$HOME/.local/share/fallout-nv/logs/vault-os.log"
   LOCK_DIR="${XDG_RUNTIME_DIR}/vault-os"
+  A11Y=0
+  A11Y_MOTION=on
+  A11Y_TEXT=normal
 
   if [[ -f "$CONF_DEFAULT" ]]; then
     set +u
@@ -80,6 +83,17 @@ log()  { _rotate_log; printf '%s INFO  %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf
 warn() { _rotate_log; printf '%s WARN  %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] WARN: %s\n' "$*" >&2; }
 err()  { _rotate_log; printf '%s ERROR %s\n' "$(_ts)" "$*" >>"$LOG_FILE"; printf '[vault-os] ERROR: %s\n' "$*" >&2; }
 have() { command -v "$1" >/dev/null 2>&1; }
+
+conf_set() {
+  local key="$1" val="$2" conf="${CONF_DEFAULT}"
+  mkdir -p "$(dirname "$conf")"
+  [[ -f "$conf" ]] || : >"$conf"
+  if grep -qE "^${key}=" "$conf" 2>/dev/null; then
+    sed -i "s|^${key}=.*|${key}=${val}|" "$conf"
+  else
+    printf '%s=%s\n' "$key" "$val" >>"$conf"
+  fi
+}
 
 _gtk_overlay_dir() {
   # Prefer conf/env checkout, then bin-adjacent repo, then ~/Vault.OS
@@ -279,6 +293,12 @@ cmd_apply() {
   xq_set xsettings /Gtk/MonospaceFontName -t string -s "$MONO_FONT"
   xq_set xsettings /Gtk/CursorThemeName -t string -s "${CURSOR_THEME:-Vault.OS}"
   xq_set xsettings /Gtk/CursorThemeSize -t int -s "${CURSOR_SIZE:-24}"
+  if [[ "${THEME_NAME}" == "Vault.OS-Reduced" || "${A11Y:-0}" == "1" || "${A11Y_MOTION:-on}" == "off" ]]; then
+    xq_set xsettings /Gtk/EnableAnimations -t bool -s false
+  else
+    xq_set xsettings /Gtk/EnableAnimations -t bool -s true
+  fi
+  xq_set xfwm4 /general/click_to_focus -t bool -s true
   # Sound follows Vault.OS (or mute) — do not bind PipBoy-NV audio unless theme is PipBoy-NV
   if [[ -d "$HOME/.local/share/sounds/Vault.OS" ]]; then
     xq_set xsettings /Net/SoundThemeName -t string -s "Vault.OS"
@@ -293,7 +313,7 @@ cmd_apply() {
     fi
   fi
   xq_set xsettings /Net/EnableInputFeedbackSounds -t bool -s false
-  # XWM-03: doors follow GTK theme name when Reduced/CANON
+  # Doors follow GTK theme name when Reduced/CANON
   if [[ "$THEME_NAME" == "Vault.OS-Reduced" ]]; then
     WM_THEME="Vault.OS-Reduced"
   elif [[ "$THEME_NAME" == "Vault.OS" ]]; then
@@ -321,9 +341,13 @@ cmd_apply() {
       xfconf-query -c xfce4-notifyd -p "$bad" -r 2>/dev/null || true
     done
   fi
-  # notify chrome lives only under ~/.themes/Vault.OS/xfce-notify-4.0 (no Reduced pack)
+  # notify chrome: Reduced pack if present, else Vault.OS
   local notify_theme="Vault.OS"
-  [[ "${THEME_NAME:-Vault.OS}" == "PipBoy-NV" ]] && notify_theme="PipBoy-NV"
+  if [[ "${THEME_NAME:-Vault.OS}" == "Vault.OS-Reduced" && -d "$HOME/.themes/Vault.OS-Reduced/xfce-notify-4.0" ]]; then
+    notify_theme="Vault.OS-Reduced"
+  elif [[ "${THEME_NAME:-Vault.OS}" == "PipBoy-NV" ]]; then
+    notify_theme="PipBoy-NV"
+  fi
   xq_set xfce4-notifyd /theme -t string -s "$notify_theme"
   xq_set xfce4-notifyd /do-fadeout -t bool -s false
   xq_set xfce4-notifyd /do-slideout -t bool -s false
@@ -353,20 +377,31 @@ cmd_apply() {
   fi
 
   # GTK settings.ini
+  local gtk_anim=true gtk_auto_mnemonics=true
+  if [[ "${THEME_NAME}" == "Vault.OS-Reduced" || "${A11Y:-0}" == "1" || "${A11Y_MOTION:-on}" == "off" ]]; then
+    gtk_anim=false
+  fi
+  if [[ "${THEME_NAME}" == "Vault.OS-Reduced" || "${A11Y:-0}" == "1" ]]; then
+    gtk_auto_mnemonics=false
+  fi
   mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
   printf '%s\n' \
     '[Settings]' \
     "gtk-theme-name=${THEME_NAME}" \
     "gtk-icon-theme-name=${ICON_THEME}" \
     "gtk-font-name=${UI_FONT}" \
-    "gtk-cursor-theme-name=${CURSOR_THEME:-Adwaita}" \
+    "gtk-cursor-theme-name=${CURSOR_THEME:-Vault.OS}" \
     "gtk-cursor-theme-size=${CURSOR_SIZE:-24}" \
     'gtk-application-prefer-dark-theme=1' \
     'gtk-xft-antialias=1' \
     'gtk-xft-hinting=1' \
     'gtk-xft-hintstyle=hintslight' \
     'gtk-xft-rgba=rgb' \
-    'gtk-enable-animations=true' \
+    "gtk-enable-animations=${gtk_anim}" \
+    'gtk-enable-accels=true' \
+    'gtk-enable-mnemonics=true' \
+    "gtk-auto-mnemonics=${gtk_auto_mnemonics}" \
+    'gtk-overlay-scrolling=false' \
     > "$HOME/.config/gtk-3.0/settings.ini"
   cp -f "$HOME/.config/gtk-3.0/settings.ini" "$HOME/.config/gtk-4.0/settings.ini"
 
@@ -388,6 +423,9 @@ cmd_apply() {
     > "$HOME/.config/gtk-3.0/gtk.css"
   if [[ -f "$overlay_src/gtk4.css" ]]; then
     cp -f "$overlay_src/gtk4.css" "$HOME/.config/gtk-4.0/gtk.css"
+    if [[ "$THEME_NAME" == "Vault.OS-Reduced" && -f "$overlay_src/gtk4-a11y.css" ]]; then
+      cat "$overlay_src/gtk4-a11y.css" >> "$HOME/.config/gtk-4.0/gtk.css"
+    fi
   fi
 
 
@@ -601,7 +639,7 @@ cmd_ensure_theme() {
   local want_w="${WM_THEME:-Vault.OS}"
   local want_c="${CURSOR_THEME:-Vault.OS}"
   case "$want_t" in Vault.OS|Vault.OS-Reduced) ;; *) want_t="Vault.OS" ;; esac
-  # XWM-03: Reduced GTK must not keep CANON doors — follow THEME_NAME for xfwm
+  # Reduced GTK must not keep CANON doors — follow THEME_NAME for xfwm
   if [[ "$want_t" == "Vault.OS-Reduced" ]]; then
     want_w="Vault.OS-Reduced"
   elif [[ "$want_t" == "Vault.OS" && "$want_w" == "Vault.OS-Reduced" ]]; then
@@ -704,6 +742,9 @@ cmd_ensure_theme() {
     > "$HOME/.config/gtk-3.0/gtk.css"
   if [[ -f "$overlay_src/gtk4.css" ]]; then
     cp -f "$overlay_src/gtk4.css" "$HOME/.config/gtk-4.0/gtk.css"
+    if [[ "$THEME_NAME" == "Vault.OS-Reduced" && -f "$overlay_src/gtk4-a11y.css" ]]; then
+      cat "$overlay_src/gtk4-a11y.css" >> "$HOME/.config/gtk-4.0/gtk.css"
+    fi
   fi
 
 
@@ -1106,6 +1147,152 @@ cmd_selftest() {
   return "$fail"
 }
 
+_a11y_picom() {
+  local want="$1" pc="$HOME/.config/picom.conf"
+  [[ -f "$pc" ]] || return 0
+  if [[ "$want" == "off" ]]; then
+    sed -i 's/^fading *= *true/fading = false/' "$pc"
+    sed -i 's/fade = true/fade = false/' "$pc"
+  else
+    sed -i 's/^fading *= *false/fading = true/' "$pc"
+    sed -i 's/fade = false/fade = true/' "$pc"
+  fi
+  pkill -HUP -x picom 2>/dev/null || true
+}
+
+_a11y_env() {
+  local dir="${XDG_CONFIG_HOME:-$HOME/.config}/environment.d"
+  local f="$dir/vault-os-a11y.conf"
+  if [[ "$1" == "on" ]]; then
+    mkdir -p "$dir"
+    printf '%s\n' 'GTK_A11Y=1' 'NO_AT_BRIDGE=0' >"$f"
+  else
+    rm -f "$f"
+  fi
+}
+
+cmd_a11y() {
+  local sub="${1:-status}"
+  case "$sub" in
+    status|"")
+      printf 'a11y       %s\n' "$([[ "${A11Y:-0}" == "1" || "$THEME_NAME" == "Vault.OS-Reduced" ]] && echo on || echo off)"
+      printf 'theme      %s\n' "$THEME_NAME"
+      printf 'motion     %s\n' "${A11Y_MOTION:-on}"
+      printf 'text       %s (%s)\n' "${A11Y_TEXT:-normal}" "$UI_FONT"
+      printf 'cursor     %s px\n' "${CURSOR_SIZE:-24}"
+      printf 'terminal   %s\n' "$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS/terminal-phosphor" 2>/dev/null || echo reduced)"
+      ;;
+    on)
+      log "a11y on — Vault.OS-Reduced, large type, no motion, 32px cursor"
+      conf_set THEME_NAME Vault.OS-Reduced
+      conf_set WM_THEME Vault.OS-Reduced
+      conf_set A11Y 1
+      conf_set A11Y_MOTION off
+      conf_set A11Y_TEXT large
+      conf_set CURSOR_SIZE 32
+      conf_set UI_FONT "Share Tech Mono 12"
+      conf_set MONO_FONT "Share Tech Mono 12"
+      conf_set TITLE_FONT "Share Tech Mono Bold 12"
+      mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS"
+      echo reduced > "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS/terminal-phosphor"
+      _a11y_picom off
+      _a11y_env on
+      load_config
+      cmd_apply
+      cmd_ensure_theme
+      if have vaultos-terminal-phosphor; then
+        vaultos-terminal-phosphor reduced >/dev/null 2>&1 || true
+      fi
+      log "a11y on. New GTK apps pick it up now; open apps may need a restart."
+      ;;
+    off)
+      log "a11y off — Vault.OS canon"
+      conf_set THEME_NAME Vault.OS
+      conf_set WM_THEME Vault.OS
+      conf_set A11Y 0
+      conf_set A11Y_MOTION on
+      conf_set A11Y_TEXT normal
+      conf_set CURSOR_SIZE 24
+      conf_set UI_FONT "Share Tech Mono 10"
+      conf_set MONO_FONT "Share Tech Mono 10"
+      conf_set TITLE_FONT "Share Tech Mono Bold 10"
+      _a11y_picom on
+      _a11y_env off
+      load_config
+      cmd_apply
+      cmd_ensure_theme
+      log "a11y off."
+      ;;
+    motion)
+      local m="${2:-}"
+      case "$m" in
+        off|0|false) conf_set A11Y_MOTION off; _a11y_picom off; load_config; cmd_apply; log "motion off" ;;
+        on|1|true)   conf_set A11Y_MOTION on;  _a11y_picom on;  load_config; cmd_apply; log "motion on" ;;
+        *) err "usage: vault-os a11y motion on|off"; return 2 ;;
+      esac
+      ;;
+    text)
+      local t="${2:-}"
+      case "$t" in
+        large|12|big)
+          conf_set A11Y_TEXT large
+          conf_set UI_FONT "Share Tech Mono 12"
+          conf_set MONO_FONT "Share Tech Mono 12"
+          conf_set TITLE_FONT "Share Tech Mono Bold 12"
+          ;;
+        huge|14)
+          conf_set A11Y_TEXT huge
+          conf_set UI_FONT "Share Tech Mono 14"
+          conf_set MONO_FONT "Share Tech Mono 14"
+          conf_set TITLE_FONT "Share Tech Mono Bold 14"
+          ;;
+        normal|10|off)
+          conf_set A11Y_TEXT normal
+          conf_set UI_FONT "Share Tech Mono 10"
+          conf_set MONO_FONT "Share Tech Mono 10"
+          conf_set TITLE_FONT "Share Tech Mono Bold 10"
+          ;;
+        *) err "usage: vault-os a11y text normal|large|huge"; return 2 ;;
+      esac
+      load_config
+      cmd_apply
+      cmd_ensure_theme
+      log "text ${A11Y_TEXT}"
+      ;;
+    cursor)
+      local s="${2:-}"
+      case "$s" in
+        24|32|48) conf_set CURSOR_SIZE "$s"; load_config; cmd_apply; log "cursor ${s}px" ;;
+        *) err "usage: vault-os a11y cursor 24|32|48"; return 2 ;;
+      esac
+      ;;
+    reduced)
+      conf_set THEME_NAME Vault.OS-Reduced
+      conf_set WM_THEME Vault.OS-Reduced
+      load_config
+      cmd_apply
+      cmd_ensure_theme
+      log "theme Vault.OS-Reduced"
+      ;;
+    -h|--help|help)
+      printf '%s\n' \
+        'vault-os a11y — high contrast, larger type, less motion' \
+        '' \
+        '  vault-os a11y              status' \
+        '  vault-os a11y on           Reduced theme + 12pt + 32px cursor + no fade' \
+        '  vault-os a11y off          back to Vault.OS canon' \
+        '  vault-os a11y reduced      theme only' \
+        '  vault-os a11y motion on|off' \
+        '  vault-os a11y text normal|large|huge' \
+        '  vault-os a11y cursor 24|32|48'
+      ;;
+    *)
+      err "unknown a11y subcommand: $sub (try: vault-os a11y help)"
+      return 2
+      ;;
+  esac
+}
+
 usage() {
   printf '%s\n' \
     "vault-os ${VERSION} — Vault.OS XFCE control plane" \
@@ -1124,6 +1311,7 @@ usage() {
     '  intro-enable    Enable intro on login' \
     '  intro-disable   Disable intro on login' \
     '  status          Health check (exit 1 if unhealthy)' \
+    '  a11y            High-contrast / large type / reduced motion (on|off|status)' \
     '  install         Copy themes/icons/helpers into ~/.themes ~/.icons ~/.local' \
     '  selftest        Validate installation' \
     '  version         Print version' \
@@ -1150,6 +1338,10 @@ main() {
     intro-enable|enable)   cmd_intro_enable ;;
     intro-disable|disable) cmd_intro_disable ;;
     status|st)             cmd_status ;;
+    a11y|accessability|accessibility)
+      shift
+      cmd_a11y "${1:-status}" "${2:-}"
+      ;;
     selftest|test)         cmd_selftest ;;
     version|-V|--version)  echo "vault-os $VERSION" ;;
     -h|--help|help)        usage ;;
