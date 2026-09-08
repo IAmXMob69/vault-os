@@ -1,3 +1,3 @@
 #!/bin/bash
-# Thin wrapper — VDS-01 single control plane. Real lock is vault-os ensure-theme.
+# Thin wrapper. Real work is vault-os ensure-theme.
 exec "$HOME/.local/bin/vault-os" ensure-theme "$@"

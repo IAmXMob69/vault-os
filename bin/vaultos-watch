@@ -1,5 +1,5 @@
 #!/bin/bash
-# Drift watch — VDS-01: only call vault-os ensure-theme (15s)
+# Drift watch — call vault-os ensure-theme on a short timer
 export DISPLAY="${DISPLAY:-:0.0}"
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
 HOME="${HOME:-$(getent passwd "$(id -un)" | cut -d: -f6)}"

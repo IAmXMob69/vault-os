@@ -3,7 +3,7 @@
 
 Embeds into xfce4-screensaver via Gtk.Plug + $XSCREENSAVER_WINDOW.
 Lock/idle default: spin (--full). Static only for Vault.OS-Reduced / --reduced-phosphor.
-Unlock chrome (lock.css) stays HUD-04's opaque plate — this is the saver surface only.
+Unlock chrome (lock.css) stays the opaque plate — this is the saver surface only.
 """
 import math
 import os
