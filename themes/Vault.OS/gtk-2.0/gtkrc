@@ -1,5 +1,5 @@
-# Vault.OS GTK-2 — GTK-02
-# Color values consumed from VDS-01 tokens.css. Do not invent greens.
+# Vault.OS GTK-2
+# Color values from tokens.css. Do not invent greens.
 # phosphor #1AFF6B / steel-900 #0C0F0C / well #070807 / seam #394139
 
 gtk-color-scheme = "fg_color:#1AFF6B\nbg_color:#0C0F0C\nbase_color:#070807\ntext_color:#66FF9C\nselected_bg_color:#0E8A3A\nselected_fg_color:#66FF9C\ntooltip_bg_color:#121612\ntooltip_fg_color:#1AFF6B"
