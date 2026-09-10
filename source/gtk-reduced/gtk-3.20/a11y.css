@@ -62,3 +62,34 @@ radio {
 notebook > header tabs tab {
   min-height: 24px;
 }
+
+/* scrollbars: 16px hits (DESIGN / ERRORS a11y density) */
+scrollbar,
+scrollbar.overlay-indicator {
+  min-width: 16px;
+  min-height: 16px;
+}
+scrollbar.vertical,
+scrollbar.vertical.overlay-indicator { min-width: 16px; }
+scrollbar.horizontal,
+scrollbar.horizontal.overlay-indicator { min-height: 16px; }
+scrollbar trough,
+scrollbar.overlay-indicator trough {
+  min-width: 16px;
+  min-height: 16px;
+}
+scrollbar slider,
+scrollbar.overlay-indicator slider {
+  min-width: 12px;
+  min-height: 12px;
+}
+scrollbar.vertical slider,
+scrollbar.vertical.overlay-indicator slider {
+  min-width: 12px;
+  min-height: 32px;
+}
+scrollbar.horizontal slider,
+scrollbar.horizontal.overlay-indicator slider {
+  min-width: 32px;
+  min-height: 12px;
+}

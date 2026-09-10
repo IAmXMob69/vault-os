@@ -416,67 +416,119 @@ switch:checked slider {
   background-color: @phos;
 }
 
-/* --- scrollbar: recessed trough + bevelled latch (phosphor only on hover) --- */
-scrollbar {
+/* --- scrollbar: 6px recessed latch. Not a phosphor pipe.
+   *:focus outline + 24px button hits + slider:focus fill turned the
+   xfce4-terminal GtkScrollbar into a full-height green column. --- */
+scrollbar,
+scrollbar.overlay-indicator {
+  -GtkScrollbar-has-backward-stepper: false;
+  -GtkScrollbar-has-forward-stepper: false;
   background-color: @vault_black;
   background-image: none;
   border: none;
   border-radius: 0;
-  min-width: 10px;
-  min-height: 10px;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  min-width: 6px;
+  min-height: 6px;
+  color: @steel;
 }
 
-scrollbar trough {
+scrollbar.vertical,
+scrollbar.vertical.overlay-indicator { min-width: 6px; }
+scrollbar.horizontal,
+scrollbar.horizontal.overlay-indicator { min-height: 6px; }
+
+scrollbar trough,
+scrollbar.overlay-indicator trough {
   background-color: @vault_black;
   border: none;
   border-radius: 0;
-  min-width: 10px;
-  min-height: 10px;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  min-width: 6px;
+  min-height: 6px;
   box-shadow:
     inset 1px 1px 0 @bevel_lo,
     inset -1px -1px 0 @bevel_hi;
 }
 
-scrollbar slider {
-  min-width: 10px;
-  min-height: 20px;
+scrollbar slider,
+scrollbar.overlay-indicator slider,
+scrollbar.overlay-indicator.hovering slider,
+scrollbar.overlay-indicator.dragging slider {
+  min-width: 4px;
+  min-height: 4px;
   margin: 1px;
-  background-color: @inset;
-  background-image: none;
+  padding: 0;
   border: none;
+  outline: none;
   border-radius: 0;
-  box-shadow:
-    inset 1px 1px 0 @bevel_hi,
-    inset -1px -1px 0 @bevel_lo;
+  background-color: @bevel_hi;
+  background-image: none;
+  color: @bevel_hi;
+  box-shadow: none;
 }
 
-scrollbar slider:hover {
-  background-color: @inset;
-  box-shadow:
-    inset 1px 1px 0 @bevel_hi,
-    inset -1px -1px 0 @bevel_lo,
-    inset 0 0 0 1px @phosphor_primary;
+scrollbar.vertical slider,
+scrollbar.vertical.overlay-indicator slider {
+  min-width: 4px;
+  min-height: 16px;
+}
+scrollbar.horizontal slider,
+scrollbar.horizontal.overlay-indicator slider {
+  min-width: 16px;
+  min-height: 4px;
+}
+
+scrollbar slider:hover,
+scrollbar.overlay-indicator slider:hover {
+  background-color: @phosphor_dim;
+  outline: none;
+  box-shadow: none;
 }
 
 scrollbar slider:active,
-scrollbar slider:focus {
-  background-color: @phosphor_ghost;
-  outline: 2px solid @focus_ring;
-  outline-offset: -2px;
-  box-shadow:
-    inset 1px 1px 0 @bevel_hi,
-    inset -1px -1px 0 @bevel_lo,
-    inset 0 -2px 0 @phosphor_primary;
+scrollbar slider:focus,
+scrollbar.overlay-indicator slider:active,
+scrollbar.overlay-indicator slider:focus {
+  background-color: @phosphor_dim;
+  outline: none;
+  box-shadow: none;
 }
 
 scrollbar button,
 scrollbar.horizontal button,
-scrollbar.vertical button {
+scrollbar.vertical button,
+scrollbar.overlay-indicator button {
   min-width: 0;
   min-height: 0;
   padding: 0;
+  margin: 0;
   border: none;
-  background-color: @vault_black;
+  outline: none;
+  opacity: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+scrollbar:focus,
+scrollbar *:focus {
+  outline: none;
+}
+
+/* xfce4-terminal: hide classic bar. Alt-screen TUIs make it full-height. */
+.xfce4-terminal scrollbar,
+.Xfce4-terminal scrollbar {
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  background: none;
   box-shadow: none;
 }
 
