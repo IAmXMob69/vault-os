@@ -1,6 +1,6 @@
 [Plymouth Theme]
 Name=Vault.OS
-Description=Vault-Tec phosphor boot — VDS-01 / HUD-04
+Description=Vault-Tec phosphor boot
 ModuleName=script
 
 [script]

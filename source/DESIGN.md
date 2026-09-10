@@ -1,8 +1,8 @@
 # Vault.OS — DESIGN.md
-**VDS-01. CANON. Human screenshots beat this file.**
+**CANON. Screenshots beat this file.**
 
 Arch Linux. XFCE 4.18+ (xfwm4, xfce4-panel, xfce4-terminal).
-Vault-Tec industrial + Pip-Boy HUD + phosphor CRT. Not generic green hacker. Not modern flat.
+Vault-Tec industrial phosphor CRT. Not generic green hacker. Not modern flat.
 
 ## Palette (do not drift)
 
@@ -40,12 +40,26 @@ Derived only: `phos-hot` `#66FF9C`, `phos-white` `#D4EDDD`, `steel-500` `#60665C
 - Scanlines only in terminal / lock / splash. Not on GTK widgets.
 - Every surface carries a part number: VAULT-TEC / ROBCO / 101 / 76.
 
+
+## Code quality bar (this pass)
+
+What “better” means for Vault.OS on Arch + XFCE:
+
+1. **One palette** — every green is hue 141 from `tokens.css`. No freelance `#33FF6A` / `#44FF3D`.
+2. **source ≡ themes** — craft lands in `source/`, packaged copies under `themes/` stay in sync.
+3. **Reduced locks with CANON** — flipping `THEME_NAME=Vault.OS-Reduced` flips GTK *and* xfwm.
+4. **Install path works** — `./bin/vault-os install` then `ensure-theme` / `status` / `selftest` on a clean user tree.
+5. **CssProvider clean** — no empty colors, no invalid properties, no web-only CSS in GTK themes.
+6. **Public voice** — README and install notes read like a normal theme release. Team pitfalls stay in `ERRORS.md` (not linked from the front door).
+7. **Human OK for sudo** — greeter / Plymouth stay staged until an explicit LightDM restart.
+
+
 ## Per-bot
 
 **GTK-02** — `~/.themes/Vault.OS/gtk-2.0|gtk-3.0|gtk-3.20/`
 Import `~/Vault.OS/source/tokens.css`. Map widgets to aliases. Stamp bevel on plates. Font Overpass Mono 9pt. Headerbar 24px `panel-black`. Part number `VAULT-TEC` on header.
 
-**XWM-03** — `~/.themes/Vault.OS/xfwm4/`
+**xfwm4** — `~/.themes/Vault.OS/xfwm4/`
 24px lintel `panel-black`. 1px jamb `bevel-hi` inside, `bevel-lo` outside. 16px square latches. Close hover `rad-red`. Active title `phosphor-primary`. Inactive `steel`. No traffic lights.
 
 **TRM-05** — `~/.config/xfce4/terminal/terminalrc`
@@ -86,6 +100,9 @@ Human paste wins. Spec mock: `~/Vault.OS/screenshots/spec-frame.png`
 
 Freelance greens. Blur soup. Material pills. Scanlines on GTK. Amber used as chrome. Sky-blue ANSI. Inter/Roboto/Segoe. New packages without a listed wait.
 
+## Pitfalls
+
+
 ## Accessibility (CANON)
 Team baseline with Accessability Bot. Craft still Vault-Tec; usable with keyboard, low vision, CRT down/off.
 
@@ -105,7 +122,12 @@ Team baseline with Accessability Bot. Craft still Vault-Tec; usable with keyboar
 ### Status
 amber/rad never sole cue — pair with icon, label, or shape.
 
+### Selection
+`theme_selected_bg` = `inset` `#121612`, `theme_selected_fg` = `phosphor_primary` `#1AFF6B` (~13.5 AAA). Always pair with LED rail. Never phosphor_dim + phos_hot (~3.5 FAIL).
+
 ### Reduced phosphor
 First-class file: `tokens-reduced.css` (clearer body, lifted rad, effects off).
 Import instead of `tokens.css` for reduced/clear-terminal mode.
 Spin/bloom/scanlines: opt-in; reduced mode sets them off.
+Density (11pt, 3px focus, 32px hits, 16px scrollbars) lives in `source/gtk-reduced/gtk-3.20/a11y.css` — not in the token file.
+Switch: `vault-os a11y on|off`. See `docs/A11Y.md`.
