@@ -1,5 +1,5 @@
 /* Vault.OS panel chrome
-   Panel, whisker, clock, tasklist LED rail.
+   Panel, Whisker, clock, tasklist LED rail.
    Consumes CANON tokens. Do not redeclare colors.
    Active tab is a phosphor LED rail, not a highlighter.
    Notify chrome lives in xfce-notify-4.0.
@@ -46,7 +46,7 @@
   border-radius: 0;
   border-bottom: 2px solid transparent;
   box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
-  padding: 0 6px;
+  padding: 0 4px;
   min-height: 22px;
 }
 
@@ -73,7 +73,6 @@
   border-bottom-color: transparent;
 }
 
-
 /* --- tasklist: LED rail (protected — do not crush labels) --- */
 .xfce4-panel .tasklist,
 .xfce4-panel .tasklist * {
@@ -84,8 +83,8 @@
 .xfce4-panel .tasklist .toggle,
 .xfce4-panel wnck-pager {
   min-height: 22px;
-  min-width: 48px;
-  padding: 0 8px;
+  min-width: 44px;
+  padding: 0 6px;
   background-color: transparent;
   border-bottom: 2px solid transparent;
   box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
@@ -138,10 +137,34 @@
   box-shadow: none;
 }
 
-/* --- launcher popup / whisker --- */
+/* --- panel popup menus --- */
 .xfce4-panel menu,
-.xfce4-panel .menu,
-/* --- whisker (tight plate — 320×420, no opacity theater) --- */
+.xfce4-panel .menu {
+  background-color: @panel_black;
+  color: @phos;
+  border: none;
+  border-radius: 0;
+  padding: 2px 0;
+  box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+  opacity: 1;
+}
+
+.xfce4-panel menuitem,
+.xfce4-panel .menu menuitem {
+  min-height: 24px;
+  padding: 2px 10px;
+  color: @phos;
+}
+
+.xfce4-panel menuitem:hover,
+.xfce4-panel menuitem:selected {
+  background-color: alpha(@phosphor_ghost, 0.45);
+  color: @phos_hot;
+  box-shadow: inset 2px 0 0 @phos;
+}
+
+/* --- whisker (320×420, full opacity) --- */
 #whiskermenu-window {
   background-color: @panel_black;
   color: @phos;
@@ -163,8 +186,8 @@
 #whiskermenu-window list row {
   background-color: @panel_black;
   color: @phos;
-  min-height: 22px;
-  padding: 0 6px;
+  min-height: 24px;
+  padding: 2px 8px;
 }
 
 #whiskermenu-window .view:selected,
@@ -174,7 +197,7 @@
 #whiskermenu-window list row:hover {
   background-color: alpha(@phosphor_ghost, 0.45);
   color: @phos_hot;
-  min-height: 22px;
+  min-height: 24px;
   box-shadow: inset 2px 0 0 @phos;
 }
 
@@ -182,20 +205,28 @@
   background-color: @vault_black;
   color: @phos_hot;
   border: none;
-  min-height: 24px;
+  min-height: 28px;
   border-radius: 0;
   box-shadow: inset 1px 1px 0 @bevel_lo, 1px 1px 0 @bevel_hi;
-  padding: 2px 6px;
+  padding: 2px 8px;
+  font-family: "Share Tech Mono", "Overpass Mono", monospace;
+  caret-color: @phos;
 }
 
 #whiskermenu-window entry:focus {
   box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_lo;
+  outline: none;
 }
 
 #whiskermenu-window button {
   border-radius: 0;
-  min-height: 24px;
+  min-height: 28px;
+  padding: 2px 8px;
   box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  background-image: none;
+  background-color: @inset;
+  color: @phos;
+  letter-spacing: 0.06em;
 }
 
 #whiskermenu-window button:hover {
@@ -210,8 +241,8 @@
 
 #whiskermenu-window button:focus {
   box-shadow: inset 0 0 0 2px @phos, inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
+  outline: none;
 }
-
 
 /* a11y focus */
 .xfce4-panel button:focus,
@@ -229,4 +260,5 @@
 .xfce4-panel .launcher button,
 .xfce4-panel .directorymenu-button {
   min-height: 28px;
+  padding: 0 6px;
 }
