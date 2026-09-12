@@ -522,17 +522,40 @@ scrollbar.overlay-indicator button {
   box-shadow: none;
 }
 
-/* xfce4-terminal: hide classic bar. Alt-screen TUIs make it full-height. */
+/* xfce4-terminal: keep a thin recessed latch (not a full-height phosphor pipe). */
 .xfce4-terminal scrollbar,
 .Xfce4-terminal scrollbar {
-  min-width: 0;
-  min-height: 0;
+  opacity: 1;
+  min-width: 8px;
+  background-color: @vault_black;
+  background-image: none;
+  border: none;
   margin: 0;
   padding: 0;
-  border: none;
-  opacity: 0;
-  background: none;
   box-shadow: none;
+}
+.xfce4-terminal scrollbar.vertical,
+.Xfce4-terminal scrollbar.vertical.overlay-indicator {
+  min-width: 8px;
+}
+.xfce4-terminal scrollbar trough {
+  background-color: @vault_black;
+  min-width: 8px;
+  box-shadow:
+    inset 1px 1px 0 @bevel_lo,
+    inset -1px -1px 0 @bevel_hi;
+}
+.xfce4-terminal scrollbar slider {
+  min-width: 6px;
+  min-height: 24px;
+  margin: 1px;
+  background-color: @bevel_hi;
+  background-image: none;
+  opacity: 1;
+}
+.xfce4-terminal scrollbar slider:hover,
+.xfce4-terminal scrollbar slider:active {
+  background-color: @phosphor_dim;
 }
 
 overshoot.top, overshoot.bottom, overshoot.left, overshoot.right,
