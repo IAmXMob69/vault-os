@@ -22,3 +22,5 @@ Live copies land in `~/.themes/Vault.OS/gtk-3.0/hud.css` (and `gtk-3.20/`). Noti
 ## Notes
 
 Stick to GTK CSS — web-only properties will fail to parse. Keep tasklist button minimum height at 22px so labels are not crushed; chrome controls can stay at 28px.
+
+Top-right session control is a launcher (`launcher-10/session.desktop`) that opens the centered logout plate — not the Actions edge dropdown.

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Session
+Comment=Centered lock / logout / power
+Exec=xfce4-session-logout
+Icon=system-shutdown-symbolic
+Terminal=false
+StartupNotify=true
