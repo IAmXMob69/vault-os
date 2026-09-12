@@ -16,3 +16,6 @@ bin/*.bak*
 config/xorg.conf.d/
 extras/cursors-src/anim/preview-*.png
 extras/cursors-src/anim/video-sheet.png
+
+# Nested project checkouts — never ship inside the theme pack
+BloodLink/
