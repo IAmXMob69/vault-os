@@ -79,6 +79,16 @@ mkdir -p "$HOME/.themes" "$HOME/.icons" "$DATA/icons" "$DATA/backgrounds" \
   "$DATA/vault-os/panel" "$HOME/.local/bin"
 
 rsync -a --delete --exclude 'icon-theme.cache' \
+  "$ROOT/themes/Vault.OS/" "$HOME/.themes/Vault.OS/"
+if [[ -d "$ROOT/themes/Vault.OS-Reduced" ]]; then
+  rsync -a --delete --exclude 'icon-theme.cache' \
+    "$ROOT/themes/Vault.OS-Reduced/" "$HOME/.themes/Vault.OS-Reduced/"
+fi
+rsync -a --delete --exclude 'icon-theme.cache' \
+  "$ROOT/icons/Vault.OS/" "$HOME/.icons/Vault.OS/"
+rsync -a "$ROOT/icons/Vault.OS/" "$DATA/icons/Vault.OS/" 2>/dev/null || true
+# Optional legacy packs
+rsync -a --delete --exclude 'icon-theme.cache' \
   "$ROOT/themes/PipBoy-NV/" "$HOME/.themes/PipBoy-NV/"
 rsync -a --delete --exclude 'icon-theme.cache' \
   "$ROOT/icons/FalloutMojave/" "$DATA/icons/FalloutMojave/"
@@ -91,6 +101,10 @@ ln -sfn "$DATA/icons/FalloutMojave" "$HOME/.icons/FalloutMojave"
 rsync -a "$ROOT/fonts/ShareTechMono/" "$DATA/fonts/ShareTechMono/"
 rsync -a "$ROOT/fonts/pipboy/" "$DATA/fonts/pipboy/"
 rsync -a "$ROOT/wallpapers/" "$DATA/backgrounds/"
+if [[ -d "$ROOT/source/wallpapers" ]]; then
+  mkdir -p "$DATA/backgrounds/Vault.OS"
+  rsync -a "$ROOT/source/wallpapers/" "$DATA/backgrounds/Vault.OS/"
+fi
 rsync -a "$ROOT/sounds/PipBoy-NV/" "$DATA/sounds/PipBoy-NV/"
 rsync -a "$ROOT/extras/panel/" "$DATA/vault-os/panel/"
 
@@ -98,7 +112,7 @@ if command -v fc-cache >/dev/null; then
   fc-cache -f "$DATA/fonts" >/dev/null 2>&1 || true
 fi
 if command -v gtk-update-icon-cache >/dev/null; then
-  gtk-update-icon-cache -f "$DATA/icons/FalloutMojave" >/dev/null 2>&1 || true
+  gtk-update-icon-cache -f "$HOME/.icons/Vault.OS" >/dev/null 2>&1 || true
 fi
 ok "assets installed"
 
@@ -143,6 +157,8 @@ fi
 cp -f "$ROOT/config/gtk-4.0/settings.ini" "$CFG/gtk-4.0/settings.ini"
 [[ -f "$ROOT/config/gtkrc-2.0" ]] && cp -f "$ROOT/config/gtkrc-2.0" "$HOME/.gtkrc-2.0"
 cp -f "$ROOT/config/picom.conf" "$CFG/picom.conf"
+cp -f "$ROOT/config/picom-anim.conf" "$CFG/picom-anim.conf"
+cp -f "$ROOT/config/picom-anim.conf" "$CFG/picom-anim.canon.conf"
 cp -f "$ROOT/config/fontconfig/fonts.conf" "$CFG/fontconfig/fonts.conf"
 rsync -a "$ROOT/config/Kvantum/" "$CFG/Kvantum/"
 cp -f "$ROOT/config/qt5ct/qt5ct.conf" "$CFG/qt5ct/qt5ct.conf"
@@ -281,4 +297,4 @@ if (( SYSTEM == 1 )); then
 fi
 
 info "Done. Log out and back in (or run: vault-os doctor)"
-printf '%s\n' '' '  Theme   PipBoy-NV' '  Icons   FalloutMojave' '  Cursor  PipBoy-NV-Cursors' '  Walls   ~/.local/share/backgrounds/' '  Pick a wallpaper in Settings -> Desktop' ''
+printf '%s\n' '' '  Theme   Vault.OS' '  Icons   Vault.OS' '  Cursor  Vault.OS' '  Walls   ~/.local/share/backgrounds/' '  Pick a wallpaper in Settings -> Desktop' ''
