@@ -26,6 +26,8 @@ vault-os status
 
 That drops themes and icons into `~/.themes` / `~/.icons`, plates into `~/.local/share/backgrounds/Vault.OS`, links the helpers in `~/.local/bin`, writes a Vault.OS conf, and runs `ensure-theme`.
 
+Stuck? See [INSTALLATION.md](INSTALLATION.md).
+
 Or by hand:
 
 ```bash
