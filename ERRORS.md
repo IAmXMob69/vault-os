@@ -316,3 +316,6 @@ Owners: whole team. Accessability Bot maintains a11y + lock/spin; Genius owns co
 - **Never use `!important` in GTK CSS** — CssProvider treats it as parse junk and can break the block.
 - Lasting craft: theme `gtk-3.0` **and** `gtk-3.20` (GTK 3.24 loads 3.20). GTK-02 owns.
 - `~/.config/gtk-3.0/gtk.css`: HUD `@import` only — no permanent spinner override fighting the theme.
+
+## Terminal scrollbar hide
+Do not force `ScrollingBar=NONE` / `TERMINAL_SCROLLBAR_NONE` in `vaultos-terminal-phosphor` or `terminalrc*`. Old phosphor pipe was a full-height green column; fix is thin recessed latch CSS (GTK/HUD), not hiding the bar. Keep `TERMINAL_SCROLLBAR_RIGHT`.

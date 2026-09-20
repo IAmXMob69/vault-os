@@ -19,3 +19,10 @@ extras/cursors-src/anim/video-sheet.png
 
 # Nested project checkouts — never ship inside the theme pack
 BloodLink/
+
+# Local privacy / geo experiments — never ship in the theme pack
+pihole-privacy-shield/
+privacy-shield
+lib/
+scripts/geolock-apply.sh
+scripts/__pycache__/
