@@ -271,38 +271,37 @@ def make(kind: str, state: str, pal: dict) -> list[list[str]]:
     pressed = state == "pressed"
     prelight = state == "prelight"
     inactive = state == "inactive"
-    fill = "R" if (kind == "close" and (prelight or pressed)) else "P"
+    hot = prelight or pressed
+    # Close: rad plate + bright X. Other latches: dim-phosphor plate + bright glyph
+    # so prelight/pressed match close's filled-plate language (not glyph-only).
+    if kind == "close" and hot:
+        fill = "R"
+    elif hot:
+        fill = "N"
+    else:
+        fill = "P"
     g = plate(fill=fill, pressed=pressed)
 
     if kind == "close":
         glyph = "W" if fill == "R" else ("R" if not inactive else "G")
         blit(g, CLOSE, glyph)
-    elif kind == "hide":
-        glyph = "O" if (prelight or pressed) else "G"
-        blit(g, HIDE, glyph)
-    elif kind == "maximize":
-        glyph = "O" if (prelight or pressed) else "G"
-        blit(g, MAXI, glyph)
-    elif kind == "maximize-toggled":
-        glyph = "O" if (prelight or pressed) else "G"
-        blit(g, REST, glyph)
-    elif kind == "menu":
-        glyph = "O" if (prelight or pressed) else "G"
-        blit(g, MENU, glyph)
-    elif kind == "shade":
-        glyph = "O" if (prelight or pressed) else "G"
-        blit(g, SHADE, glyph)
-    elif kind == "shade-toggled":
-        glyph = "O" if (prelight or pressed) else "G"
-        blit(g, SHADE_DN, glyph)
-    elif kind == "stick":
-        glyph = "O" if (prelight or pressed) else "G"
-        blit(g, STICK, glyph)
-    elif kind == "stick-toggled":
-        glyph = "O" if (prelight or pressed) else "G"
-        blit(g, STICK_ON, glyph)
-    else:
+        return g
+
+    stamps = {
+        "hide": HIDE,
+        "maximize": MAXI,
+        "maximize-toggled": REST,
+        "menu": MENU,
+        "shade": SHADE,
+        "shade-toggled": SHADE_DN,
+        "stick": STICK,
+        "stick-toggled": STICK_ON,
+    }
+    if kind not in stamps:
         raise ValueError(kind)
+    # Hot: bright glyph on phosphor plate (parity with close). Else steel.
+    glyph = "W" if hot else "G"
+    blit(g, stamps[kind], glyph)
     return g
 
 
