@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Vault.OS
+Comment=Vault.OS desktop (XFCE)
+Exec=startxfce4
+TryExec=startxfce4
+Icon=vaultos
+Type=Application
+DesktopNames=XFCE
+Keywords=xfce;vaultos;session;desktop;

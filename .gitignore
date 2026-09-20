@@ -17,6 +17,12 @@ config/xorg.conf.d/
 extras/cursors-src/anim/preview-*.png
 extras/cursors-src/anim/video-sheet.png
 
+# archiso work products — never ship
+iso/work/
+iso/out/
+iso/profile/
+*.iso
+
 # Nested project checkouts — never ship inside the theme pack
 BloodLink/
 

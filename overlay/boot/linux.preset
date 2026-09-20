@@ -1,0 +1,9 @@
+# mkinitcpio preset — Vault.OS default UKI + keep Arch recovery as a static copy
+# (arch-linux-recovery.efi is NOT rebuilt here).
+
+ALL_kver="/boot/vmlinuz-linux"
+
+PRESETS=('default')
+
+default_uki="/boot/EFI/Linux/vaultos-linux.efi"
+default_options="--splash /usr/share/systemd/bootctl/splash-vaultos.bmp"

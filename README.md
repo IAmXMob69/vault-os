@@ -1,8 +1,16 @@
 # Vault.OS
 
-XFCE theme for Arch. Vault-Tec terminal energy — not a green wash over Adwaita.
+**Vault.OS is an Arch Linux derivative, not a from-scratch kernel.** It keeps the Arch kernel (`linux` or `linux-lts`), pacman, systemd, and official Arch repos. Identity is `ID=vaultos` with `ID_LIKE=arch`.
+
+This repository is both:
+
+1. **Distro overlay + live/install ISO** (`overlay/`, `iso/`, `bin/vaultos`) so a machine can report as Vault.OS and so other PCs can be installed from `vaultos-<version>-x86_64.iso`.
+2. **XFCE desktop chrome** (GTK/xfwm theme, icons, Plymouth, greeter) with Vault-Tec terminal energy — not a green wash over Adwaita.
 
 Phosphor: `#1AFF6B`. Fonts: Share Tech Mono, Overpass Mono, Terminus (or PxPlus IBM VGA8).
+
+Distro CLI is `vaultos` (no hyphen): `status`, `version`, `doctor`, `overlay`, `update`, `iso`.  
+Theme/session CLI is `vault-os` (hyphen). Overlay docs: [`overlay/README.md`](overlay/README.md). ISO: [`iso/README.md`](iso/README.md).
 
 ## Layout
 

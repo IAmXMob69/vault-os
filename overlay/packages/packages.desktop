@@ -1,0 +1,20 @@
+# Vault.OS desktop set (XFCE). Official extra/community via Arch [extra].
+# The xfce4 metapackage is not required if these components are present.
+xorg-server
+xfce4-session
+xfce4-panel
+xfce4-settings
+xfdesktop
+xfwm4
+xfce4-terminal
+thunar
+lightdm
+lightdm-gtk-greeter
+network-manager-applet
+picom
+xfce4-notifyd
+xfce4-whiskermenu-plugin
+xfce4-screensaver
+xfce4-power-manager
+xfce4-pulseaudio-plugin
+xfce4-taskmanager

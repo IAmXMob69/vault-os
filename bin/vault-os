@@ -1371,6 +1371,8 @@ usage() {
     '  status          Health check (exit 1 if unhealthy)' \
     '  a11y            High-contrast / large type / reduced motion (on|off|status)' \
     '  install         Copy themes/icons/helpers into ~/.themes ~/.icons ~/.local' \
+    '  overlay         Distro identity (status|apply|rollback) — Phase 1' \
+    '  (distro CLI is vaultos: status, doctor, update, iso)' \
     '  selftest        Validate installation' \
     '  version         Print version' \
     '' \
@@ -1399,6 +1401,12 @@ main() {
     a11y|accessability|accessibility)
       shift
       cmd_a11y "${1:-status}" "${2:-}"
+      ;;
+    overlay)
+      shift
+      _script="$(readlink -f "${BASH_SOURCE[0]}")"
+      _root="$(cd "$(dirname "$_script")/.." && pwd)"
+      exec "$_root/overlay/identity-apply.sh" "${1:-status}"
       ;;
     selftest|test)         cmd_selftest ;;
     version|-V|--version)  echo "vault-os $VERSION" ;;
