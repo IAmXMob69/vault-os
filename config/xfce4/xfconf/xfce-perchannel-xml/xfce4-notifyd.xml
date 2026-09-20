@@ -21,7 +21,7 @@
   <property name="date-time-custom-format" type="string" value="%a %H:%M:%S"/>
   <property name="do-slideout" type="bool" value="true"/>
   <property name="do-fadeout" type="bool" value="true"/>
-  <property name="theme" type="string" value="PipBoy-NV"/>
+  <property name="theme" type="string" value="Vault.OS"/>
   <property name="initial-opacity" type="double" value="0.95999999999999996"/>
   <property name="show-notifications-on" type="string" value="active-monitor"/>
   <property name="notify-location" type="string" value="bottom-left"/>
