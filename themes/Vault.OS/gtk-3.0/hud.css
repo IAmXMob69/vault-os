@@ -27,7 +27,7 @@
 }
 
 .xfce4-panel label {
-  color: @phos;
+  color: @phos_hot;
   font-family: "Share Tech Mono", "Overpass Mono", monospace;
   font-size: 9pt;
   font-weight: bold;
@@ -131,7 +131,7 @@
   font-size: 10pt;
   font-weight: bold;
   letter-spacing: 0.08em;
-  color: @phos;
+  color: @phos_hot;
   text-shadow: 0 0 1px @phos;
   border-bottom: none;
   box-shadow: none;
