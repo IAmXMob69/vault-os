@@ -6,7 +6,7 @@ static char * close_active_xpm[] = {
 "H c #3A463A s active_highlight_1",
 "L c #050605 s active_shadow_1",
 "P c #121612 s active_color_2",
-"R c #E94D5A",
+"R c #E94D5A s active_close",
 "THHHHHHHHHHHHHHHHHHHHT",
 "HPPPPPPPPPPPPPPPPPPPPL",
 "HPPPPPPPPPPPPPPPPPPPPL",
