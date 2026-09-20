@@ -16,8 +16,9 @@ Improve Arch XFCE / Vault.OS across the stack. Master Coding Bot can pull any la
 
 ## Open — human sudo later
 
-- Greeter / Plymouth — [`BOOT.md`](BOOT.md). Do not restart LightDM until ready.
-- Optional fonts (Overpass, Share Tech Mono, Terminus / VGA8).
+- Greeter system files are installed (`/usr/share/themes|icons|backgrounds/Vault.OS` + lightdm-gtk-greeter.conf). **Do not** `systemctl restart lightdm` until you want to end the session — next logout shows it.
+- Plymouth still staged only — package not installed; see [`BOOT.md`](BOOT.md).
+- Optional fonts system-wide beyond Share Tech Mono for greeter.
 
 ## Landed
 
