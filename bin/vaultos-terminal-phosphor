@@ -1,11 +1,29 @@
 #!/bin/bash
-# Vault.OS — phosphor dial
+# Vault.OS — phosphor dial (terminal CRT only; never stops desktop/lock Arch spin)
 # Usage: vaultos-terminal-phosphor {full|reduced|clear|status}
-# HUD/GTK/a11y may call this. Default readable: clear/reduced.
+# Modes: reduced=solid, full=scanline+bloom, clear=sharp solid. Default: reduced.
 set -euo pipefail
 MODE="${1:-status}"
 HOME="${HOME:-$(getent passwd "$(id -un)" | cut -d: -f6)}"
-SRC="$HOME/Vault.OS/source/xfce4-terminal"
+# Prefer checkout root from vault-os.conf, then ~/Vault.OS (portable; no hard home path)
+ROOT=""
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
+if [[ -f "$CONF" ]]; then
+  # shellcheck disable=SC1090
+  ROOT="$(grep -E '^VAULT_OS_ROOT=' "$CONF" 2>/dev/null | head -1 | cut -d= -f2- || true)"
+fi
+SRC=""
+for cand in ${ROOT:+"$ROOT/source/xfce4-terminal"} \
+            "$HOME/Projects/vault-os/source/xfce4-terminal" \
+            "$HOME/Vault.OS/source/xfce4-terminal"; do
+  if [[ -d "$cand" && -f "$cand/terminalrc.reduced" ]]; then
+    SRC="$cand"
+    break
+  fi
+done
+if [[ -z "$SRC" ]]; then
+  SRC="$HOME/Vault.OS/source/xfce4-terminal"
+fi
 LIVE="$HOME/.config/xfce4/terminal/terminalrc"
 STATE="$HOME/.config/Vault.OS/terminal-phosphor"
 export DISPLAY="${DISPLAY:-:0.0}"
@@ -34,6 +52,7 @@ apply_xfconf() {
       ;;
     reduced|clear)
       xfconf-query -c xfce4-terminal -p /background-mode -s TERMINAL_BACKGROUND_SOLID
+      xfconf-query -c xfce4-terminal -p /background-image-file -s "" 2>/dev/null || true
       ;;
   esac
 }

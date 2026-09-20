@@ -319,3 +319,6 @@ Owners: whole team. Accessability Bot maintains a11y + lock/spin; Genius owns co
 
 ## Terminal scrollbar hide
 Do not force `ScrollingBar=NONE` / `TERMINAL_SCROLLBAR_NONE` in `vaultos-terminal-phosphor` or `terminalrc*`. Old phosphor pipe was a full-height green column; fix is thin recessed latch CSS (GTK/HUD), not hiding the bar. Keep `TERMINAL_SCROLLBAR_RIGHT`.
+
+## Terminal install seed
+Fresh `vault-os install` must copy the full `source/xfce4-terminal/` tree and seed live `terminalrc` from `terminalrc.reduced` (not only the generic `terminalrc`). Always keep `ScrollingBar=TERMINAL_SCROLLBAR_RIGHT`.

@@ -465,7 +465,7 @@ cmd_apply() {
   write_vault_os_env
 
   # Terminal — vaultos-terminal-phosphor (CANON palette)
-  # Modes: full|reduced|clear. Default reduced. See ~/Vault.OS/source/xfce4-terminal/A11Y.md
+  # Modes: full|reduced|clear. Default reduced. See source/xfce4-terminal/A11Y.md
   if have vaultos-terminal-phosphor; then
     local phos_mode
     phos_mode="$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS/terminal-phosphor" 2>/dev/null || echo reduced)"
@@ -473,6 +473,7 @@ cmd_apply() {
     vaultos-terminal-phosphor "$phos_mode" >/dev/null || true
     xq_set xfce4-terminal /title-initial -t string -s "ROBCO 76"
     xq_set xfce4-terminal /misc-borders-default -t bool -s true
+    xq_set xfce4-terminal /scrolling-bar -t string -s "TERMINAL_SCROLLBAR_RIGHT"
   elif have xfconf-query; then
     # Fallback CANON if dial missing
     local pal="#070807;#C41E3A;#0E8A3A;#FFB000;#2A332A;#C41E3A;#1AFF6B;#8A8F86;#121612;#C41E3A;#1AFF6B;#FFB000;#8A8F86;#C41E3A;#1AFF6B;#C7C9C5"
@@ -486,6 +487,7 @@ cmd_apply() {
     xq_set xfce4-terminal /misc-borders-default -t bool -s true
     xq_set xfce4-terminal /font-name -t string -s "Share Tech Mono 11"
     xq_set xfce4-terminal /title-initial -t string -s "ROBCO 76"
+    xq_set xfce4-terminal /scrolling-bar -t string -s "TERMINAL_SCROLLBAR_RIGHT"
   fi
 
   ensure_xfdesktop || true
@@ -1079,13 +1081,27 @@ cmd_install() {
     :
   fi
 
-  # Terminal theme + scanline asset
+  # Terminal theme: full source tree + live reduced seed
   if [[ -d "$root/source/xfce4-terminal" ]]; then
-    mkdir -p "$HOME/.config/xfce4/terminal"              "$HOME/.local/share/xfce4/terminal/colorschemes"              "$HOME/.local/share/Vault.OS"
-    [[ -f "$root/source/xfce4-terminal/terminalrc" ]] &&       cp -f "$root/source/xfce4-terminal/terminalrc" "$HOME/.config/xfce4/terminal/terminalrc"
-    [[ -f "$root/source/xfce4-terminal/Vault.OS.theme" ]] &&       cp -f "$root/source/xfce4-terminal/Vault.OS.theme"         "$HOME/.local/share/xfce4/terminal/colorschemes/Vault.OS.theme"
-    [[ -f "$root/source/xfce4-terminal/scanline.png" ]] &&       cp -f "$root/source/xfce4-terminal/scanline.png" "$HOME/.local/share/Vault.OS/scanline.png"
-    mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS"
+    mkdir -p "$HOME/Vault.OS/source" \
+             "$HOME/.config/xfce4/terminal" \
+             "$HOME/.local/share/xfce4/terminal/colorschemes" \
+             "$HOME/.local/share/Vault.OS" \
+             "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS"
+    cp -a "$root/source/xfce4-terminal/." "$HOME/Vault.OS/source/xfce4-terminal/"
+    if [[ -f "$root/source/xfce4-terminal/terminalrc.reduced" ]]; then
+      cp -f "$root/source/xfce4-terminal/terminalrc.reduced" \
+        "$HOME/.config/xfce4/terminal/terminalrc"
+    elif [[ -f "$root/source/xfce4-terminal/terminalrc" ]]; then
+      cp -f "$root/source/xfce4-terminal/terminalrc" \
+        "$HOME/.config/xfce4/terminal/terminalrc"
+    fi
+    [[ -f "$root/source/xfce4-terminal/Vault.OS.theme" ]] && \
+      cp -f "$root/source/xfce4-terminal/Vault.OS.theme" \
+        "$HOME/.local/share/xfce4/terminal/colorschemes/Vault.OS.theme"
+    [[ -f "$root/source/xfce4-terminal/scanline.png" ]] && \
+      cp -f "$root/source/xfce4-terminal/scanline.png" \
+        "$HOME/.local/share/Vault.OS/scanline.png"
     echo reduced > "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS/terminal-phosphor"
   fi
 

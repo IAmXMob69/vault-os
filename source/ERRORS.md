@@ -120,7 +120,7 @@ Owners: whole team. Accessability Bot maintains a11y + lock/spin; Genius owns co
 ### DO NOT leave idle Thunar/menubar spinner visible (and don’t fix only gtk-3.0 or opacity-only)
 - **Symptom:** Persistent grey loading circle in Thunar menubar when nothing is loading — reads broken, not Vault-Tec.
 - **Why:** Thunar packs `GtkSpinner` always-visible; GTK 3.24 loads `gtk-3.20/gtk.css` first. Opacity-only + always-on `-gtk-icon-source: process-working` can still paint. Lasting home is theme `gtk-3.0`/`gtk-3.20` only. Do **not** re-add a fighting spinner override in `~/.config/gtk-3.0/gtk.css` (HUD `@import` only; VDS 2026-09-05).
-- **Do instead:** Lasting fix in CANON + Reduced `gtk-3.0` **and** `gtk-3.20` (live + source): idle = opacity 0, `-gtk-icon-source: none`, `-gtk-icon-transform: scale(0)`, collapse `.thunar menubar > menuitem:disabled`/`:last-child` chrome (no black square); busy = quiet phosphor on `spinner:checked` / `.active` (incl. `:disabled:checked` for Thunar’s insensitive menuitem).
+- **Do instead:** Lasting fix in CANON + Reduced `gtk-3.0` **and** `gtk-3.20` (live + source): idle = opacity 0, `-gtk-icon-source: none`, `-gtk-icon-transform: scale(0)`; busy = quiet phosphor on `spinner:checked` / `.active` (incl. `:disabled:checked` for Thunar’s insensitive menuitem).
 - **Owner:** GTK-02. **Logged:** 2026-09-05 VDS-01 / GTK-02
 
 
@@ -158,7 +158,7 @@ Owners: whole team. Accessability Bot maintains a11y + lock/spin; Genius owns co
 ### DO NOT leave xfwm on `Vault.OS` when GTK is `Vault.OS-Reduced`
 - **Symptom:** Reduced GTK with CANON doors (wrong phosphor/rad plates).
 - **Do instead:** When `THEME_NAME=Vault.OS-Reduced`, set `xfwm4 /general/theme` to `Vault.OS-Reduced` (own plates `#66FF9C` / `#E94D5A` / `#B7BEB4`). CANON mode keeps WM `Vault.OS`.
-- **Owner:** Genius ensure-theme + XWM-03 plates. **Logged:** 2026-09-05 XWM / VDS-01
+- **Fix:** ensure-theme must set xfwm4 `/general/theme` with the GTK theme. Logged 2026-09-05.
 
 ---
 
@@ -306,8 +306,8 @@ Owners: whole team. Accessability Bot maintains a11y + lock/spin; Genius owns co
 - Stock `xfce-floaters.desktop` stays stock — **do not** slot-hijack.
 - Obsolete: “stock ids only resolve / hijack floaters” guidance.
 
-## XWM-03 — addendum
-- Never leave a mixed xfwm tree: some XPMs hex+`s`, others symbolic-only. xfwm will look half-Default. Replace the whole `xfwm4/` dir, don’t patch one latch.
+## xfwm4 — mixed decoration trees
+- Do not leave a mixed xfwm tree: some XPMs hex+`s`, others symbolic-only. xfwm will look half-Default. Replace the whole `xfwm4/` dir, don’t patch one latch.
 
 ## GTK / Thunar — idle menubar spinner (2026-09-05) — VDS DESIGN CALL
 - **DO NOT** leave idle spinner visible on Thunar menubar.
@@ -316,3 +316,9 @@ Owners: whole team. Accessability Bot maintains a11y + lock/spin; Genius owns co
 - **Never use `!important` in GTK CSS** — CssProvider treats it as parse junk and can break the block.
 - Lasting craft: theme `gtk-3.0` **and** `gtk-3.20` (GTK 3.24 loads 3.20). GTK-02 owns.
 - `~/.config/gtk-3.0/gtk.css`: HUD `@import` only — no permanent spinner override fighting the theme.
+
+## Terminal scrollbar hide
+Do not force `ScrollingBar=NONE` / `TERMINAL_SCROLLBAR_NONE` in `vaultos-terminal-phosphor` or `terminalrc*`. Old phosphor pipe was a full-height green column; fix is thin recessed latch CSS (GTK/HUD), not hiding the bar. Keep `TERMINAL_SCROLLBAR_RIGHT`.
+
+## Terminal install seed
+Fresh `vault-os install` must copy the full `source/xfce4-terminal/` tree and seed live `terminalrc` from `terminalrc.reduced` (not only the generic `terminalrc`). Always keep `ScrollingBar=TERMINAL_SCROLLBAR_RIGHT`.
