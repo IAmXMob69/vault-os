@@ -8,7 +8,7 @@ Honors reduced phosphor (a11y):
 
 PERIOD stays 8.0. Spin/bloom are opt-in; reduced/clear set them off.
 111 spinner stays Hidden (separate autostart).
-Desktop canon: --full --instance desktop (never --reduced-phosphor on that instance).
+Desktop default: --reduced-phosphor --instance desktop (CPU-safe static). Set ~/.config/Vault.OS/desktop-spin=full to spin.
 """
 import argparse
 import math

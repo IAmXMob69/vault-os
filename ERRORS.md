@@ -322,3 +322,6 @@ Do not force `ScrollingBar=NONE` / `TERMINAL_SCROLLBAR_NONE` in `vaultos-termina
 
 ## Terminal install seed
 Fresh `vault-os install` must copy the full `source/xfce4-terminal/` tree and seed live `terminalrc` from `terminalrc.reduced` (not only the generic `terminalrc`). Always keep `ScrollingBar=TERMINAL_SCROLLBAR_RIGHT`.
+
+## Desktop Arch spin CPU
+Do not leave `vaultos-spin-arch --full` running for days on HD 630 — it burns CPU. Default desktop mark is `--reduced-phosphor` (static). Opt into spin with `~/.config/Vault.OS/desktop-spin=full`. Autostart must call `vaultos-spin-arch-autostart`, not a hard `--full` Exec.

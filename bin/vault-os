@@ -1120,7 +1120,7 @@ cmd_install() {
   # Control-plane helpers
   local bin
   for bin in vault-os vaultos-lock vaultos-session-lock vaultos-spin-arch \
-             vaultos-spin-lock vaultos-spin-lock-run vaultos-terminal-phosphor vaultos-watch; do
+             vaultos-spin-lock vaultos-spin-lock-run vaultos-spin-arch-autostart vaultos-terminal-phosphor vaultos-watch; do
     if [[ -f "$root/bin/$bin" ]]; then
       ln -sfn "$root/bin/$bin" "$HOME/.local/bin/$bin"
       chmod +x "$root/bin/$bin" 2>/dev/null || true

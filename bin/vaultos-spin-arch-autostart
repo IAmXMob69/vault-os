@@ -1,0 +1,17 @@
+#!/bin/bash
+# Desktop Arch mark autostart.
+# Prefer --reduced-phosphor (static) to spare CPU on HD 630; set
+# ~/.config/Vault.OS/desktop-spin=full to spin again.
+set -euo pipefail
+export DISPLAY="${DISPLAY:-:0.0}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+MODE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS/desktop-spin"
+mode="$(cat "$MODE_FILE" 2>/dev/null || echo reduced)"
+case "$mode" in
+  full) flag=--full ;;
+  off)
+    exit 0
+    ;;
+  *) flag=--reduced-phosphor ;;
+esac
+exec "$HOME/.local/bin/vaultos-spin-arch" "$flag" --instance desktop
