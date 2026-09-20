@@ -9,6 +9,11 @@ OUT="$ROOT/iso/out"
 PROFILE="$ROOT/iso/profile"
 [[ -d "$PROFILE" ]] || { echo "missing $PROFILE (run prepare-profile.sh)" >&2; exit 1; }
 mkdir -p "$OUT"
+if [[ -d "$WORK" ]]; then
+  awk -v p="$WORK" '$2 ~ p {print $2}' /proc/mounts | sort -r | while read -r m; do
+    umount -lf "$m" || true
+  done
+fi
 rm -rf "$WORK"
 mkarchiso -v -w "$WORK" -o "$OUT" "$PROFILE"
 shopt -s nullglob

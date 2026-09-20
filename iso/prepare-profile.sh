@@ -9,13 +9,15 @@ PROFILE="$ROOT/iso/profile"
 rm -rf "$PROFILE"
 cp -a "$RELENG" "$PROFILE"
 
-# --- identity. airootfs is copied after pacstrap, so these replace Arch stock
-# on the live medium. vaultos-firstboot still applies them if they are missing. ---
+# --- live identity. hostname/issue/motd are not owned by pacstrap packages.
+# os-release and lsb-release ARE (filesystem / lsb-release) — those are written
+# after pacstrap by airootfs/root/customize_airootfs.sh. ---
 install -m 0644 "$ROOT/iso/airootfs/etc/hostname" "$PROFILE/airootfs/etc/hostname"
 install -m 0644 "$ROOT/iso/airootfs/etc/motd" "$PROFILE/airootfs/etc/motd"
 install -m 0644 "$ROOT/iso/airootfs/etc/issue" "$PROFILE/airootfs/etc/issue"
-install -m 0644 "$ROOT/overlay/identity/os-release" "$PROFILE/airootfs/etc/os-release"
-install -m 0644 "$ROOT/overlay/identity/lsb-release" "$PROFILE/airootfs/etc/lsb-release"
+install -d "$PROFILE/airootfs/root"
+install -m 0755 "$ROOT/iso/airootfs/root/customize_airootfs.sh" \
+  "$PROFILE/airootfs/root/customize_airootfs.sh"
 
 # --- vaultos tree inside the live root ---
 install -d "$PROFILE/airootfs/usr/lib/vaultos/bin" \
@@ -53,7 +55,7 @@ sed -i \
   "$PROFILE/profiledef.sh"
 # append file_permissions for installer
 if ! grep -q vaultos-install "$PROFILE/profiledef.sh"; then
-  sed -i 's|  \["/usr/local/bin/livecd-sound"\]="0:0:755"|  ["/usr/local/bin/livecd-sound"]="0:0:755"\n  ["/usr/local/bin/vaultos-install"]="0:0:755"\n  ["/usr/lib/vaultos/bin/vaultos"]="0:0:755"|' \
+  sed -i 's|  \["/usr/local/bin/livecd-sound"\]="0:0:755"|  ["/usr/local/bin/livecd-sound"]="0:0:755"\n  ["/usr/local/bin/vaultos-install"]="0:0:755"\n  ["/usr/lib/vaultos/bin/vaultos"]="0:0:755"\n  ["/root/customize_airootfs.sh"]="0:0:755"|' \
     "$PROFILE/profiledef.sh"
 fi
 
