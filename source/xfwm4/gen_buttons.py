@@ -184,8 +184,8 @@ CANON = {
     "G": ("#8A8F86", "active_mid_1"),
     "O": ("#1AFF6B", "active_text_color"),
     "N": ("#0E8A3A", "active_highlight_2"),
-    "W": ("#D4EDDD", None),
-    "R": ("#C41E3A", None),
+    "W": ("#D4EDDD", "active_bright"),
+    "R": ("#C41E3A", "active_close"),
     "T": ("None", None),
 }
 CANON_INACT = {
@@ -204,8 +204,8 @@ REDUCED = {
     "G": ("#B7BEB4", "active_mid_1"),
     "O": ("#66FF9C", "active_text_color"),
     "N": ("#1AFF6B", "active_highlight_2"),
-    "W": ("#F2F7F2", None),
-    "R": ("#E94D5A", None),
+    "W": ("#F2F7F2", "active_bright"),
+    "R": ("#E94D5A", "active_close"),
     "T": ("None", None),
 }
 REDUCED_INACT = {
@@ -259,7 +259,7 @@ def write_xpm(path: Path, name: str, grid: list[list[str]], pal: dict) -> None:
         elif sym:
             lines.append(f'"{c} c {hexcol} s {sym}",')
         else:
-            lines.append(f'"{c} c {hexcol}",')
+            raise ValueError(f"{name}: palette {c} missing symbolic name for {hexcol}")
     for y, row in enumerate(grid):
         comma = "," if y < SIZE - 1 else ""
         lines.append(f'"{"".join(row)}"{comma}')
