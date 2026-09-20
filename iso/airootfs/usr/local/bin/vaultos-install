@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# Guided Vault.OS installer. Will not partition anything unless argv is exactly:
+#   INSTALL TO /dev/DISK CONFIRMED
+# Example: vaultos-install 'INSTALL TO /dev/sdb CONFIRMED'
+set -euo pipefail
+
+die() { echo "vaultos-install: $*" >&2; exit 1; }
+
+usage() {
+  cat <<'EOF'
+Vault.OS installer (Arch derivative).
+
+This script wipes the named disk. It refuses to run unless the first argument
+is exactly:
+
+  INSTALL TO /dev/DISK CONFIRMED
+
+Example (only from the live ISO, never against a disk you did not name):
+
+  vaultos-install 'INSTALL TO /dev/sdb CONFIRMED'
+
+It will:
+  - partition that disk (GPT: 1G ESP + rest root ext4)
+  - pacstrap base linux linux-firmware intel-ucode networkmanager sudo git neovim
+  - install the Vault.OS overlay (os-release, units, vaultos CLI)
+  - systemd-boot on the ESP
+  - create user vaultos (you will be prompted for a password)
+
+It will NOT run if:
+  - the confirmation string is missing or misspelled
+  - DISK is empty, missing, or looks like the live ISO (/dev/sr0, /dev/loop)
+  - / is already on that disk
+EOF
+}
+
+[[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && { usage; exit 0; }
+
+conf="${1:-}"
+[[ "$conf" =~ ^INSTALL\ TO\ /dev/[A-Za-z0-9]+\ CONFIRMED$ ]] \
+  || die "refusing to run. Pass exactly: INSTALL TO /dev/DISK CONFIRMED"
+
+# Live ISO only. Never run from an installed system (this host included).
+if [[ ! -d /run/archiso && ! -f /run/archiso/bootmnt ]]; then
+  die "not a Vault.OS live ISO session (/run/archiso missing). Refusing to touch disks."
+fi
+[[ "$(id -u)" -eq 0 ]] || die "need root on the live ISO"
+
+disk="${conf#INSTALL TO }"
+disk="${disk% CONFIRMED}"
+[[ -b "$disk" ]] || die "$disk is not a block device"
+case "$disk" in
+  /dev/sr*|/dev/loop*|/dev/ram*|/dev/zram*) die "$disk is not an install target" ;;
+esac
+root_src=$(findmnt -n -o SOURCE / || true)
+[[ "$root_src" != "$disk"* ]] || die "$disk is the running root; abort"
+# Never target a disk that currently holds /boot of this session
+if findmnt -n /boot >/dev/null 2>&1; then
+  boot_src=$(findmnt -n -o SOURCE /boot)
+  [[ "$boot_src" != "$disk"* ]] || die "$disk currently has /boot mounted; abort"
+fi
+
+echo "Will ERASE $disk and install Vault.OS."
+echo "Last chance: Ctrl-C in 5 seconds."
+sleep 5
+
+sgdisk --zap-all "$disk"
+sgdisk -n1:0:+1G -t1:ef00 -c1:ESP \
+       -n2:0:0 -t2:8300 -c2:root "$disk"
+if [[ "$disk" == *[0-9] ]]; then
+  p1="${disk}p1"; p2="${disk}p2"
+else
+  p1="${disk}1"; p2="${disk}2"
+fi
+mkfs.fat -F32 -n VAULTESP "$p1"
+mkfs.ext4 -F -L vaultos-root "$p2"
+mount "$p2" /mnt
+mkdir -p /mnt/boot
+mount "$p1" /mnt/boot
+
+pacstrap -K /mnt base linux linux-firmware intel-ucode mkinitcpio \
+  networkmanager sudo git neovim vim lvm2 \
+  efibootmgr dosfstools
+genfstab -U /mnt >>/mnt/etc/fstab
+
+if [[ -d /usr/lib/vaultos ]]; then
+  mkdir -p /mnt/usr/lib/vaultos
+  cp -a /usr/lib/vaultos/. /mnt/usr/lib/vaultos/
+fi
+if [[ -x /usr/lib/vaultos/overlay/identity-apply.sh ]]; then
+  arch-chroot /mnt /usr/lib/vaultos/overlay/identity-apply.sh apply || true
+fi
+arch-chroot /mnt /bin/bash -s <<'CHROOT'
+set -e
+ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+hwclock --systohc || true
+echo 'en_US.UTF-8 UTF-8' >/etc/locale.gen
+locale-gen
+echo 'LANG=en_US.UTF-8' >/etc/locale.conf
+# live hostname is vaultos-live; installed system defaults to vaultos
+echo vaultos >/etc/hostname
+systemctl enable NetworkManager.service
+if [[ -f /usr/lib/systemd/system/vaultos-core.service ]]; then
+  systemctl enable vaultos-core.service vaultos-firstboot.service
+fi
+bootctl install
+id vaultos >/dev/null 2>&1 || useradd -m -G wheel -s /bin/bash vaultos
+echo '%wheel ALL=(ALL:ALL) ALL' >/etc/sudoers.d/wheel
+chmod 0440 /etc/sudoers.d/wheel
+CHROOT
+
+echo "Set password for user vaultos:"
+arch-chroot /mnt passwd vaultos
+echo "Set password for root:"
+arch-chroot /mnt passwd
+umount -R /mnt
+echo "Install finished. Remove the ISO and boot the disk."

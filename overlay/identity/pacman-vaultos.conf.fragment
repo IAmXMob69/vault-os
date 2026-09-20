@@ -1,0 +1,8 @@
+
+# ---------------------------------------------------------------------------
+# Vault.OS — commented repo stub (Phase 1). Do not uncomment until a signed
+# repo exists. Official [core]/[extra]/[multilib] remain the package source.
+# ---------------------------------------------------------------------------
+#[vaultos]
+#SigLevel = Required DatabaseOptional
+#Server = https://github.com/IAmXMob69/vault-os/releases/latest/download

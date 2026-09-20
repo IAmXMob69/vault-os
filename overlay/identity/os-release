@@ -1,0 +1,15 @@
+NAME="Vault.OS"
+PRETTY_NAME="Vault.OS"
+ID=vaultos
+ID_LIKE=arch
+VERSION="1.5.19"
+VERSION_ID="1.5.19"
+BUILD_ID="2026.09.20.ae02aeb"
+ANSI_COLOR="38;2;26;255;107"
+HOME_URL="https://github.com/IAmXMob69/vault-os"
+DOCUMENTATION_URL="https://github.com/IAmXMob69/vault-os#readme"
+SUPPORT_URL="https://github.com/IAmXMob69/vault-os/issues"
+BUG_REPORT_URL="https://github.com/IAmXMob69/vault-os/issues"
+LOGO=vaultos
+VARIANT="Arch derivative"
+VARIANT_ID="arch-derivative"

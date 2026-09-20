@@ -1,0 +1,17 @@
+[Unit]
+Description=Vault.OS first-boot identity and network
+Documentation=https://github.com/IAmXMob69/vault-os
+ConditionPathExists=!/var/lib/vaultos/firstboot-done
+After=local-fs.target
+Before=vaultos-core.service
+# Do not Require= this from graphical.target. Failure must not block LightDM.
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/vaultos/libexec/vaultos-firstboot.sh
+Nice=10
+TimeoutStartSec=60
+
+[Install]
+WantedBy=multi-user.target

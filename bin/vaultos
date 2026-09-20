@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+# vaultos — distro control plane (Arch derivative). Not the kernel.
+# Theme/session tools remain `vault-os` (hyphen).
+set -euo pipefail
+
+SCRIPT="$(readlink -f "$0")"
+# Installed copy: /usr/lib/vaultos/bin/vaultos  or repo: .../vault-os/bin/vaultos
+_dir="$(dirname "$SCRIPT")"
+if [[ -d "$_dir/../overlay/identity" ]]; then
+  ROOT="$(cd "$_dir/.." && pwd)"
+elif [[ -d /usr/lib/vaultos/overlay/identity ]]; then
+  ROOT=/usr/lib/vaultos
+else
+  ROOT="$(cd "$_dir/.." && pwd)"
+fi
+LIB="${VAULTOS_LIB:-$ROOT}"
+CHECKOUT="${VAULTOS_CHECKOUT:-}"
+VERSION="$(tr -d '\n' <"$LIB/overlay/VERSION" 2>/dev/null || echo 1.5.19)"
+IDENT="$LIB/overlay/identity-apply.sh"
+PKGSH="$LIB/libexec/vaultos-packages.sh"
+[[ -x "$PKGSH" ]] || PKGSH="$LIB/overlay/libexec/vaultos-packages.sh"
+
+usage() {
+  printf '%s\n' \
+    "vaultos ${VERSION} — Vault.OS distro CLI (Arch derivative)" \
+    '' \
+    '  status     Identity, units, network, first-boot stamp' \
+    '  version    Print overlay version' \
+    '  doctor     Check identity + units (does not repair XFCE; use vault-os doctor)' \
+    '  overlay    status|apply|rollback  (Phase 1 identity files)' \
+    '  packages   Show packages.base / packages.desktop vs installed' \
+    '  update     git pull + re-apply identity + restart units' \
+    '             add --syu for pacman -Syu (kernel upgrade; not implied)' \
+    '  iso        Print ISO path (build with iso/build.sh; does not touch disks)' \
+    '' \
+    'Does not change hostname, bootloader, kernel, or partitions.'
+}
+
+cmd_version() {
+  echo "vaultos $VERSION"
+  echo "lib $LIB"
+  [[ -d "$CHECKOUT/.git" ]] && echo "checkout $(git -C "$CHECKOUT" log -1 --format='%h %s' 2>/dev/null)"
+}
+
+cmd_status() {
+  local ec=0
+  cmd_version
+  echo "───────────────"
+  if grep -q '^ID=vaultos$' /etc/os-release 2>/dev/null && grep -q '^ID_LIKE=arch$' /etc/os-release; then
+    echo "os-release  Vault.OS (ID_LIKE=arch) OK"
+  else
+    echo "os-release  NOT vaultos"; ec=1
+  fi
+  echo "hostname    $(cat /etc/hostname 2>/dev/null)"
+  if [[ -f /var/lib/vaultos/firstboot-done ]]; then
+    echo "firstboot   done ($(head -1 /var/lib/vaultos/firstboot-done))"
+  else
+    echo "firstboot   pending"
+  fi
+  for u in vaultos-core.service vaultos-firstboot.service; do
+    local st ac
+    st=$(systemctl is-enabled "$u" 2>/dev/null || echo missing)
+    ac=$(systemctl is-active "$u" 2>/dev/null || true)
+    echo "unit        $u enabled=$st active=${ac:-inactive}"
+  done
+  echo "network     NetworkManager $(systemctl is-active NetworkManager.service 2>/dev/null || echo inactive)"
+  echo "boot        default vaultos-linux.efi; recovery arch-linux-recovery.efi"
+  return "$ec"
+}
+
+cmd_doctor() {
+  local ec=0
+  cmd_status || ec=1
+  echo "───────────────"
+  command -v pacman >/dev/null || { echo "pacman      MISSING"; ec=1; }
+  pacman-conf >/dev/null 2>&1 && echo "pacman.conf OK" || { echo "pacman.conf PARSE_FAIL"; ec=1; }
+  [[ -x /usr/lib/vaultos/libexec/vaultos-core.sh ]] && echo "core script OK" || echo "core script not installed under /usr/lib/vaultos"
+  [[ -f /usr/lib/os-release ]] && echo "arch stock  /usr/lib/os-release present (rollback target)"
+  if command -v vault-os >/dev/null 2>&1; then
+    echo "theme CLI   vault-os $(vault-os version 2>/dev/null | awk '{print $2}')"
+  fi
+  local miss
+  miss=""
+  [[ -x "$PKGSH" ]] && miss="$("$PKGSH" missing 2>/dev/null || true)"
+  if [[ -z "$miss" ]]; then
+    echo "packages    base+desktop OK"
+  else
+    echo "packages    missing:"
+    printf '            %s\n' $miss
+  fi
+  if grep -qE '^\[chaotic|^\[[^]#].*SigLevel = Optional TrustAll' /etc/pacman.conf 2>/dev/null; then
+    echo "repos       unsigned/chaotic present (unexpected)"; ec=1
+  else
+    echo "repos       official Arch only OK"
+  fi
+  return "$ec"
+}
+
+cmd_packages() {
+  [[ -x "$PKGSH" ]] || { echo "missing vaultos-packages.sh" >&2; return 2; }
+  exec "$PKGSH" "${1:-status}"
+}
+
+cmd_overlay() {
+  [[ -x "$IDENT" ]] || { echo "missing $IDENT" >&2; return 2; }
+  exec "$IDENT" "${1:-status}"
+}
+
+cmd_update() {
+  local syu=0
+  [[ "${1:-}" == "--syu" || "${1:-}" == "--packages" ]] && syu=1
+  if [[ -d "$CHECKOUT/.git" ]]; then
+    if [[ "$(id -u)" -eq 0 ]]; then
+      echo "skip git pull as root; run as the checkout owner"
+    else
+      git -C "$CHECKOUT" pull --ff-only || echo "git pull skipped/failed"
+    fi
+  fi
+  if [[ -x "$IDENT" ]]; then
+    "$IDENT" apply || true
+  fi
+  if systemctl list-unit-files vaultos-core.service >/dev/null 2>&1; then
+    if [[ "$(id -u)" -eq 0 ]]; then
+      systemctl restart vaultos-core.service || true
+    elif command -v pkexec >/dev/null; then
+      pkexec systemctl restart vaultos-core.service || true
+    fi
+  fi
+  echo "package gaps:"
+  [[ -x "$PKGSH" ]] && "$PKGSH" missing || true
+  if [[ "$syu" -eq 1 ]]; then
+    echo "running pacman -Syu (needs root; may upgrade kernel/UKI)"
+    if [[ "$(id -u)" -eq 0 ]]; then
+      pacman -Syu --noconfirm
+    else
+      pkexec pacman -Syu --noconfirm
+    fi
+  else
+    echo "skipped pacman -Syu (pass --syu to upgrade all packages)"
+  fi
+}
+
+cmd_iso() {
+  local iso="$CHECKOUT/iso/out/vaultos-${VERSION}-x86_64.iso"
+  if [[ -f "$iso" ]]; then
+    echo "$iso"
+    ls -lh "$iso"
+    return 0
+  fi
+  echo "No ISO yet. From the checkout (does not touch host disks):"
+  echo "  $CHECKOUT/iso/build.sh"
+  return 2
+}
+
+cmd="${1:-status}"
+shift || true
+case "$cmd" in
+  status|st) cmd_status ;;
+  version|-V|--version) cmd_version ;;
+  doctor) cmd_doctor ;;
+  overlay) cmd_overlay "${1:-status}" ;;
+  packages) cmd_packages "${1:-status}" ;;
+  update) cmd_update "${1:-}" ;;
+  iso) cmd_iso ;;
+  -h|--help|help) usage ;;
+  *) usage; exit 2 ;;
+esac

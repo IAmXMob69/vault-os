@@ -1,0 +1,18 @@
+# Vault.OS base set — official Arch repos only.
+# One package per line. Lines starting with # are comments.
+# linux-lts is optional; this machine uses linux.
+base
+linux
+linux-firmware
+intel-ucode
+mkinitcpio
+lvm2
+systemd
+networkmanager
+sudo
+git
+neovim
+vim
+# reflector is optional; geo/fastly mirrors already in pacman.d/mirrorlist
+reflector
+yay

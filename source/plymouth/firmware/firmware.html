@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Vault.OS firmware</title>
+<style>
+  @font-face {
+    font-family: STM;
+    src: url("");
+  }
+  @font-face {
+    font-family: STMB;
+    src: url("");
+  }
+  html, body {
+    margin: 0; padding: 0; width: 1920px; height: 1080px;
+    background: #07090c; color: #d7c4a3;
+    font-family: STM, "Share Tech Mono", ui-monospace, monospace;
+    overflow: hidden;
+  }
+  .wrap { width: 1920px; height: 1080px; position: relative; }
+  header {
+    display: flex; align-items: center; gap: 28px;
+    padding: 48px 72px 28px;
+  }
+  .hex {
+    width: 86px; height: 96px; flex: 0 0 86px;
+    display: grid; place-items: center;
+  }
+  .hex svg { width: 86px; height: 96px; display: block; }
+  .brand { display: flex; flex-direction: column; gap: 8px; }
+  .title {
+    font-family: STMB, STM, monospace;
+    font-size: 36px; letter-spacing: 0.22em;
+    color: #d4b896; font-weight: 700;
+  }
+  .meta {
+    font-size: 16px; letter-spacing: 0.18em;
+    color: #8a9aa0; text-transform: uppercase;
+  }
+  .meta span { margin-right: 28px; }
+  hr {
+    border: 0; height: 1px; margin: 0 72px;
+    background: linear-gradient(90deg, transparent, #3d4a4e 8%, #3d4a4e 92%, transparent);
+  }
+  .line {
+    margin: 72px 80px 0;
+    font-size: 26px; letter-spacing: 0.06em;
+    color: #5fd3c8;
+  }
+  footer {
+    position: absolute; left: 72px; right: 72px; bottom: 36px;
+    display: flex; justify-content: space-between;
+    font-size: 16px; letter-spacing: 0.16em; color: #6a7378;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="hex" aria-hidden="true">
+      <svg viewBox="0 0 86 96" fill="none">
+        <polygon points="43,4 80,24 80,72 43,92 6,72 6,24"
+                 stroke="#c9b08a" stroke-width="2.2" fill="#0c1014"/>
+        <path d="M43 30c-6.5 0-12 5.2-12 11.6 0 4.6 2.7 8.6 6.6 10.4v6.2h10.8v-6.2c3.9-1.8 6.6-5.8 6.6-10.4C55 35.2 49.5 30 43 30z"
+              stroke="#c9b08a" stroke-width="2" fill="none"/>
+        <circle cx="43" cy="41.6" r="3.2" fill="#c9b08a"/>
+      </svg>
+    </div>
+    <div class="brand">
+      <div class="title">VAULT.OS FIRMWARE</div>
+      <div class="meta">
+        <span>UEFI 1.0.4</span>
+        <span>Secure Boot ON</span>
+        <span>TPM 2.0 READY</span>
+      </div>
+    </div>
+  </header>
+  <hr/>
+  <div class="line">Initializing Vault silicon interface ............. OK</div>
+  <footer>
+    <span>ESC Setup</span>
+    <span>F12 Boot Menu</span>
+    <span>Vault.OS Reference Hardware</span>
+  </footer>
+</div>
+</body>
+</html>

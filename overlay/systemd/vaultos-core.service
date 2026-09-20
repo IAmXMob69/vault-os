@@ -1,0 +1,17 @@
+[Unit]
+Description=Vault.OS control plane (identity overlay)
+Documentation=https://github.com/IAmXMob69/vault-os
+Documentation=file:/usr/lib/vaultos/overlay/README.md
+After=local-fs.target
+Wants=vaultos-firstboot.service
+# Do not order before display-manager or sysinit. Must not block login.
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/vaultos/libexec/vaultos-core.sh
+Nice=10
+TimeoutStartSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+Vault.OS live medium (Arch Linux derivative).
+
+  vaultos status
+  vaultos doctor
+  vaultos-install    # refuses unless you type: INSTALL TO /dev/DISK CONFIRMED
+
+This ISO will not partition a disk without that exact confirmation.
+Do not run the installer against a machine that is already booted from its HDD.
+
+Wi-Fi: iwctl. After network: vaultos-install with a target disk you intend to wipe.
