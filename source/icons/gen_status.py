@@ -127,6 +127,85 @@ def playlist_shuffle(size: int):
     return im
 
 
+
+
+def dialog_ok(size: int):
+    im, d = plate(size)
+    w = sw(size)
+    p = max(3, size // 6)
+    d.line([(p, size // 2), (size // 2 - 1, size - p), (size - p, p)], fill=PHOS, width=w + 1)
+    led(d, size)
+    return im
+
+
+def dialog_cancel(size: int):
+    im, d = plate(size)
+    w = sw(size)
+    p = max(4, size // 5)
+    d.line([(p, p), (size - p, size - p)], fill=RAD, width=w + 1)
+    d.line([(size - p, p), (p, size - p)], fill=RAD, width=w + 1)
+    led(d, size, RAD)
+    return im
+
+
+def object_select(size: int):
+    im, d = plate(size)
+    w = sw(size)
+    p = max(3, size // 6)
+    d.rectangle([p, p, size - p, size - p], outline=PHOS, width=w)
+    led(d, size)
+    return im
+
+
+def open_menu(size: int):
+    im, d = plate(size)
+    w = sw(size)
+    p = max(4, size // 5)
+    for y in (p, size // 2, size - p):
+        d.line([(p, y), (size - p, y)], fill=PHOS, width=w)
+    led(d, size)
+    return im
+
+
+def pan_down(size: int):
+    im, d = plate(size)
+    p = max(4, size // 5)
+    d.polygon([(p, p), (size - p, p), (size // 2, size - p)], fill=PHOS)
+    led(d, size)
+    return im
+
+
+def pan_up(size: int):
+    im, d = plate(size)
+    p = max(4, size // 5)
+    d.polygon([(size // 2, p), (size - p, size - p), (p, size - p)], fill=PHOS)
+    led(d, size)
+    return im
+
+
+def bluetooth(size: int):
+    im, d = plate(size)
+    w = sw(size)
+    cx = size // 2
+    p = max(3, size // 6)
+    d.line([(cx, p), (cx, size - p)], fill=PHOS, width=w)
+    d.line([(cx, p), (size - p, size // 3), (cx, size // 2)], fill=PHOS, width=w)
+    d.line([(cx, size // 2), (size - p, 2 * size // 3), (cx, size - p)], fill=PHOS, width=w)
+    led(d, size)
+    return im
+
+
+def battery_charging(size: int):
+    im, d = plate(size)
+    w = sw(size)
+    p = max(3, size // 7)
+    d.rectangle([p, p + 2, size - p - 2, size - p], outline=PHOS, width=w)
+    d.rectangle([size - p - 2, size // 2 - 2, size - p, size // 2 + 2], fill=PHOS)
+    mid = size // 2
+    d.polygon([(mid + 1, p + 4), (mid - 2, mid), (mid + 1, mid), (mid - 1, size - p - 2)], fill=AMBER)
+    led(d, size, AMBER)
+    return im
+
 ITEMS = [
     ("status", "process-working", process_working),
     ("status", "process-working-symbolic", process_working),
@@ -142,6 +221,15 @@ ITEMS = [
     ("emblems", "emblem-synchronizing", emblem_sync),
     ("actions", "media-playlist-repeat", playlist_repeat),
     ("actions", "media-playlist-shuffle", playlist_shuffle),
+    ("actions", "dialog-ok", dialog_ok),
+    ("actions", "dialog-cancel", dialog_cancel),
+    ("actions", "object-select", object_select),
+    ("actions", "open-menu", open_menu),
+    ("actions", "pan-down", pan_down),
+    ("actions", "pan-up", pan_up),
+    ("devices", "bluetooth", bluetooth),
+    ("status", "battery-full-charging", battery_charging),
+
 ]
 
 
