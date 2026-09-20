@@ -7,21 +7,12 @@ WORK="$ROOT/iso/work"
 OUT="$ROOT/iso/out"
 "$ROOT/iso/prepare-profile.sh"
 mkdir -p "$OUT"
-rm -rf "$WORK"
 echo "mkarchiso work=$WORK out=$OUT (needs root)"
-mkdir -p "$OUT"
-if [[ "$(id -u)" -ne 0 ]]; then
-  pkexec mkarchiso -v -w "$WORK" -o "$OUT" "$ROOT/iso/profile"
+if [[ "$(id -u)" -eq 0 ]]; then
+  "$ROOT/iso/mkarchiso-root.sh" "$ROOT"
 else
-  mkarchiso -v -w "$WORK" -o "$OUT" "$ROOT/iso/profile"
+  pkexec env DISPLAY="${DISPLAY:-:0}" XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}" \
+    DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}" \
+    SUDO_USER="${USER:-}" \
+    "$ROOT/iso/mkarchiso-root.sh" "$ROOT"
 fi
-# rename to spec name if mkarchiso used iso_name-iso_version
-shopt -s nullglob
-for f in "$OUT"/vaultos-*.iso; do
-  dest="$OUT/vaultos-${VER}-x86_64.iso"
-  if [[ "$f" != "$dest" ]]; then
-    mv -f "$f" "$dest" 2>/dev/null || pkexec mv -f "$f" "$dest"
-  fi
-  echo "ISO $dest"
-  ls -lh "$dest"
-done
