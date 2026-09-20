@@ -1023,7 +1023,7 @@ undershoot, overshoot { background: none; }
 }
 
 .xfce4-panel .tasklist button:checked label {
-  color: @phos_hot;
+  color: @theme_selected_fg_color;
 }
 
 /* --- spinner: hide idle Thunar menubar indicator (no black square) ---
