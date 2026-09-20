@@ -1,8 +1,7 @@
 /* Vault.OS lock / logout
-   First and last impression. Scanlines allowed here.
+   Stronger plate contrast over Arch spin. Opaque always.
    A11y: 2px phosphor focus, 28px hits, Share Tech Mono.
-   Consumes CANON tokens. Amber = warn only. Shutdown = rad-red.
-   Spinning Arch saver/lock backdrop OK behind this plate — keep plate opaque.
+   Amber = warn only. Shutdown = rad-red.
 */
 @import url("tokens.css");
 
@@ -14,10 +13,10 @@ dialog.lockscreen {
   background-color: @panel_black;
   background-image: none;
   opacity: 1;
-  color: @phos;
+  color: @phos_hot;
   border: none;
   border-radius: 0;
-  padding: 16px 20px;
+  padding: 18px 22px;
   box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
   font-family: "Share Tech Mono", "Overpass Mono", "Terminus", monospace;
 }
@@ -33,7 +32,8 @@ window.xfce-screensaver-dialog label,
 #lock-dialog label {
   color: @phos_hot;
   font-family: "Share Tech Mono", "Overpass Mono", monospace;
-  font-size: 10pt;
+  font-size: 11pt;
+  font-weight: bold;
   letter-spacing: 0.08em;
   text-shadow: 0 0 1px @phos;
 }
@@ -41,16 +41,16 @@ window.xfce-screensaver-dialog label,
 window.xfce-screensaver-dialog entry,
 .xfce-screensaver-dialog entry,
 #lock-dialog entry {
-  min-height: 28px;
-  min-width: 240px;
-  padding: 4px 10px;
+  min-height: 32px;
+  min-width: 260px;
+  padding: 6px 12px;
   background-color: @vault_black;
   color: @phos_hot;
   border: none;
   border-radius: 0;
   box-shadow: inset 1px 1px 0 @bevel_lo, 1px 1px 0 @bevel_hi;
   font-family: "Share Tech Mono", "Overpass Mono", monospace;
-  font-size: 11pt;
+  font-size: 12pt;
   caret-color: @phos;
 }
 
@@ -64,11 +64,11 @@ window.xfce-screensaver-dialog entry:focus,
 window.xfce-screensaver-dialog button,
 .xfce-screensaver-dialog button,
 #lock-dialog button {
-  min-height: 28px;
-  min-width: 96px;
-  padding: 4px 14px;
+  min-height: 32px;
+  min-width: 104px;
+  padding: 6px 16px;
   background-color: @inset;
-  color: @phos;
+  color: @phos_hot;
   border: none;
   border-radius: 0;
   box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
@@ -103,10 +103,10 @@ window.xfsm-logout-dialog,
   background-color: @panel_black;
   background-image: none;
   opacity: 1;
-  color: @phos;
+  color: @phos_hot;
   border: none;
   border-radius: 0;
-  padding: 12px 16px;
+  padding: 14px 18px;
   box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
   font-family: "Share Tech Mono", "Overpass Mono", monospace;
 }
@@ -116,15 +116,17 @@ window.xfsm-logout-dialog,
   color: @phos_hot;
   letter-spacing: 0.08em;
   text-shadow: 0 0 1px @phos;
+  font-size: 11pt;
+  font-weight: bold;
 }
 
 #xfsm-logout-dialog button,
 .xfsm-logout-dialog button {
-  min-height: 28px;
-  min-width: 104px;
-  padding: 6px 14px;
+  min-height: 32px;
+  min-width: 112px;
+  padding: 8px 16px;
   background-color: @inset;
-  color: @phos;
+  color: @phos_hot;
   border: none;
   border-radius: 0;
   box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;

@@ -27,7 +27,7 @@
 
 #XfceNotifyWindow label#summary {
   font-family: "Share Tech Mono", "Overpass Mono", monospace;
-  font-size: 9pt;
+  font-size: 10pt;
   font-weight: bold;
   letter-spacing: 0.08em;
   color: @phos_hot;
