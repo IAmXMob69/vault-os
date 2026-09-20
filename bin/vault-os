@@ -2,7 +2,7 @@
 # vault-os — production control plane for Vault.OS XFCE stack
 set -euo pipefail
 
-readonly VERSION="1.5.18"
+readonly VERSION="1.5.19"
 readonly CONF_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/vault-os.conf"
 
 export DISPLAY="${DISPLAY:-:0}"
@@ -1003,6 +1003,18 @@ cmd_status() {
     printf 'notify_thm OK\n'
   else
     printf 'notify_thm MISSING\n'
+  fi
+  local ldm_theme
+  ldm_theme=$(grep -E '^theme-name=' /etc/lightdm/lightdm-gtk-greeter.conf 2>/dev/null | cut -d= -f2 || true)
+  if [[ "$ldm_theme" == "Vault.OS" || "$ldm_theme" == "Vault.OS-Reduced" ]]; then
+    printf 'greeter    %s conf\n' "$ldm_theme"
+  else
+    printf 'greeter    conf missing\n'
+  fi
+  if [[ -d /usr/share/themes/Vault.OS/gtk-3.0 && -f /usr/share/backgrounds/Vault.OS/vault-111.png ]]; then
+    printf 'greeter_sys OK\n'
+  else
+    printf 'greeter_sys MISSING (pkexec install)\n'
   fi
   return "$ec"
 }
