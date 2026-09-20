@@ -700,7 +700,7 @@ combobox window.popup {
   color: @phosphor_primary;
   border: none;
   border-radius: 0;
-  padding: 0;
+  padding: 2px 0;
   box-shadow:
     inset 1px 1px 0 @bevel_hi,
     inset -1px -1px 0 @bevel_lo;
@@ -711,7 +711,7 @@ modelbutton,
 popover modelbutton,
 combobox menu menuitem {
   min-height: 18px;
-  padding: 0 8px;
+  padding: 0 6px;
   background-color: transparent;
   color: @phosphor_primary;
   border-radius: 0;
@@ -721,6 +721,7 @@ combobox menu menuitem {
 menuitem:hover,
 menuitem:selected,
 modelbutton:hover,
+modelbutton:selected,
 .menuitem:hover {
   background-color: @theme_selected_bg_color;
   color: @theme_selected_fg_color;
@@ -728,9 +729,13 @@ modelbutton:hover,
 }
 
 menuitem:focus,
-modelbutton:focus {
+modelbutton:focus,
+popover modelbutton:focus {
   outline: 2px solid @focus_ring;
   outline-offset: -2px;
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+  box-shadow: inset 2px 0 0 0 @phosphor_primary;
 }
 
 menuitem:disabled {
@@ -985,7 +990,7 @@ menubar {
 
 menubar > menuitem {
   min-height: 18px;
-  padding: 0 8px;
+  padding: 0 6px;
   letter-spacing: 0;
 }
 
