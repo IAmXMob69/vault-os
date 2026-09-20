@@ -46,8 +46,8 @@
   border-radius: 0;
   border-bottom: 2px solid transparent;
   box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
-  padding: 0 4px;
-  min-height: 22px;
+  padding: 0 6px;
+  min-height: 24px;
 }
 
 .xfce4-panel button:hover,
@@ -82,9 +82,9 @@
 .xfce4-panel .tasklist button,
 .xfce4-panel .tasklist .toggle,
 .xfce4-panel wnck-pager {
-  min-height: 22px;
+  min-height: 24px;
   min-width: 44px;
-  padding: 0 6px;
+  padding: 0 8px;
   background-color: transparent;
   border-bottom: 2px solid transparent;
   box-shadow: inset 1px 1px 0 @bevel_hi, 1px 1px 0 @bevel_lo;
@@ -152,8 +152,8 @@
 
 .xfce4-panel menuitem,
 .xfce4-panel .menu menuitem {
-  min-height: 24px;
-  padding: 2px 10px;
+  min-height: 28px;
+  padding: 4px 12px;
   color: @phos;
 }
 
@@ -186,8 +186,8 @@
 #whiskermenu-window list row {
   background-color: @panel_black;
   color: @phos;
-  min-height: 24px;
-  padding: 2px 8px;
+  min-height: 28px;
+  padding: 4px 10px;
 }
 
 #whiskermenu-window .view:selected,
@@ -197,7 +197,7 @@
 #whiskermenu-window list row:hover {
   background-color: alpha(@phosphor_ghost, 0.45);
   color: @phos_hot;
-  min-height: 24px;
+  min-height: 28px;
   box-shadow: inset 2px 0 0 @phos;
 }
 
@@ -251,7 +251,7 @@
   outline: none;
 }
 
-/* a11y hits: panel chrome only — tasklist keeps 22px floor */
+/* a11y hits: panel chrome 28px — tasklist keeps 24px DESIGN floor */
 .xfce4-panel .applicationsmenu-button,
 .xfce4-panel #clock-button,
 .xfce4-panel .systray,
