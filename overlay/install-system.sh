@@ -33,9 +33,11 @@ ln -sfn "$LIB/bin/vaultos" /usr/bin/vaultos
 
 systemctl daemon-reload
 systemctl enable vaultos-firstboot.service vaultos-core.service
-# Do not enable or start firstuser on a machine that already has a login user.
-# Fresh installs enable it from vaultos-install so the first boot can create an account.
-# Run now so we do not need a reboot to verify. Units cannot block LightDM.
+# Do NOT enable or start vaultos-firstuser.service on an existing desktop.
+# Fresh installs enable it from vaultos-install so first boot can create
+# an account. Enabling it here would grab tty1 on the next reboot.
+# Run identity/core now so we do not need a reboot to verify. They cannot
+# block LightDM.
 systemctl start vaultos-firstboot.service
 systemctl start vaultos-core.service
 
