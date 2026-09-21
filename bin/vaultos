@@ -39,8 +39,12 @@ usage() {
     '  update     git pull + re-apply identity + restart units' \
     '             add --syu for pacman -Syu (kernel upgrade; not implied)' \
     '  iso        Print ISO path (build with iso/build.sh; does not touch disks)' \
+    '  firstboot  status | --reset | --run' \
+    '             --reset removes stamps (next boot runs the wizard).' \
+    '             --run starts the wizard now (needs a TTY; not for this desktop).' \
     '' \
-    'Does not change hostname, bootloader, kernel, or partitions.'
+    'Does not change hostname, bootloader, kernel, or partitions unless you' \
+    'pass firstboot --run (hostname/locale/user on a fresh machine).'
 }
 
 cmd_version() {
@@ -152,6 +156,36 @@ cmd_update() {
   fi
 }
 
+cmd_firstboot() {
+  local a="${1:-status}"
+  local stamp=/var/lib/vaultos/firstboot-done
+  case "$a" in
+    status|"")
+      if [[ -f "$stamp" ]]; then
+        echo "firstboot-done:"
+        cat "$stamp"
+      else
+        echo "firstboot pending (no $stamp)"
+      fi
+      ;;
+    --reset)
+      if [[ "$(id -u)" -ne 0 ]]; then
+        echo "firstboot --reset needs root" >&2
+        return 1
+      fi
+      rm -f /var/lib/vaultos/firstboot-done /var/lib/vaultos/firstuser-done
+      echo "stamps removed; reboot to run the wizard"
+      ;;
+    --run)
+      exec /usr/lib/vaultos/libexec/vaultos-firstuser.sh
+      ;;
+    *)
+      echo "usage: vaultos firstboot [status|--reset|--run]" >&2
+      return 2
+      ;;
+  esac
+}
+
 cmd_iso() {
   local iso="$CHECKOUT/iso/out/vaultos-${VERSION}-x86_64.iso"
   if [[ -f "$iso" ]]; then
@@ -174,6 +208,7 @@ case "$cmd" in
   packages) cmd_packages "${1:-status}" ;;
   update) cmd_update "${1:-}" ;;
   iso) cmd_iso ;;
+  firstboot) cmd_firstboot "${1:-status}" ;;
   -h|--help|help) usage ;;
   *) usage; exit 2 ;;
 esac

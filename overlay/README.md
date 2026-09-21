@@ -14,7 +14,7 @@ Bootloader, initramfs, and disks are **not** touched.
 | `/etc/issue` | Replace |
 | `/etc/motd` | Create |
 | `/etc/pacman.conf` | Append a **commented** `[vaultos]` stub |
-| `/etc/hostname` | Unchanged |
+| `/etc/hostname` | Unchanged by identity-apply; the first-boot wizard may set it |
 
 Source copies live in `overlay/identity/`.
 
@@ -37,8 +37,8 @@ Backup lands in `/var/lib/vaultos/backups/phase1-<timestamp>/`.
 | `/usr/lib/vaultos/` | Installed overlay + `bin/vaultos` + libexec |
 | `/usr/bin/vaultos` | Distro CLI (`status version doctor overlay update iso`) |
 | `vaultos-core.service` | Oneshot, RemainAfterExit, WantedBy=multi-user. Not ordered before LightDM. |
-| `vaultos-firstboot.service` | Oneshot, skips if `/var/lib/vaultos/firstboot-done` exists. |
-| `vaultos-firstuser.service` | Fresh install only: TTY wizard to create the first login account. Skips if a UID≥1000 user already exists. Not enabled by `install-system.sh` on an existing desktop. |
+| `vaultos-firstboot.service` | Identity (os-release) + NetworkManager. Stamps `identity-applied`, not `firstboot-done`. |
+| `vaultos-firstuser.service` | Fresh-install TTY wizard (machine + account). Before LightDM, Conflicts getty@tty1. Stamps `firstboot-done` only on success. Not enabled by `install-system.sh`. |
 
 Theme/session CLI remains `vault-os` (hyphen). XFCE watch stays a **user** unit.
 
