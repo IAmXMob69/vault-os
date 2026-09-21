@@ -9,8 +9,53 @@ This repository is both:
 
 Phosphor: `#1AFF6B`. Fonts: Share Tech Mono, Overpass Mono, Terminus (or PxPlus IBM VGA8).
 
-Distro CLI is `vaultos` (no hyphen): `status`, `version`, `doctor`, `overlay`, `update`, `iso`.  
+Distro CLI is `vaultos` (no hyphen): `status`, `version`, `doctor`, `overlay`, `update`, `iso`, `firstboot`.  
 Theme/session CLI is `vault-os` (hyphen). Overlay docs: [`overlay/README.md`](overlay/README.md). ISO: [`iso/README.md`](iso/README.md).
+
+## First boot
+
+A freshly installed disk has **no login user**. The first boot takes tty1 and asks:
+
+```text
+  Vault.OS setup
+  ──────────────
+  Enter accepts the value in [brackets].
+
+Hostname [vaultos]:
+Timezone (type a zone, or a search like 'New_York') [UTC]:
+Locale [en_US.UTF-8]:
+Keyboard layout [us]:
+Connect Wi-Fi now? [y/N]:
+Username []:
+Password:
+Password (again):
+```
+
+Then LightDM starts with session `vaultos`. The wheel sudoers drop-in is visudo-checked. Theme bits are copied from `/etc/skel`.
+
+Re-run (next boot shows the wizard again):
+
+```bash
+sudo vaultos firstboot --reset
+```
+
+Unattended:
+
+- Kernel: `vaultos.firstboot=skip` (stamp and continue)
+- Kernel: `vaultos.firstboot=/etc/vaultos/firstboot.conf`
+- Or drop answers in `/etc/vaultos/firstboot.conf` (see `overlay/firstboot.conf.example`)
+
+```text
+hostname=vaultos
+timezone=UTC
+locale=en_US.UTF-8
+keymap=us
+username=alice
+password=change-me
+skip_wifi=1
+```
+
+Tests (fake root, does not touch this machine): `iso/test-firstboot.sh`.
 
 ## Layout
 

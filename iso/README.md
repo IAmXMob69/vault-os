@@ -11,7 +11,9 @@ Releng derivative. **Does not install to the host disk.**
 Output: `iso/out/vaultos-<version>-x86_64.iso`
 
 A freshly installed disk does **not** pre-create a login user. First boot
-asks for a username and password, then continues to LightDM.
+asks hostname, timezone, locale, keyboard, optional Wi-Fi, then username
+and password (twice). LightDM starts only after `/var/lib/vaultos/firstboot-done`
+exists. Wizard tests: `./iso/test-firstboot.sh` (fake rootfs, no host writes).
 
 QEMU smoke (serial, 1536M — keep the host bootable). Direct-kernel live boot; ISO still supplies the squashfs. Proven 2026-09-20: issue `Vault.OS live`, hostname `vaultos-live`, getty on ttyS0.
 
