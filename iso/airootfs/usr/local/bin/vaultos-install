@@ -87,11 +87,30 @@ pacstrap -K /mnt base linux linux-firmware intel-ucode mkinitcpio \
 genfstab -U /mnt >>/mnt/etc/fstab
 
 if [[ -d /usr/lib/vaultos ]]; then
-  mkdir -p /mnt/usr/lib/vaultos /mnt/usr/lib/systemd/system /mnt/usr/bin
+  mkdir -p /mnt/usr/lib/vaultos /mnt/usr/lib/systemd/system /mnt/usr/bin \
+    /mnt/usr/share/xsessions /mnt/etc/skel /mnt/etc/vaultos
   cp -a /usr/lib/vaultos/. /mnt/usr/lib/vaultos/
   cp -a /usr/lib/systemd/system/vaultos-*.service /mnt/usr/lib/systemd/system/ 2>/dev/null || true
   ln -sfn /usr/lib/vaultos/bin/vaultos /mnt/usr/bin/vaultos
+  if [[ -d /usr/lib/vaultos/overlay/skel ]]; then
+    cp -a /usr/lib/vaultos/overlay/skel/. /mnt/etc/skel/
+  fi
+  if [[ -f /usr/lib/vaultos/overlay/xsessions/vaultos.desktop ]]; then
+    install -m 0644 /usr/lib/vaultos/overlay/xsessions/vaultos.desktop \
+      /mnt/usr/share/xsessions/vaultos.desktop
+  fi
+  if [[ -f /usr/lib/vaultos/overlay/firstboot.conf.example ]]; then
+    install -m 0644 /usr/lib/vaultos/overlay/firstboot.conf.example \
+      /mnt/etc/vaultos/firstboot.conf.example
+  fi
 fi
+# Theme files if the live medium has them (optional).
+for t in /usr/share/themes/Vault.OS /root/.themes/Vault.OS; do
+  [[ -d "$t" ]] && mkdir -p /mnt/usr/share/themes && cp -a "$t" /mnt/usr/share/themes/ && break
+done
+for t in /usr/share/icons/Vault.OS /root/.icons/Vault.OS; do
+  [[ -d "$t" ]] && mkdir -p /mnt/usr/share/icons && cp -a "$t" /mnt/usr/share/icons/ && break
+done
 if [[ -x /usr/lib/vaultos/overlay/identity-apply.sh ]]; then
   arch-chroot /mnt /usr/lib/vaultos/overlay/identity-apply.sh apply || true
 fi
@@ -114,13 +133,27 @@ if [[ -f /usr/lib/systemd/system/lightdm.service ]]; then
   mkdir -p /etc/lightdm/lightdm.conf.d
   cat >/etc/lightdm/lightdm.conf.d/50-vaultos.conf <<'LD'
 [Seat:*]
+user-session=vaultos
+greeter-session=lightdm-gtk-greeter
 greeter-hide-users=false
 greeter-show-manual-login=true
 LD
+  mkdir -p /etc/systemd/system/lightdm.service.d
+  cat >/etc/systemd/system/lightdm.service.d/vaultos-firstuser.conf <<'LD'
+[Unit]
+# Do not start the greeter until the wizard has created a login user.
+After=vaultos-firstuser.service
+Requires=vaultos-firstuser.service
+LD
 fi
 bootctl install
-echo '%wheel ALL=(ALL:ALL) ALL' >/etc/sudoers.d/wheel
-chmod 0440 /etc/sudoers.d/wheel
+tmp=$(mktemp)
+printf '%%wheel ALL=(ALL:ALL) ALL\n' >"$tmp"
+if command -v visudo >/dev/null 2>&1; then
+  visudo -c -f "$tmp"
+fi
+install -m 0440 "$tmp" /etc/sudoers.d/wheel
+rm -f "$tmp"
 CHROOT
 
 echo "Set password for root (recovery only). Your login user is created on first boot."

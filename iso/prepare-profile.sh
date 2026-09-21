@@ -37,6 +37,25 @@ install -m 0644 "$ROOT/overlay/identity/"* "$PROFILE/airootfs/usr/lib/vaultos/ov
 install -m 0644 "$ROOT/overlay/packages/"* "$PROFILE/airootfs/usr/lib/vaultos/overlay/packages/"
 install -m 0755 "$ROOT/overlay/libexec/"*.sh "$PROFILE/airootfs/usr/lib/vaultos/libexec/"
 install -m 0644 "$ROOT/overlay/systemd/"*.service "$PROFILE/airootfs/usr/lib/systemd/system/"
+install -d "$PROFILE/airootfs/usr/lib/vaultos/overlay/skel" \
+  "$PROFILE/airootfs/usr/lib/vaultos/overlay/xsessions" \
+  "$PROFILE/airootfs/usr/share/xsessions" \
+  "$PROFILE/airootfs/etc/skel" \
+  "$PROFILE/airootfs/etc/vaultos"
+if [[ -d "$ROOT/overlay/skel" ]]; then
+  cp -a "$ROOT/overlay/skel"/. "$PROFILE/airootfs/usr/lib/vaultos/overlay/skel/"
+  cp -a "$ROOT/overlay/skel"/. "$PROFILE/airootfs/etc/skel/"
+fi
+if [[ -f "$ROOT/overlay/xsessions/vaultos.desktop" ]]; then
+  install -m 0644 "$ROOT/overlay/xsessions/vaultos.desktop" \
+    "$PROFILE/airootfs/usr/lib/vaultos/overlay/xsessions/vaultos.desktop"
+  install -m 0644 "$ROOT/overlay/xsessions/vaultos.desktop" \
+    "$PROFILE/airootfs/usr/share/xsessions/vaultos.desktop"
+fi
+if [[ -f "$ROOT/overlay/firstboot.conf.example" ]]; then
+  install -m 0644 "$ROOT/overlay/firstboot.conf.example" \
+    "$PROFILE/airootfs/etc/vaultos/firstboot.conf.example"
+fi
 ln -sfn /usr/lib/vaultos/bin/vaultos "$PROFILE/airootfs/usr/bin/vaultos"
 ln -sfn /usr/lib/systemd/system/vaultos-core.service \
   "$PROFILE/airootfs/etc/systemd/system/multi-user.target.wants/vaultos-core.service"
