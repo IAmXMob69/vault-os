@@ -4,11 +4,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 VER="$(tr -d '\n' <"$ROOT/overlay/VERSION")"
 ISO="${1:-$ROOT/iso/out/vaultos-${VER}-x86_64.iso}"
-# Stable id for the 57.6G "General USB Flash Disk" used on this machine.
-DEV="${2:-/dev/disk/by-id//dev/disk/by-id/usb-STICK}"
+DEV="${2:-}"
 
 die() { echo "write-usb: $*" >&2; exit 1; }
 
+[[ -n "$DEV" ]] || die "usage: $0 [iso] /dev/disk/by-id/usb-…   (whole USB disk, never sda/sdb)"
 [[ -f "$ISO" ]] || die "missing ISO $ISO (build with iso/build.sh)"
 [[ -e "$DEV" ]] || die "device $DEV not present — plug in the USB stick"
 

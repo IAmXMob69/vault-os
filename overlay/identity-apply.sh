@@ -89,7 +89,7 @@ cmd_apply() {
     echo "pacman.conf: appended commented [vaultos] stub"
   fi
 
-  # Hostname intentionally unchanged (still archlinux unless you ask).
+  # Hostname intentionally unchanged.
   pacman-conf >/dev/null || die "pacman.conf failed to parse — restore from $dest"
   grep -q '^ID=vaultos$' /etc/os-release || die "apply did not stick"
   grep -q '^ID_LIKE=arch$' /etc/os-release || die "ID_LIKE=arch missing"

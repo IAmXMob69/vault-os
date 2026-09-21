@@ -116,9 +116,9 @@ sed -i \
   -e 's/menuentry "Arch Linux install medium with speakup screen reader (%ARCH%, ${archiso_platform})" --hotkey s --class arch --class gnu-linux --class gnu --class os --id '\''archlinux-accessibility'\''/menuentry "Install Vault.OS" --class arch --class gnu-linux --class gnu --class os --id '\''vaultos-install'\''/' \
   "$PROFILE/grub/grub.cfg"
 # install entry should pass vaultos.install=1
-python3 - <<'PY'
+python3 - <<PY
 from pathlib import Path
-p=Path("/iso/profile/grub/grub.cfg")
+p=Path("$PROFILE/grub/grub.cfg")
 t=p.read_text()
 # second linux line (install) add flag if we replaced accessibility entry
 old="id 'vaultos-install' {\n    set gfxpayload=keep\n    linux /%INSTALL_DIR%/boot/%ARCH%/vmlinuz-linux archisobasedir=%INSTALL_DIR% archisosearchuuid=%ARCHISO_UUID% accessibility=on"
