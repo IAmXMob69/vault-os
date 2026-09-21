@@ -1,46 +1,39 @@
 #!/usr/bin/env bash
-# Vault.OS first boot — identity + network, never block graphical login.
-# Hostname, bootloader, kernel, and disks are not changed.
+# Vault.OS first boot — identity only. Does not stamp firstboot-done;
+# the interactive wizard writes that after machine + account succeed.
+# Hostname, bootloader, kernel, and disks are not changed here.
 set +e
-exec 1>/var/log/vaultos-firstboot.log 2>&1
-echo "vaultos-firstboot $(date -Iseconds)"
-
+P="${VAULTOS_TEST_ROOT:-}"
 LIB="${VAULTOS_LIB:-/usr/lib/vaultos}"
-STAMP=/var/lib/vaultos/firstboot-done
+IDSTAMP="${P}/var/lib/vaultos/identity-applied"
+mkdir -p "${P}/var/lib/vaultos" "${P}/var/log"
+exec >>"${P}/var/log/vaultos-firstboot.log" 2>&1
+echo "vaultos-firstboot-identity $(date -Iseconds)"
 
-mkdir -p /var/lib/vaultos /var/log
-
-if [[ -f "$STAMP" ]]; then
-  echo "already stamped: $STAMP"
+if [[ -f "$IDSTAMP" ]]; then
+  echo "already stamped: $IDSTAMP"
   exit 0
 fi
 
-# Locale only if unset
-if [[ -z "$(localectl status 2>/dev/null | awk -F= '/System Locale/{print $2; exit}')" ]]; then
-  localectl set-locale LANG=en_US.UTF-8 || true
-fi
-
-# Timezone only if unset / UTC factory default with no NTP — skip if already set.
-# This machine already has America/New_York; do not clobber.
-
-# Network: keep existing NetworkManager. Do not enable iwd or systemd-networkd
-# if NM is already the live stack.
-if systemctl list-unit-files NetworkManager.service >/dev/null 2>&1; then
+if [[ -z "$P" ]] && systemctl list-unit-files NetworkManager.service >/dev/null 2>&1; then
   systemctl enable NetworkManager.service >/dev/null 2>&1 || true
   systemctl start NetworkManager.service >/dev/null 2>&1 || true
 fi
 
 if [[ -x "$LIB/overlay/identity-apply.sh" ]]; then
-  if ! grep -q '^ID=vaultos$' /etc/os-release 2>/dev/null; then
-    "$LIB/overlay/identity-apply.sh" apply || true
+  if ! grep -q '^ID=vaultos$' "${P}/etc/os-release" 2>/dev/null; then
+    if [[ -n "$P" ]]; then
+      echo "test: skip identity-apply"
+    else
+      "$LIB/overlay/identity-apply.sh" apply || true
+    fi
   fi
 fi
 
 {
   echo "done=$(date -Iseconds)"
-  echo "hostname=$(cat /etc/hostname 2>/dev/null)"
-  echo "id=$(awk -F= '/^ID=/{print $2; exit}' /etc/os-release)"
-} >"$STAMP"
-chmod 0644 "$STAMP"
-echo "stamped $STAMP"
+  echo "id=$(awk -F= '/^ID=/{print $2; exit}' "${P}/etc/os-release" 2>/dev/null)"
+} >"$IDSTAMP"
+chmod 0644 "$IDSTAMP"
+echo "stamped $IDSTAMP"
 exit 0
