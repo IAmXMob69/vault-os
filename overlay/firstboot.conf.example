@@ -1,0 +1,13 @@
+# Copy to /etc/vaultos/firstboot.conf for unattended first boot.
+# Also accepted via kernel cmdline: vaultos.firstboot=/etc/vaultos/firstboot.conf
+# Skip the wizard entirely: vaultos.firstboot=skip
+#
+# hostname=vaultos
+# timezone=UTC
+# locale=en_US.UTF-8
+# keymap=us
+# username=alice
+# password=change-me
+# skip_wifi=1
+# wifi_ssid=
+# wifi_psk=
