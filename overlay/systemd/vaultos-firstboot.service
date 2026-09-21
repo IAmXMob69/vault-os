@@ -1,9 +1,10 @@
 [Unit]
-Description=Vault.OS first-boot identity and network
+Description=Vault.OS first-boot identity (os-release), before the wizard
 Documentation=https://github.com/IAmXMob69/vault-os
-ConditionPathExists=!/var/lib/vaultos/firstboot-done
+# Identity apply is once. The interactive wizard writes firstboot-done.
+ConditionPathExists=!/var/lib/vaultos/identity-applied
 After=local-fs.target
-Before=vaultos-core.service
+Before=vaultos-firstuser.service vaultos-core.service
 # Do not Require= this from graphical.target. Failure must not block LightDM.
 
 [Service]
