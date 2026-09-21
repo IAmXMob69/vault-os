@@ -21,10 +21,11 @@ Example (only from the live ISO, never against a disk you did not name):
 
 It will:
   - partition that disk (GPT: 1G ESP + rest root ext4)
-  - pacstrap base linux linux-firmware intel-ucode networkmanager sudo git neovim
+  - pacstrap base + desktop (XFCE/LightDM) when those lists are on the live medium
   - install the Vault.OS overlay (os-release, units, vaultos CLI)
   - systemd-boot on the ESP
-  - create user vaultos (you will be prompted for a password)
+  - set the root password
+  - leave first boot to create YOUR login account (any username)
 
 It will NOT run if:
   - the confirmation string is missing or misspelled
@@ -77,14 +78,19 @@ mount "$p2" /mnt
 mkdir -p /mnt/boot
 mount "$p1" /mnt/boot
 
+mapfile -t extra < <(awk '/^[^#]/ && NF && $1 != "yay" {print}' \
+  /usr/lib/vaultos/overlay/packages/packages.base \
+  /usr/lib/vaultos/overlay/packages/packages.desktop 2>/dev/null || true)
 pacstrap -K /mnt base linux linux-firmware intel-ucode mkinitcpio \
   networkmanager sudo git neovim vim lvm2 \
-  efibootmgr dosfstools
+  efibootmgr dosfstools "${extra[@]+"${extra[@]}"}"
 genfstab -U /mnt >>/mnt/etc/fstab
 
 if [[ -d /usr/lib/vaultos ]]; then
-  mkdir -p /mnt/usr/lib/vaultos
+  mkdir -p /mnt/usr/lib/vaultos /mnt/usr/lib/systemd/system /mnt/usr/bin
   cp -a /usr/lib/vaultos/. /mnt/usr/lib/vaultos/
+  cp -a /usr/lib/systemd/system/vaultos-*.service /mnt/usr/lib/systemd/system/ 2>/dev/null || true
+  ln -sfn /usr/lib/vaultos/bin/vaultos /mnt/usr/bin/vaultos
 fi
 if [[ -x /usr/lib/vaultos/overlay/identity-apply.sh ]]; then
   arch-chroot /mnt /usr/lib/vaultos/overlay/identity-apply.sh apply || true
@@ -100,17 +106,25 @@ echo 'LANG=en_US.UTF-8' >/etc/locale.conf
 echo vaultos >/etc/hostname
 systemctl enable NetworkManager.service
 if [[ -f /usr/lib/systemd/system/vaultos-core.service ]]; then
-  systemctl enable vaultos-core.service vaultos-firstboot.service
+  systemctl enable vaultos-core.service vaultos-firstboot.service vaultos-firstuser.service
+fi
+if [[ -f /usr/lib/systemd/system/lightdm.service ]]; then
+  systemctl enable lightdm.service
+  systemctl set-default graphical.target
+  mkdir -p /etc/lightdm/lightdm.conf.d
+  cat >/etc/lightdm/lightdm.conf.d/50-vaultos.conf <<'LD'
+[Seat:*]
+greeter-hide-users=false
+greeter-show-manual-login=true
+LD
 fi
 bootctl install
-id vaultos >/dev/null 2>&1 || useradd -m -G wheel -s /bin/bash vaultos
 echo '%wheel ALL=(ALL:ALL) ALL' >/etc/sudoers.d/wheel
 chmod 0440 /etc/sudoers.d/wheel
 CHROOT
 
-echo "Set password for user vaultos:"
-arch-chroot /mnt passwd vaultos
-echo "Set password for root:"
+echo "Set password for root (recovery only). Your login user is created on first boot."
 arch-chroot /mnt passwd
 umount -R /mnt
 echo "Install finished. Remove the ISO and boot the disk."
+echo "First boot will ask you to create your account."

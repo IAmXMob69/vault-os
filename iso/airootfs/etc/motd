@@ -3,6 +3,7 @@ Vault.OS live medium (Arch Linux derivative).
   vaultos status
   vaultos doctor
   vaultos-install    # refuses unless you type: INSTALL TO /dev/DISK CONFIRMED
+                     # first boot of the installed disk creates YOUR account
 
 This ISO will not partition a disk without that exact confirmation.
 Do not run the installer against a machine that is already booted from its HDD.

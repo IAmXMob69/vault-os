@@ -8,7 +8,10 @@ Releng derivative. **Does not install to the host disk.**
 ./iso/build.sh          # pkexec mkarchiso
 ```
 
-Output: `iso/out/vaultos-1.5.19-x86_64.iso`
+Output: `iso/out/vaultos-<version>-x86_64.iso`
+
+A freshly installed disk does **not** pre-create a login user. First boot
+asks for a username and password, then continues to LightDM.
 
 QEMU smoke (serial, 1536M — keep the host bootable). Direct-kernel live boot; ISO still supplies the squashfs. Proven 2026-09-20: issue `Vault.OS live`, hostname `vaultos-live`, getty on ttyS0.
 
