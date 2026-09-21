@@ -14,7 +14,14 @@ else
   ROOT="$(cd "$_dir/.." && pwd)"
 fi
 LIB="${VAULTOS_LIB:-$ROOT}"
-CHECKOUT="${VAULTOS_CHECKOUT:-}"
+# Prefer an explicit checkout, else the git root next to this script.
+if [[ -n "${VAULTOS_CHECKOUT:-}" ]]; then
+  CHECKOUT="$VAULTOS_CHECKOUT"
+elif [[ -d "$ROOT/.git" ]]; then
+  CHECKOUT="$ROOT"
+else
+  CHECKOUT=""
+fi
 VERSION="$(tr -d '\n' <"$LIB/overlay/VERSION" 2>/dev/null || echo 1.5.19)"
 IDENT="$LIB/overlay/identity-apply.sh"
 PKGSH="$LIB/libexec/vaultos-packages.sh"

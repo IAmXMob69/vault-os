@@ -2,7 +2,7 @@
 
 Arch derivative branding. **Not a kernel.** `ID_LIKE=arch` stays so pacman and yay keep working.
 
-Hostname is **not** changed (this box stays `archlinux` until you ask).
+Hostname is **not** changed by this overlay.
 Bootloader, initramfs, and disks are **not** touched.
 
 ## Files this overlay installs

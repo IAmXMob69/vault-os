@@ -25,4 +25,6 @@ for f in "$OUT"/vaultos-*.iso; do
   echo "ISO $dest"
   ls -lh "$dest"
 done
-chown -R "${SUDO_USER:-}:${SUDO_USER:-}" "$OUT" || true
+if [[ -n "${SUDO_USER:-}" && -d "$OUT" ]]; then
+  chown -R "$SUDO_USER:$SUDO_USER" "$OUT" || true
+fi
