@@ -2,6 +2,7 @@
 # Build iso/profile from archiso releng + Vault.OS overlay. Does not touch /boot.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+VER="$(tr -d '\n' <"$ROOT/overlay/VERSION")"
 RELENG=/usr/share/archiso/configs/releng
 PROFILE="$ROOT/iso/profile"
 [[ -d "$RELENG" ]] || { echo "install archiso first" >&2; exit 1; }
@@ -50,12 +51,12 @@ sed -i \
   -e 's/^iso_label=.*/iso_label="VAULTOS"/' \
   -e 's|^iso_publisher=.*|iso_publisher="Vault.OS <https://github.com/IAmXMob69/vault-os>"|' \
   -e 's|^iso_application=.*|iso_application="Vault.OS Live/Install"|' \
-  -e 's/^iso_version=.*/iso_version="1.5.19"/' \
+  -e "s/^iso_version=.*/iso_version=\"$VER\"/" \
   -e 's/^install_dir=.*/install_dir="vaultos"/' \
   "$PROFILE/profiledef.sh"
 # append file_permissions for installer
 if ! grep -q vaultos-install "$PROFILE/profiledef.sh"; then
-  sed -i 's|  \["/usr/local/bin/livecd-sound"\]="0:0:755"|  ["/usr/local/bin/livecd-sound"]="0:0:755"\n  ["/usr/local/bin/vaultos-install"]="0:0:755"\n  ["/usr/lib/vaultos/bin/vaultos"]="0:0:755"\n  ["/root/customize_airootfs.sh"]="0:0:755"|' \
+  sed -i 's|  \["/usr/local/bin/livecd-sound"\]="0:0:755"|  ["/usr/local/bin/livecd-sound"]="0:0:755"\n  ["/usr/local/bin/vaultos-install"]="0:0:755"\n  ["/usr/lib/vaultos/bin/vaultos"]="0:0:755"\n  ["/usr/lib/vaultos/libexec/vaultos-firstuser.sh"]="0:0:755"\n  ["/usr/lib/vaultos/libexec/vaultos-firstboot.sh"]="0:0:755"\n  ["/usr/lib/vaultos/libexec/vaultos-core.sh"]="0:0:755"\n  ["/root/customize_airootfs.sh"]="0:0:755"|' \
     "$PROFILE/profiledef.sh"
 fi
 

@@ -64,7 +64,12 @@ cmd_status() {
   else
     echo "firstboot   pending"
   fi
-  for u in vaultos-core.service vaultos-firstboot.service; do
+  if [[ -f /var/lib/vaultos/firstuser-done ]]; then
+    echo "firstuser   done ($(tr '\n' ' ' </var/lib/vaultos/firstuser-done))"
+  else
+    echo "firstuser   pending (create account on first boot of a fresh install)"
+  fi
+  for u in vaultos-core.service vaultos-firstboot.service vaultos-firstuser.service; do
     local st ac
     st=$(systemctl is-enabled "$u" 2>/dev/null || echo missing)
     ac=$(systemctl is-active "$u" 2>/dev/null || true)

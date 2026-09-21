@@ -25,12 +25,16 @@ install -m 0644 "$SRC/overlay/README.md" "$LIB/overlay/README.md"
 install -m 0644 "$SRC/overlay/identity/"* "$LIB/overlay/identity/"
 install -m 0755 "$SRC/overlay/libexec/vaultos-core.sh" "$LIB/libexec/vaultos-core.sh"
 install -m 0755 "$SRC/overlay/libexec/vaultos-firstboot.sh" "$LIB/libexec/vaultos-firstboot.sh"
+install -m 0755 "$SRC/overlay/libexec/vaultos-firstuser.sh" "$LIB/libexec/vaultos-firstuser.sh"
 install -m 0644 "$SRC/overlay/systemd/vaultos-core.service" /usr/lib/systemd/system/vaultos-core.service
 install -m 0644 "$SRC/overlay/systemd/vaultos-firstboot.service" /usr/lib/systemd/system/vaultos-firstboot.service
+install -m 0644 "$SRC/overlay/systemd/vaultos-firstuser.service" /usr/lib/systemd/system/vaultos-firstuser.service
 ln -sfn "$LIB/bin/vaultos" /usr/bin/vaultos
 
 systemctl daemon-reload
 systemctl enable vaultos-firstboot.service vaultos-core.service
+# Do not enable or start firstuser on a machine that already has a login user.
+# Fresh installs enable it from vaultos-install so the first boot can create an account.
 # Run now so we do not need a reboot to verify. Units cannot block LightDM.
 systemctl start vaultos-firstboot.service
 systemctl start vaultos-core.service

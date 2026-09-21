@@ -1,0 +1,23 @@
+[Unit]
+Description=Vault.OS first-boot create login account
+Documentation=https://github.com/IAmXMob69/vault-os
+ConditionPathExists=!/var/lib/vaultos/firstuser-done
+ConditionPathExists=!/run/archiso
+After=local-fs.target systemd-user-sessions.service vaultos-firstboot.service
+Before=display-manager.service graphical.target getty@tty1.service
+Conflicts=getty@tty1.service
+# Failure must not leave the machine unbootable; script stamps on skip.
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/vaultos/libexec/vaultos-firstuser.sh
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/console
+TTYReset=yes
+TTYVHangup=yes
+TimeoutStartSec=infinity
+
+[Install]
+WantedBy=multi-user.target

@@ -38,6 +38,7 @@ Backup lands in `/var/lib/vaultos/backups/phase1-<timestamp>/`.
 | `/usr/bin/vaultos` | Distro CLI (`status version doctor overlay update iso`) |
 | `vaultos-core.service` | Oneshot, RemainAfterExit, WantedBy=multi-user. Not ordered before LightDM. |
 | `vaultos-firstboot.service` | Oneshot, skips if `/var/lib/vaultos/firstboot-done` exists. |
+| `vaultos-firstuser.service` | Fresh install only: TTY wizard to create the first login account. Skips if a UID≥1000 user already exists. Not enabled by `install-system.sh` on an existing desktop. |
 
 Theme/session CLI remains `vault-os` (hyphen). XFCE watch stays a **user** unit.
 
