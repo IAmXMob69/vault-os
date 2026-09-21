@@ -384,7 +384,7 @@ ensure_wheel_sudo() {
 
 read_password() {
   local p1 p2
-  if [[ -n "${ANSWERS[password]:-}" ]]; then
+  if [[ -n "${ANSWERS[password]+x}" ]]; then
     PW="${ANSWERS[password]}"
     [[ -n "$PW" ]] || { echo "Password cannot be empty."; return 1; }
     return 0
