@@ -1,23 +1,38 @@
 [Unit]
-Description=Vault.OS first-boot create login account
+Description=Vault.OS first-boot setup wizard (account + machine)
 Documentation=https://github.com/IAmXMob69/vault-os
-ConditionPathExists=!/var/lib/vaultos/firstuser-done
+# Skip once the wizard has finished successfully (stamp written last).
+ConditionPathExists=!/var/lib/vaultos/firstboot-done
+# Live ISO autologins root; never run the wizard there.
 ConditionPathExists=!/run/archiso
-After=local-fs.target systemd-user-sessions.service vaultos-firstboot.service
-Before=display-manager.service graphical.target getty@tty1.service
+# User sessions + plymouth must be out of the way so tty1 is ours.
+After=local-fs.target systemd-user-sessions.service plymouth-quit-wait.service vaultos-firstboot.service
+# Block the greeter until this oneshot exits 0. display-manager is the
+# alias; name lightdm too so a drop-in-less unit still orders correctly.
+Before=display-manager.service lightdm.service graphical.target getty@tty1.service
+# Take tty1 from getty for the duration of the wizard.
 Conflicts=getty@tty1.service
-# Failure must not leave the machine unbootable; script stamps on skip.
+# RemainAfterExit keeps this unit "active" after success, which holds the
+# Conflicts= and so getty@tty1 stays down for THIS boot. LightDM uses tty7,
+# so graphical login still works. Next boot ConditionPathExists skips this
+# unit, Conflicts lifts, and getty@tty1 starts normally.
 
 [Service]
 Type=oneshot
+# Stay "started" so systemd will not start LightDM until we have succeeded
+# (Before= + this unit remaining in the transaction).
+RemainAfterExit=yes
 ExecStart=/usr/lib/vaultos/libexec/vaultos-firstuser.sh
+# Bind the wizard to the first VT (not /dev/console, which can be serial).
 StandardInput=tty
 StandardOutput=tty
 StandardError=tty
-TTYPath=/dev/console
+TTYPath=/dev/tty1
 TTYReset=yes
 TTYVHangup=yes
 TimeoutStartSec=infinity
+# Failure (Ctrl-C, EOF, validation) must not look like success — LightDM
+# is After= this unit via installer drop-in Requires=.
 
 [Install]
 WantedBy=multi-user.target
