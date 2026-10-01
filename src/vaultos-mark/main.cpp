@@ -5,11 +5,19 @@
 // Modes:  --boot (default)  --spin  --pulse  --static
 // Config: ~/.config/Vault.OS/overseer   one line, e.g. "XMOB"
 //         ~/.config/Vault.OS/desktop-spin  boot|full|pulse|static|off
+// Other logos (replaces vaultos-spin-111 and the vaultos-spin-arch fallback):
+//   --logo PNG  --period SECONDS (spin, default 8)  --frame-ms N
+//   --rotate (spin in the screen plane, like the Vault 111 overlay)
+//   --bare (no halo, no caption)  --size PX (logo width cap, 0 = native)
+// e.g. vaultos-mark --logo vault-111-logo.png --rotate --bare --size 0
+//        --period 12 --frame-ms 33 --instance 111
+// Motion still follows desktop-spin: static unless it says full (or --spin).
 #include <gtk/gtk.h>
 #include <cairo.h>
 #include <fcntl.h>
 #include <sys/file.h>
 #include <unistd.h>
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -44,6 +52,10 @@ struct Mark {
   cairo_surface_t* comp = nullptr;   // halo+logo baked once (spin/pulse/static)
   cairo_surface_t* cap = nullptr;    // full caption baked once
   int lw = 0, lh = 0, ww = 0, wh = 0;
+  int box = 0;                       // logo area height (lh, or the diagonal for --rotate)
+  double period = 8.0;
+  int frame_ms = 0;                  // 0 = per-mode default
+  bool rotate = false, bare = false;
   gint64 t0 = 0;
   guint timer = 0;
   std::string line1 = "VAULT-TEC INDUSTRIES";
@@ -109,7 +121,7 @@ void draw_caption(cairo_t* cr, const Mark& m, double y, size_t n1, size_t n2, bo
 void bake(Mark& m) {
   m.comp = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, m.lw + 24, m.lh + 24);
   cairo_t* c = cairo_create(m.comp);
-  cairo_set_source_surface(c, m.halo, 0, 0); cairo_paint(c);
+  if (m.halo) { cairo_set_source_surface(c, m.halo, 0, 0); cairo_paint(c); }
   cairo_set_source_surface(c, m.logo, 12, 12); cairo_paint(c);
   cairo_destroy(c);
   m.cap = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, m.ww, kCaptionH);
@@ -123,19 +135,22 @@ void render(cairo_t* cr, Mark& m, double t) {
   cairo_set_source_rgba(cr, 0, 0, 0, 0);
   cairo_paint(cr);
   cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-  double cx = m.ww / 2.0, cy = m.lh / 2.0;
+  double cx = m.ww / 2.0, cy = m.box / 2.0;
 
-  auto paint_logo = [&](double alpha, double sx) {
+  auto paint_logo = [&](double alpha, double sx, double rot = 0.0) {
     cairo_save(cr);
     cairo_translate(cr, cx, cy);
+    if (rot != 0.0) cairo_rotate(cr, rot);
     cairo_scale(cr, sx, 1.0);
     cairo_set_source_surface(cr, m.comp, -m.lw / 2.0 - 12, -m.lh / 2.0 - 12);
-    cairo_pattern_set_filter(cairo_get_source(cr), sx == 1.0 ? CAIRO_FILTER_NEAREST : CAIRO_FILTER_FAST);
+    cairo_pattern_set_filter(cairo_get_source(cr),
+                             rot != 0.0 ? CAIRO_FILTER_GOOD : sx == 1.0 ? CAIRO_FILTER_NEAREST : CAIRO_FILTER_FAST);
     if (alpha >= 1.0) cairo_paint(cr); else cairo_paint_with_alpha(cr, alpha);
     cairo_restore(cr);
   };
   auto paint_cap = [&]() {
-    cairo_set_source_surface(cr, m.cap, 0, m.lh);
+    if (m.bare) return;
+    cairo_set_source_surface(cr, m.cap, 0, m.box);
     cairo_paint(cr);
   };
 
@@ -145,9 +160,10 @@ void render(cairo_t* cr, Mark& m, double t) {
       paint_cap();
       break;
     case Mode::Spin: {
-      double a = std::fmod(t / 8.0, 1.0) * 2 * M_PI;
+      double a = std::fmod(t / m.period, 1.0) * 2 * M_PI;
       double sx = std::cos(a);
-      paint_logo(1.0, (sx < 0 ? -1 : 1) * std::max(0.08, std::fabs(sx)));
+      if (m.rotate) paint_logo(1.0, 1.0, a);
+      else paint_logo(1.0, (sx < 0 ? -1 : 1) * std::max(0.08, std::fabs(sx)));
       paint_cap();
       break;
     }
@@ -186,7 +202,7 @@ void render(cairo_t* cr, Mark& m, double t) {
         size_t n2 = t2 > 0 ? size_t(t2 / 0.06) : 0;
         bool done = n2 >= m.line2.size();
         bool cur = !done || (int(t * 2.5) % 2 == 0);
-        draw_caption(cr, m, m.lh, n1, n2, cur && t2 > 0);
+        if (!m.bare) draw_caption(cr, m, m.box, n1, n2, cur && t2 > 0);
       }
       break;
     }
@@ -237,6 +253,8 @@ int main(int argc, char** argv) {
   Mark m;
   double png_t = -1; std::string png_out;
   std::string inst = "desktop";
+  std::string logo = home() + "/.local/share/backgrounds/Vault.OS/arch-logo-code.png";
+  int logo_px = kLogoPx;
   std::string cfg = home() + "/.config/Vault.OS/";
   std::string want = read_line(cfg + "desktop-spin", "boot");
   if (want == "off") return 0;
@@ -251,18 +269,29 @@ int main(int argc, char** argv) {
     else if (a == "--static" || a == "--reduced-phosphor") m.mode = Mode::Static;
     else if (a == "--instance" && i + 1 < argc) inst = argv[++i];
     else if (a == "--png" && i + 2 < argc) { png_t = std::atof(argv[++i]); png_out = argv[++i]; }
+    else if (a == "--logo" && i + 1 < argc) logo = argv[++i];
+    else if (a == "--period" && i + 1 < argc) m.period = std::max(0.5, std::atof(argv[++i]));
+    else if (a == "--frame-ms" && i + 1 < argc) m.frame_ms = std::clamp(std::atoi(argv[++i]), 16, 1000);
+    else if (a == "--size" && i + 1 < argc) logo_px = std::max(0, std::atoi(argv[++i]));
+    else if (a == "--rotate") m.rotate = true;
+    else if (a == "--bare") m.bare = true;
   }
   m.line2 = "OVERSEER " + read_line(cfg + "overseer", "XMOB");
 
   gtk_init(&argc, &argv);
   g_set_prgname("vaultos-mark");
 
-  std::string logo = home() + "/.local/share/backgrounds/Vault.OS/arch-logo-code.png";
-  m.logo = scale_png(logo, kLogoPx, &m.lw, &m.lh);
+  m.logo = scale_png(logo, logo_px > 0 ? logo_px : 1 << 30, &m.lw, &m.lh);
   if (!m.logo) { std::fprintf(stderr, "vaultos-mark: missing %s\n", logo.c_str()); return 1; }
-  m.halo = make_halo(m.logo, m.lw, m.lh);
+  if (!m.bare) m.halo = make_halo(m.logo, m.lw, m.lh);
+  m.box = m.lh;
   m.ww = m.lw + 80;
-  m.wh = m.lh + kCaptionH;
+  if (m.rotate) {  // room for the logo at any angle
+    int diag = int(std::ceil(std::hypot(m.lw + 24, m.lh + 24)));
+    m.box = diag;
+    m.ww = std::max(m.ww, diag);
+  }
+  m.wh = m.box + (m.bare ? 0 : kCaptionH);
   bake(m);
   if (!png_out.empty()) {  // offscreen frame for previews/docs, no window
     cairo_surface_t* s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, m.ww, m.wh);
@@ -297,7 +326,7 @@ int main(int argc, char** argv) {
   GdkRectangle geo{};
   gdk_monitor_get_geometry(mon, &geo);
   gtk_window_set_default_size(GTK_WINDOW(w), m.ww, m.wh);
-  gtk_window_move(GTK_WINDOW(w), geo.x + (geo.width - m.ww) / 2, geo.y + (geo.height - m.lh) / 2 - 40);
+  gtk_window_move(GTK_WINDOW(w), geo.x + (geo.width - m.ww) / 2, geo.y + (geo.height - m.box) / 2 - 40);
 
   g_signal_connect(w, "draw", G_CALLBACK(on_draw), &m);
   g_signal_connect(w, "realize", G_CALLBACK(on_realize), nullptr);
@@ -305,7 +334,7 @@ int main(int argc, char** argv) {
 
   if (m.mode != Mode::Static) {
     m.t0 = g_get_monotonic_time();
-    guint ms = m.mode == Mode::Boot ? 33 : (m.mode == Mode::Pulse ? 125 : 66);
+    guint ms = m.frame_ms ? m.frame_ms : m.mode == Mode::Boot ? 33 : (m.mode == Mode::Pulse ? 125 : 66);
     m.timer = g_timeout_add(ms, tick, &m);
   }
   std::printf("vaultos-mark mode=%d overseer=%s\n", int(m.mode), m.line2.c_str());

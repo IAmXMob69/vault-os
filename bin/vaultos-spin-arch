@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Vault.OS — Arch logo MADE OF CODE, spinning in place (Y-axis). Vault.OS.
 
+FALLBACK: the native port is src/vaultos-mark (vaultos-mark, which also
+takes --logo/--period/--rotate for the Vault 111 overlay).
+vaultos-spin-arch-autostart only runs this script when the binary is missing.
+
 Honors reduced phosphor (a11y):
   --reduced-phosphor          force effects off (static mark; PERIOD unused)
   or ~/.config/Vault.OS/terminal-phosphor in {reduced,clear}
