@@ -1,10 +1,10 @@
 [Unit]
-Description=Vault-OS desktop+panel integrity timer (every 30s)
+Description=Vault-OS desktop+panel integrity timer
 
 [Timer]
-OnBootSec=20s
-OnUnitActiveSec=30s
-AccuracySec=5s
+OnBootSec=45s
+OnUnitActiveSec=10min
+AccuracySec=30s
 Persistent=false
 Unit=vault-os-watch.service
 
