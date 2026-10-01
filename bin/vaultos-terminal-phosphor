@@ -24,8 +24,11 @@ done
 if [[ -z "$SRC" ]]; then
   SRC="$HOME/Vault.OS/source/xfce4-terminal"
 fi
-LIVE="$HOME/.config/xfce4/terminal/terminalrc"
-STATE="$HOME/.config/Vault.OS/terminal-phosphor"
+# Source tree is read-only input; all runtime output lives under XDG config.
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+LIVE="$CFG/xfce4/terminal/terminalrc"
+STATE="$CFG/Vault.OS/terminal-phosphor"
+ACTIVE_CSS="$CFG/Vault.OS/terminal.css"
 export DISPLAY="${DISPLAY:-:0.0}"
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
 
@@ -58,13 +61,18 @@ apply_xfconf() {
 }
 
 apply_css() {
+  # Theme gtk.css does @import url("terminal.css") relative to each installed
+  # theme dir, so the dial writes the copies there; never back into $SRC.
   local mode="$1"
   for d in "$HOME/.themes/Vault.OS/gtk-3.0" "$HOME/.themes/Vault.OS/gtk-3.20" \
            "$HOME/Vault.OS/source/gtk-3.0" "$HOME/Vault.OS/source/gtk-3.20"; do
     [ -d "$d" ] || continue
+    # Never write into a git checkout (tracked theme sources stay clean).
+    git -C "$d" rev-parse --is-inside-work-tree >/dev/null 2>&1 && continue
     cp -f "$SRC/terminal.${mode}.css" "$d/terminal.css"
   done
-  cp -f "$SRC/terminal.${mode}.css" "$SRC/terminal.css"
+  mkdir -p "$(dirname "$ACTIVE_CSS")"
+  cp -f "$SRC/terminal.${mode}.css" "$ACTIVE_CSS"
 }
 
 case "$MODE" in
@@ -92,7 +100,7 @@ if [[ -f "$STATE" && "$(cat "$STATE" 2>/dev/null)" == "$MODE" ]] \
   fi
 fi
 
-cp -f "$SRC/terminalrc.${MODE}" "$SRC/terminalrc"
+mkdir -p "$(dirname "$LIVE")"
 cp -f "$SRC/terminalrc.${MODE}" "$LIVE"
 apply_css "$MODE"
 apply_xfconf "$MODE"
