@@ -57,10 +57,83 @@ parse_cmdline() {
   done
 }
 
+# --- answers file hygiene ----------------------------------------------------
+# The answers file can hold password= and wifi_psk= in clear text. Only read
+# it when it is a regular file owned by root:root with mode 0600 (tightened
+# with a warning if loose; refused if not root-owned or a symlink). After a
+# successful run it is shredded; after a failed run it stays, still 0600, so
+# the next boot can retry.
+ANSWER_PATH=""
+STAMPED=0
+
+warn() { echo "vaultos-firstboot: $*" >&2; log "warn: $*"; }
+
+answers_owner() {
+  # root:root on a real system; the harness user under VAULTOS_TEST_ROOT.
+  if in_test; then echo "$(id -u) $(id -g)"; else echo "0 0"; fi
+}
+
+answers_file_secure() {
+  local f="$1" uid gid mode want_u want_g
+  read -r want_u want_g < <(answers_owner)
+  if [[ -L "$f" || ! -f "$f" ]]; then
+    warn "answers file $f is not a regular file; ignoring it"
+    return 1
+  fi
+  read -r uid gid mode < <(stat -c '%u %g %a' "$f")
+  if [[ "$uid" != "$want_u" ]]; then
+    warn "answers file $f is owned by uid $uid, not root; ignoring it"
+    return 1
+  fi
+  if [[ "$gid" != "$want_g" ]] || (( 8#$mode & 8#7177 )); then
+    warn "answers file $f was mode $mode group $gid; setting 0600 root:root. A password in it may already have been readable."
+    if ! { chown "$want_u:$want_g" "$f" && chmod 0600 "$f"; }; then
+      warn "could not secure $f; ignoring it"
+      return 1
+    fi
+  fi
+  return 0
+}
+
+remove_answers() {
+  local f="$ANSWER_PATH"
+  [[ -n "$f" && -f "$f" && ! -L "$f" ]] || return 0
+  if command -v shred >/dev/null 2>&1 && shred -u -z "$f" 2>/dev/null; then
+    log "answers file $f shredded"
+  elif rm -f "$f" 2>/dev/null; then
+    log "answers file $f removed (shred unavailable or failed)"
+  else
+    # Read-only media or similar: at least drop the secrets.
+    sed -i -E '/^[[:space:]]*(password|wifi_psk)[[:space:]]*=/d' "$f" 2>/dev/null \
+      && warn "could not delete $f; removed password keys from it" \
+      || warn "could not delete or scrub $f; remove it by hand"
+  fi
+  ANSWER_PATH=""
+}
+
+keep_answers_for_retry() {
+  local f="$ANSWER_PATH" want_u want_g
+  [[ -n "$f" && -f "$f" && ! -L "$f" ]] || return 0
+  read -r want_u want_g < <(answers_owner)
+  chown "$want_u:$want_g" "$f" 2>/dev/null || true
+  chmod 0600 "$f" 2>/dev/null || true
+  log "answers file $f kept (0600) for the next attempt"
+}
+
+finish_ok() {
+  # The stamp is the commit point: after it, never roll back.
+  stamp_ok "$@"
+  STAMPED=1
+  remove_answers || true
+}
+
 load_answers() {
   local f="${VAULTOS_FIRSTBOOT_CONF:-$ANSWER_FILE}"
   [[ -z "$f" && -f "$CONF_DEFAULT" ]] && f="$CONF_DEFAULT"
-  [[ -n "$f" && -f "$f" ]] || return 0
+  [[ -n "$f" ]] || return 0
+  [[ -e "$f" || -L "$f" ]] || return 0
+  answers_file_secure "$f" || return 0
+  ANSWER_PATH="$f"
   log "answers $f"
   local line k v
   while IFS= read -r line || [[ -n "$line" ]]; do
@@ -82,7 +155,7 @@ load_answers
 [[ "${ANSWERS[skip]:-}" == "1" ]] && SKIP=1
 
 if [[ "$SKIP" -eq 1 ]]; then
-  stamp_ok skip
+  finish_ok skip
   exit 0
 fi
 
@@ -120,7 +193,7 @@ RESET_ONLY=""
 if existing=$(first_login_user); then
   h=$(shadow_hash_for "$existing" || true)
   if hash_usable "$h"; then
-    stamp_ok existing-user "$existing"
+    finish_ok existing-user "$existing"
     exit 0
   fi
   RESET_ONLY="$existing"
@@ -138,6 +211,31 @@ fi
 
 trap 'log "interrupted"; echo; echo "Setup cancelled. Reboot to try again."; exit 1' INT
 
+# --- typeahead -------------------------------------------------------------
+# Keys typed while a slow step runs (locale-gen, localectl) used to land in the
+# NEXT prompt: on a real console a password typed early became the username
+# and was echoed in clear. Stop echo during slow steps and throw away anything
+# pending before every interactive prompt. Only acts when stdin is a TTY.
+TTY_SAVED=""
+hold_input() {
+  [[ -t 0 ]] || return 0
+  [[ -n "$TTY_SAVED" ]] || TTY_SAVED="$(stty -g 2>/dev/null || true)"
+  stty -echo 2>/dev/null || true
+}
+restore_tty() {
+  if [[ -n "$TTY_SAVED" ]]; then
+    stty "$TTY_SAVED" 2>/dev/null || true
+    TTY_SAVED=""
+  fi
+}
+drain_input() {
+  [[ -t 0 ]] || return 0
+  local junk
+  # read -n 1 runs non-canonical, so half-typed lines (no Enter) are drained too.
+  while IFS= read -r -s -n 1 -t 0.05 junk; do :; done
+  restore_tty
+}
+
 ask() {
   # ask KEY DEFAULT PROMPT
   local key="$1" def="$2" prompt="$3"
@@ -146,6 +244,7 @@ ask() {
     echo "$prompt [$def]: $REPLY"
     return 0
   fi
+  drain_input
   printf '%s [%s]: ' "$prompt" "$def"
   IFS= read -r REPLY || return 1
   REPLY="${REPLY:-$def}"
@@ -190,7 +289,10 @@ list_timezones() {
 
 valid_timezone() {
   local tz="$1"
-  [[ -e "${P}/usr/share/zoneinfo/$tz" || -e "/usr/share/zoneinfo/$tz" ]]
+  # A zone is a file under zoneinfo. Reject directories ("America"), absolute
+  # paths, and ".." so /etc/localtime never points outside zoneinfo.
+  [[ -n "$tz" && "$tz" != /* && "$tz" != *..* ]] || return 1
+  [[ -f "${P}/usr/share/zoneinfo/$tz" || -f "/usr/share/zoneinfo/$tz" ]]
 }
 
 apply_timezone() {
@@ -309,6 +411,8 @@ prompt_machine() {
     echo "Example: en_US.UTF-8"
     ANSWERS[locale]=""
   done
+  echo "Applying locale ${loc}… (this can take a few seconds; please wait)"
+  hold_input
   apply_locale "$loc"
 
   while true; do
@@ -318,6 +422,8 @@ prompt_machine() {
     echo "Example: us, uk, de, fr"
     ANSWERS[keymap]=""
   done
+  echo "Applying keyboard layout ${km}… (please wait)"
+  hold_input
   apply_keymap "$km"
 
   if net_online; then
@@ -325,8 +431,14 @@ prompt_machine() {
   else
     echo "Network: offline."
     if wifi_device >/dev/null; then
-      ask skip_wifi n "Connect Wi-Fi now? [y/N]"
-      q="${REPLY,,}"
+      # skip_wifi=1 in the answers file means "skip". It used to be fed in as
+      # the answer to "Connect?", so skip_wifi=yes connected instead.
+      q="${ANSWERS[skip_wifi]:-}"
+      case "${q,,}" in
+        1|y|yes|true) q=n ;;
+        0|n|no|false) q=y ;;
+        *) ask connect_wifi n "Connect Wi-Fi now? (y/n)"; q="${REPLY,,}" ;;
+      esac
       if [[ "$q" == y || "$q" == yes ]]; then
         ask wifi_ssid "" "Wi-Fi SSID"
         ssid="$REPLY"
@@ -334,6 +446,7 @@ prompt_machine() {
           if [[ -n "${ANSWERS[wifi_psk]:-}" ]]; then
             psk="${ANSWERS[wifi_psk]}"
           else
+            drain_input
             printf 'Wi-Fi password: '
             IFS= read -rs psk || true
             echo
@@ -390,9 +503,11 @@ read_password() {
     return 0
   fi
   while true; do
+    drain_input
     printf 'Password: '
     IFS= read -rs p1 || return 1
     echo
+    drain_input
     printf 'Password (again): '
     IFS= read -rs p2 || return 1
     echo
@@ -434,7 +549,9 @@ test_useradd() {
   for g in "${_gs[@]}"; do
     [[ -z "$g" ]] && continue
     if grep -qE "^${g}:" "${P}/etc/group"; then
-      sed -i "s/^${g}:\\([^:]*\\):\\([^:]*\\):\\(.*\\)/${g}:\\1:\\2:\\3,${user}/" "${P}/etc/group"
+      awk -F: -v OFS=: -v g="$g" -v u="$user" \
+        '$1==g{$4 = ($4=="" ? u : $4 "," u)} {print}' \
+        "${P}/etc/group" >"${P}/etc/group.tmp" && mv "${P}/etc/group.tmp" "${P}/etc/group"
     fi
   done
 }
@@ -559,6 +676,11 @@ rollback_user() {
     mv "${P}/etc/passwd.tmp" "${P}/etc/passwd" 2>/dev/null || true
     grep -vE "^${u}:" "${P}/etc/shadow" >"${P}/etc/shadow.tmp" 2>/dev/null || true
     mv "${P}/etc/shadow.tmp" "${P}/etc/shadow" 2>/dev/null || true
+    awk -F: -v OFS=: -v u="$u" '$1==u{next} {
+        n=split($4, m, ","); s=""
+        for (i=1; i<=n; i++) if (m[i]!=u && m[i]!="") s = (s=="" ? m[i] : s "," m[i])
+        $4=s; print }' "${P}/etc/group" >"${P}/etc/group.tmp" 2>/dev/null \
+      && mv "${P}/etc/group.tmp" "${P}/etc/group" 2>/dev/null || true
     rm -rf "${P}/home/${u}"
   else
     userdel -r "$u" 2>/dev/null || true
@@ -567,13 +689,42 @@ rollback_user() {
 }
 
 CREATED_USER=""
-trap 'log "fail"; rollback_user; echo; echo "Setup failed. Reboot to try again."; exit 1' ERR
-trap 'log "interrupted"; rollback_user; echo; echo "Setup cancelled. Reboot to try again."; exit 1' INT
+# Roll back on ANY non-zero exit. An ERR trap alone is not enough: without
+# errtrace, set -e exits from inside a function (ensure_wheel_sudo,
+# set_lightdm_session, ...) without firing it, leaving a half-made user that
+# the next boot treats as an existing account and skips.
+CANCELLED=0
+on_exit() {
+  local rc=$?
+  trap - EXIT
+  restore_tty
+  if (( rc != 0 && STAMPED )); then
+    # Account and stamp are in place; a late error (e.g. a hung-up tty on
+    # the final echo) must not delete the user or block LightDM.
+    log "error rc=$rc after stamp; keeping account"
+    exit 0
+  fi
+  if (( rc != 0 )); then
+    log "fail rc=$rc"
+    rollback_user || true
+    keep_answers_for_retry || true
+    echo
+    if (( CANCELLED )); then
+      echo "Setup cancelled. Reboot to try again."
+    else
+      echo "Setup failed. Reboot to try again."
+    fi
+  fi
+  exit "$rc"
+}
+trap on_exit EXIT
+trap 'log "interrupted"; CANCELLED=1; exit 130' INT
+trap 'log "terminated"; CANCELLED=1; exit 143' TERM HUP
 
 clear 2>/dev/null || true
 prompt_machine
 prompt_account
-stamp_ok created "${CREATED_USER:-$RESET_ONLY}"
+finish_ok created "${CREATED_USER:-$RESET_ONLY}"
 echo "Continuing to login…"
 sleep 1
 exit 0

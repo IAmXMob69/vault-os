@@ -25,7 +25,7 @@ Hostname [vaultos]:
 Timezone (type a zone, or a search like 'New_York') [UTC]:
 Locale [en_US.UTF-8]:
 Keyboard layout [us]:
-Connect Wi-Fi now? [y/N]:
+Connect Wi-Fi now? (y/n) [n]:          (only when offline with a Wi-Fi device)
 Username []:
 Password:
 Password (again):
@@ -33,17 +33,29 @@ Password (again):
 
 Then LightDM starts with session `vaultos`. The wheel sudoers drop-in is visudo-checked. Theme bits are copied from `/etc/skel`.
 
-Re-run (next boot shows the wizard again):
+Re-run on a fresh install (next boot shows the wizard again):
 
 ```bash
 sudo vaultos firstboot --reset
 ```
+
+The wizard only prompts when no UID>=1000 user has a usable password (or to
+set one for a locked user). If one exists it stamps `existing-user` and
+LightDM starts. Desktops set up with `overlay/install-system.sh` never enable
+`vaultos-firstuser.service`, so `--reset` alone does nothing there.
+`vaultos firstboot --run` needs root and prompts on tty1, not your terminal.
 
 Unattended:
 
 - Kernel: `vaultos.firstboot=skip` (stamp and continue)
 - Kernel: `vaultos.firstboot=/etc/vaultos/firstboot.conf`
 - Or drop answers in `/etc/vaultos/firstboot.conf` (see `overlay/firstboot.conf.example`)
+
+The answers file must be a regular file owned `root:root`, mode `0600`
+(`sudo install -m 0600 -o root -g root answers /etc/vaultos/firstboot.conf`).
+A looser mode is tightened with a warning; a symlink or a file not owned by
+root is ignored. After a successful run the file is shredded (`shred -u`,
+else `rm`). After a failed run it is kept at `0600` for the next boot.
 
 ```text
 hostname=vaultos
