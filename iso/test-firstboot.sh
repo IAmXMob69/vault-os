@@ -61,7 +61,9 @@ run_wiz() {
   export VAULTOS_TEST_ROOT="$r"
   export VAULTOS_LIB="$ROOT"
   export VAULTOS_FIRSTBOOT_CONF="$conf"
-  "$WIZ"
+  # Never inherit the caller's terminal: a rejected answer falls back to an
+  # interactive prompt, which would hang the harness waiting on the keyboard.
+  "$WIZ" </dev/null
 }
 
 # Happy path
