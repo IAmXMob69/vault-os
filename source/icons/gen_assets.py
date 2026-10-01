@@ -107,14 +107,20 @@ def g_desktop(d, s):
 
 
 def g_trash(d, s):
-    R(d, s, 5, 3, 6, 1)
-    R(d, s, 4, 4, 8, 1)
+    # lid + handle
+    R(d, s, 6, 2, 4, 1)
+    R(d, s, 4, 3, 8, 1)
+    # hollow can
     P(d, s, [(5, 5), (11, 5), (10, 13), (6, 13)])
+    R(d, s, 6, 6, 4, 6, STEEL_800)
+    R(d, s, 7, 7, 1, 4)
+    R(d, s, 9, 7, 1, 4)
 
 
 def g_trash_full(d, s):
     g_trash(d, s)
-    R(d, s, 7, 6, 2, 5, STEEL_800)
+    R(d, s, 7, 1, 1, 2)
+    R(d, s, 9, 1, 1, 2)
 
 
 def g_computer(d, s):
@@ -794,8 +800,8 @@ def write_index(root: Path, dirs: list[str]) -> None:
 
 
 # --- cursors ---
-def pack_xcursor(images: list[tuple[Image.Image, int, int, int]]) -> bytes:
-    """images: (PIL RGBA, nominal_size, xhot, yhot)"""
+def pack_xcursor(images: list[tuple[Image.Image, int, int, int]], delay: int = 0) -> bytes:
+    """images: (PIL RGBA, nominal_size, xhot, yhot). delay > 0 makes an animated cursor (ms per frame)."""
     n = len(images)
     header_size = 16
     toc_off = header_size
@@ -808,7 +814,7 @@ def pack_xcursor(images: list[tuple[Image.Image, int, int, int]]) -> bytes:
         w, h = im.size
         pixels = im.convert("RGBA").tobytes("raw", "BGRA")
         chunk = struct.pack("<IIIIIIII", 36, 0xFFFD0002, nominal, 1, w, h, xhot, yhot)
-        chunk += struct.pack("<I", 0)  # delay
+        chunk += struct.pack("<I", delay)
         chunk += pixels
         toc.append((0xFFFD0002, nominal, pos))
         chunks.append(chunk)
@@ -876,20 +882,36 @@ def make_cursors(out: Path) -> None:
     save("xterm", im, 11, 12)
     link("xterm", "ibeam", "text", "vertical-text")
 
-    # watch / wait
-    im, d = cursor_base()
-    d.ellipse([3, 3, 20, 20], fill=fill, outline=ol)
-    d.line([(12, 12), (12, 7)], fill=ol, width=1)
-    d.line([(12, 12), (16, 12)], fill=ol, width=1)
-    save("watch", im, 12, 12)
+    # watch / wait and left_ptr_watch / progress: animated phosphor sweep.
+    # The X server steps the frames, so this costs no process and no CPU in Vault.OS.
+    BUSY_FRAMES, BUSY_DELAY = 8, 90
+
+    def sweep(d, box, step):
+        d.ellipse(box, fill=fill, outline=PHOS_DIM)
+        start = step * (360 // BUSY_FRAMES) - 90
+        d.arc(box, start, start + 100, fill=ol, width=2)
+
+    def save_anim(name, frames, xhot, yhot):
+        data = pack_xcursor([(f, cs, xhot, yhot) for f in frames], BUSY_DELAY)
+        (out / name).write_bytes(data)
+
+    frames = []
+    for i in range(BUSY_FRAMES):
+        im, d = cursor_base()
+        sweep(d, [3, 3, 20, 20], i)
+        d.rectangle([11, 11, 12, 12], fill=ol)  # hub
+        frames.append(im)
+    save_anim("watch", frames, 12, 12)
     link("watch", "wait")
 
-    # left_ptr_watch / progress
-    im, d = cursor_base()
-    pts = [(1, 1), (1, 16), (5, 13), (8, 20), (11, 19), (7, 12), (13, 12)]
-    outline_poly(d, pts, fill, ol)
-    d.ellipse([13, 13, 23, 23], fill=fill, outline=ol)
-    save("left_ptr_watch", im, 1, 1)
+    frames = []
+    for i in range(BUSY_FRAMES):
+        im, d = cursor_base()
+        pts = [(1, 1), (1, 16), (5, 13), (8, 20), (11, 19), (7, 12), (13, 12)]
+        outline_poly(d, pts, fill, ol)
+        sweep(d, [13, 13, 23, 23], i)
+        frames.append(im)
+    save_anim("left_ptr_watch", frames, 1, 1)
     link("left_ptr_watch", "progress")
 
     # fleur / move
