@@ -1,5 +1,6 @@
 #!/bin/sh
 # Installed to /usr/lib/xfce4-screensaver/vaultos-arch-spin
+# (saver theme id: screensavers-vaultos-arch-spin)
 # xfce4-screensaver runs this as the logged-in user, so resolve the runner
 # from that user's home at run time (no home path baked in at install).
 # Lock/saver spin only; the terminal phosphor dial never controls it.
@@ -8,4 +9,12 @@ export HOME
 run="$HOME/.local/bin/vaultos-spin-lock-run"
 [ -x "$run" ] && exec "$run" "$@"
 run="$(command -v vaultos-spin-lock-run 2>/dev/null)" && [ -n "$run" ] && exec "$run" "$@"
+# No runner: call a spinner directly. Native vaultos-lockmark picks still or
+# spin from the GTK theme itself; the Python fallback gets --full like the
+# runner passes for the full theme.
+run="$HOME/.local/bin/vaultos-lockmark"
+[ -x "$run" ] && exec "$run" "$@"
+run="$(command -v vaultos-lockmark 2>/dev/null)" && [ -n "$run" ] && exec "$run" "$@"
+run="$HOME/.local/bin/vaultos-spin-lock"
+[ -x "$run" ] && exec "$run" --full "$@"
 exit 0
