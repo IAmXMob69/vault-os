@@ -32,3 +32,4 @@ privacy-shield
 lib/
 scripts/geolock-apply.sh
 scripts/__pycache__/
+src/vaultos-mark/vaultos-mark
