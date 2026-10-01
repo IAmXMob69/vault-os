@@ -364,3 +364,13 @@ Do not leave `vaultos-spin-arch --full` running for days on HD 630 — it burns 
 - **Symptom:** Shell and C++ wizards both showed 17 MiB peak RSS. Linux keeps the RSS high-water mark across `execve`, so a Python `fork()`+exec reports Python's size.
 - **Do instead:** Launch through a tiny static C launcher (`fork`, `execv`, `wait4`) and read `ru_maxrss` there.
 - **Logged:** 2026-09-30 cpp-firstuser
+
+### DO NOT pipe into `grep -q` under `set -o pipefail`
+- **Symptom:** `vault-os doctor` said `font Share Tech Mono MISSING` with the font installed (seen with a fake HOME; the live run hid it behind the file check). `grep -q` exits at the first match, `fc-list` dies of SIGPIPE, and pipefail turns the match into a failure. Whether it happens depends on timing and output size.
+- **Do instead:** `cmd | grep -F pattern >/dev/null` (grep reads to EOF), or capture first: `out=$(cmd); [[ $out == *x* ]]`.
+- **Logged:** 2026-09-30 cpp-tools (found by the native doctor parity test)
+
+### DO NOT assume a port of the lint can sort however it likes
+- **Symptom:** Byte-identical output needs the same order as the bash tools: `find`/`grep -r` walk in readdir order (no sort), globs, `diff -r` and `sort -u` sort with `strcoll` in the user's locale, and bash walks associative-array keys in hash order (`hexsym symonly mixed none` for `_xpm_n`).
+- **Do instead:** `src/vaultos-doctor` reads directories with `readdir`, sorts with `strcoll` where bash does, and hard-codes the assoc order. `src/vaultos-doctor/test-parity.sh` diffs both on clean and broken copies of the tree; run it after changing either side.
+- **Logged:** 2026-09-30 cpp-tools

@@ -85,6 +85,18 @@ Needs the maintainer before going live: merging, `make -C src install` into
   test-mode rollback left the fake shadow 0644.
 - Not switched: the ISO and `vaultos firstboot --run` still run the `.sh`.
 
+## Native doctor / lint (branch `cpp-tools`, not merged, not pushed)
+
+- `src/vaultos-doctor`: `lint [PATH]`, `doctor`, `status`, read-only. Output
+  and exit codes are byte-identical to the bash checks (tested by
+  `src/vaultos-doctor/test-parity.sh` on clean and deliberately broken copies
+  of the tree, plus a fake HOME with a stub xfconf-query for the doctor).
+- `bin/vault-os` execs it for `lint` and read-only `doctor` when
+  `vaultos-doctor` is on PATH (`VAULTOS_DOCTOR=` turns it off). `doctor --fix`
+  and everything else stays bash. Live only after merge + `make -C src install`.
+- Fixed on the way: `has_share_tech_mono` could report MISSING because
+  `grep -q` + pipefail SIGPIPE'd `fc-list`.
+
 ## Landed
 
 - `vault-os` 1.5.17 — install path + greeter system installer targets Vault.OS
