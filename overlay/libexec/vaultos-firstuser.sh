@@ -138,6 +138,31 @@ fi
 
 trap 'log "interrupted"; echo; echo "Setup cancelled. Reboot to try again."; exit 1' INT
 
+# --- typeahead -------------------------------------------------------------
+# Keys typed while a slow step runs (locale-gen, localectl) used to land in the
+# NEXT prompt: on a real console a password typed early became the username
+# and was echoed in clear. Stop echo during slow steps and throw away anything
+# pending before every interactive prompt. Only acts when stdin is a TTY.
+TTY_SAVED=""
+hold_input() {
+  [[ -t 0 ]] || return 0
+  [[ -n "$TTY_SAVED" ]] || TTY_SAVED="$(stty -g 2>/dev/null || true)"
+  stty -echo 2>/dev/null || true
+}
+restore_tty() {
+  if [[ -n "$TTY_SAVED" ]]; then
+    stty "$TTY_SAVED" 2>/dev/null || true
+    TTY_SAVED=""
+  fi
+}
+drain_input() {
+  [[ -t 0 ]] || return 0
+  local junk
+  # read -n 1 runs non-canonical, so half-typed lines (no Enter) are drained too.
+  while IFS= read -r -s -n 1 -t 0.05 junk; do :; done
+  restore_tty
+}
+
 ask() {
   # ask KEY DEFAULT PROMPT
   local key="$1" def="$2" prompt="$3"
@@ -146,6 +171,7 @@ ask() {
     echo "$prompt [$def]: $REPLY"
     return 0
   fi
+  drain_input
   printf '%s [%s]: ' "$prompt" "$def"
   IFS= read -r REPLY || return 1
   REPLY="${REPLY:-$def}"
@@ -312,6 +338,8 @@ prompt_machine() {
     echo "Example: en_US.UTF-8"
     ANSWERS[locale]=""
   done
+  echo "Applying locale ${loc}… (this can take a few seconds; please wait)"
+  hold_input
   apply_locale "$loc"
 
   while true; do
@@ -321,6 +349,8 @@ prompt_machine() {
     echo "Example: us, uk, de, fr"
     ANSWERS[keymap]=""
   done
+  echo "Applying keyboard layout ${km}… (please wait)"
+  hold_input
   apply_keymap "$km"
 
   if net_online; then
@@ -343,6 +373,7 @@ prompt_machine() {
           if [[ -n "${ANSWERS[wifi_psk]:-}" ]]; then
             psk="${ANSWERS[wifi_psk]}"
           else
+            drain_input
             printf 'Wi-Fi password: '
             IFS= read -rs psk || true
             echo
@@ -399,9 +430,11 @@ read_password() {
     return 0
   fi
   while true; do
+    drain_input
     printf 'Password: '
     IFS= read -rs p1 || return 1
     echo
+    drain_input
     printf 'Password (again): '
     IFS= read -rs p2 || return 1
     echo
@@ -591,6 +624,7 @@ CANCELLED=0
 on_exit() {
   local rc=$?
   trap - EXIT
+  restore_tty
   if (( rc != 0 )); then
     log "fail rc=$rc"
     rollback_user || true

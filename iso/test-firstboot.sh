@@ -245,6 +245,68 @@ grep -q 'wifi ssid=' "$work/wifiyes/var/log/vaultos-firstboot.log" \
 grep -q 'wifi ssid=testnet' "$work/wifi0/var/log/vaultos-firstboot.log" \
   && pass "skip_wifi=0 connects Wi-Fi" || fail "skip_wifi=0 did not connect"
 
+# Typeahead on a real TTY: keys typed while locale/keymap apply must be
+# discarded, never read as the username, and never as the password
+# confirmation. Needs a pty, so drive the wizard from python3's pty module.
+if command -v python3 >/dev/null 2>&1; then
+  prep_root "$work/tty"
+  if python3 - "$WIZ" "$work/tty" "$ROOT" >"$work/tty.out" 2>&1 <<'PYTTY'
+import os, pty, select, sys, time
+wiz, root, lib = sys.argv[1:4]
+env = dict(os.environ, VAULTOS_TEST_ROOT=root, VAULTOS_LIB=lib)
+env.pop("VAULTOS_FIRSTBOOT_CONF", None)
+pid, fd = pty.fork()
+if pid == 0:
+    os.execve(wiz, [wiz], env)
+buf = b""
+log = open(os.path.join(root, "pty-transcript.txt"), "wb")
+def expect(pat, timeout=20):
+    global buf
+    end = time.time() + timeout
+    while pat.encode() not in buf:
+        r, _, _ = select.select([fd], [], [], max(0, end - time.time()))
+        if not r:
+            sys.exit(f"timeout waiting for {pat!r}; tail {buf[-200:]!r}")
+        try:
+            d = os.read(fd, 4096)
+        except OSError:
+            sys.exit(f"EOF waiting for {pat!r}; tail {buf[-200:]!r}")
+        log.write(d); buf += d
+    buf = buf[buf.index(pat.encode()) + len(pat):]
+def send(s):
+    os.write(fd, s.encode())
+expect("Hostname [vaultos]: "); send("vaultos\n")
+expect("[UTC]: "); send("UTC\n")
+# Accept the locale, then type ahead a keymap and a password-like line.
+expect("Locale [en_US.UTF-8]: "); send("\nde\nTypedAheadPw\n")
+expect("Applying locale")
+# Keymap typed normally, then a half-typed line with no Enter.
+expect("Keyboard layout [us]: "); send("us\nPartialJunk")
+expect("Applying keyboard layout")
+expect("Username []: "); send("carl\n")
+# Password plus a stray extra line before the confirmation prompt.
+expect("Password: "); send("Carl-pw-1\nEXTRA\n")
+expect("Password (again): "); send("Carl-pw-1\n")
+expect("is ready")
+_, st = os.waitpid(pid, 0)
+sys.exit(os.waitstatus_to_exitcode(st))
+PYTTY
+  then
+    pass "tty typeahead: wizard finished"
+  else
+    fail "tty typeahead: wizard did not finish ($(tail -1 "$work/tty.out"))"
+  fi
+  grep -q '^carl:' "$work/tty/etc/passwd" && pass "tty typeahead: username is carl" || fail "tty typeahead: carl missing"
+  grep -qiE '^(typedaheadpw|partialjunk|partialjunkcarl|de|extra|carl-pw-1):' "$work/tty/etc/passwd" \
+    && fail "tty typeahead: typed-ahead text became a user" || pass "tty typeahead: no typed-ahead user"
+  grep -qx 'KEYMAP=us' "$work/tty/etc/vconsole.conf" \
+    && pass "tty typeahead: keymap us (typed-ahead 'de' discarded)" || fail "tty typeahead: keymap $(cat "$work/tty/etc/vconsole.conf")"
+  grep -q 'Applying locale' "$work/tty/pty-transcript.txt" && grep -q 'Applying keyboard layout' "$work/tty/pty-transcript.txt" \
+    && pass "tty: Applying… messages shown" || fail "tty: no Applying… message"
+else
+  echo "SKIP  tty typeahead (no python3)"
+fi
+
 # Password mismatch via stdin (no answers password)
 prep_root "$work/mismatch"
 export VAULTOS_TEST_ROOT="$work/mismatch" VAULTOS_LIB="$ROOT"
