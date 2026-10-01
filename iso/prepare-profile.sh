@@ -79,6 +79,28 @@ if ! grep -q vaultos-install "$PROFILE/profiledef.sh"; then
     "$PROFILE/profiledef.sh"
 fi
 
+# mkarchiso copies airootfs with cp --no-preserve=mode, so any script not in
+# file_permissions lands 0644 in the ISO (1.5.19: vaultos-firstboot/core
+# failed 203/EXEC; identity-apply.sh was skipped by vaultos-install, which
+# copies /usr/lib/vaultos as-is). List every executable we ship.
+perm_file="$(mktemp)"
+while IFS= read -r -d '' f; do
+  rel="/${f#"$PROFILE/airootfs/"}"
+  grep -qF "[\"$rel\"]=" "$PROFILE/profiledef.sh" && continue
+  printf '  ["%s"]="0:0:755"\n' "$rel" >>"$perm_file"
+done < <(find "$PROFILE/airootfs/usr/lib/vaultos" "$PROFILE/airootfs/usr/local/bin" \
+           "$PROFILE/airootfs/root" -type f -perm -u+x -print0 2>/dev/null | sort -z)
+if [[ -s "$perm_file" ]]; then
+  awk -v add="$perm_file" '
+    /^file_permissions=\(/ { inside=1 }
+    inside && /^\)/ { while ((getline l < add) > 0) print l; inside=0 }
+    { print }' "$PROFILE/profiledef.sh" >"$PROFILE/profiledef.sh.new"
+  cat "$PROFILE/profiledef.sh.new" >"$PROFILE/profiledef.sh"
+  rm -f "$PROFILE/profiledef.sh.new"
+fi
+rm -f "$perm_file"
+bash -n "$PROFILE/profiledef.sh"
+
 # --- UEFI loader titles ---
 cat >"$PROFILE/efiboot/loader/loader.conf" <<'EOF'
 timeout 15
