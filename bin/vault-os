@@ -1026,7 +1026,7 @@ cmd_status() {
 # Patterns are split so this file never matches its own checks.
 _CHK_FAIL=0
 _CHK_WARN=0
-_BANNED_HEX_RE='#(33FF6A|44FF3D)'
+_BANNED_HEX_RE='(#|0x)(33FF6A|44FF3D)|rgba?\(\s*(51\s*,\s*255\s*,\s*106|68\s*,\s*255\s*,\s*61)\b'
 _SB_NONE_RE='ScrollingBar''=NONE|TERMINAL_SCROLLBAR_''NONE'
 _IMPORTANT_RE='!\s*import''ant'
 _CSS_JUNK_RE='text-trans''form|:(before|after)\b|-GtkNote''book-'
@@ -1158,6 +1158,8 @@ _lint_repo() {
     if [[ -n "$hits" ]]; then
       _chk WARN palette-old "legacy PipBoy-NV app themes still carry banned hexes ($(printf '%s\n' "$hits" | wc -l) files)"
       printf '%s\n' "$hits" | _chk_list 8
+    else
+      _chk OK palette-old "legacy PipBoy-NV app themes free of banned phosphor colours"
     fi
   fi
 
