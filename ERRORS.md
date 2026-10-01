@@ -374,3 +374,13 @@ Do not leave `vaultos-spin-arch --full` running for days on HD 630 — it burns 
 - **Symptom:** Byte-identical output needs the same order as the bash tools: `find`/`grep -r` walk in readdir order (no sort), globs, `diff -r` and `sort -u` sort with `strcoll` in the user's locale, and bash walks associative-array keys in hash order (`hexsym symonly mixed none` for `_xpm_n`).
 - **Do instead:** `src/vaultos-doctor` reads directories with `readdir`, sorts with `strcoll` where bash does, and hard-codes the assoc order. `src/vaultos-doctor/test-parity.sh` diffs both on clean and broken copies of the tree; run it after changing either side.
 - **Logged:** 2026-09-30 cpp-tools
+
+### DO NOT skip side effects that follow a failed redirect when porting
+- **Symptom:** `{ …; } >"$IDSTAMP"; chmod 0644 "$IDSTAMP"` still runs the chmod when the redirect fails (set +e). With a directory in the way the script chmods the directory to 0644; a port that only chmods after a successful write leaves it 0755 (the boot parity test caught it).
+- **Do instead:** Port every statement after a failing one unless the script uses `&&`/`set -e`. Test the "path is a directory" and "parent is a file" cases.
+- **Logged:** 2026-09-30 cpp-tools
+
+### DO NOT test real-mode boot helpers against the host's /var
+- **Symptom:** The no-test-root branches (systemctl, identity-apply, /var/log) can't be run on a dev box without writing system state.
+- **Do instead:** `unshare -rm` gives a private user+mount namespace where `mount --bind TMP /var/lib` works unprivileged; put stub `systemctl`/`identity-apply.sh` first in PATH/`VAULTOS_LIB`. See `src/vaultos-boot/test-parity.sh`.
+- **Logged:** 2026-09-30 cpp-tools

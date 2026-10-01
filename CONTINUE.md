@@ -97,6 +97,24 @@ Needs the maintainer before going live: merging, `make -C src install` into
 - Fixed on the way: `has_share_tech_mono` could report MISSING because
   `grep -q` + pipefail SIGPIPE'd `fc-list`.
 
+## Native boot helpers (branch `cpp-tools`, not merged, not pushed)
+
+- `src/vaultos-boot`: `core` == `overlay/libexec/vaultos-core.sh`, `identity`
+  == `vaultos-firstboot.sh`. Same files, contents, modes and log lines; both
+  always exit 0. Installs to `/usr/lib/vaultos/libexec/vaultos-boot`.
+- `vaultos-core.sh` gained `VAULTOS_TEST_ROOT` (skips identity-apply, like
+  the firstboot script) so both sides can be tested on fake roots.
+- `src/vaultos-boot/test-parity.sh`: fake-root cases plus real-mode cases in a
+  private `unshare -rm` namespace (bind-mounted /var/lib, /var/log,
+  /etc/os-release, stub systemctl and identity-apply). Host never written.
+- Units still run the scripts. To switch: install the binary into the ISO
+  profile and use `ExecStart=/bin/sh -c '[ -x B ] && exec B core || exec S'`
+  (B = `/usr/lib/vaultos/libexec/vaultos-boot`, S = the script) so the script
+  stays the fallback. Needs a VM boot test.
+- Not ported: `vaultos-plymouth.sh`, `install-boot.sh`, `identity-apply.sh`
+  (root-only, rewrite mkinitcpio/UKI/pacman.conf, no fake-root mode; a
+  native port would be untestable here).
+
 ## Landed
 
 - `vault-os` 1.5.17 — install path + greeter system installer targets Vault.OS
