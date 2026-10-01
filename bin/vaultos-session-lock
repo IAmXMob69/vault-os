@@ -6,6 +6,7 @@ HOME="${HOME:-$(getent passwd "$(id -un)" | cut -d: -f6)}"
 SPIN="${HOME}/.local/bin/vaultos-spin-lock"
 RUN="${HOME}/.local/bin/vaultos-spin-lock-run"
 pkill -f "${SPIN}" 2>/dev/null || true
+pkill -x vaultos-lockmar 2>/dev/null || true
 if [[ -x "$RUN" ]]; then
   "$RUN" >/tmp/vaultos-spin-lock.log 2>&1 &
 elif [[ -x "$SPIN" ]]; then

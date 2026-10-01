@@ -1,5 +1,5 @@
 # Native Vault.OS helpers. `make -C src install` puts them in ~/.local/bin.
-SUBDIRS = vaultos-mark vaultos-screensaver-proxy
+SUBDIRS = vaultos-mark vaultos-screensaver-proxy vaultos-lockmark
 PREFIX ?= $(HOME)/.local
 
 all install clean:
