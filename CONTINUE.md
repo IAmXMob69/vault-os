@@ -12,7 +12,26 @@ Improve Arch XFCE / Vault.OS across the stack. Master Coding Bot can pull any la
 | Panel / notify / unlock | lock.css contrast; professional whisker sizes |
 | Terminal + Arch spin | phosphor dial; no `#33FF6A`; install seeds terminalrc |
 | Icons / cursors | vault-dock + cache on install; no Mojave pins |
-| Control plane | `vault-os` install / ensure-theme / status / doctor |
+| Control plane | ~~`vault-os` install / ensure-theme / status / doctor~~ landed on branch `control-plane-doctor` (unpushed); see below |
+
+## Control plane — `vault-os doctor` / `vault-os lint` (branch `control-plane-doctor`, unpushed)
+
+- `vault-os doctor` is read-only now: status + live rules + repo lint, exit 1 on any FAIL. It no longer runs apply / ensure-* or restarts xfce4-panel (it used to `xfce4-panel -r` a healthy panel on every run).
+- `vault-os doctor --fix` (and `repair` / `fix`) is the repair pass; it restarts xfce4-panel only when it is dead or panel-2 length is bad, then runs the read-only doctor.
+- `vault-os lint [PATH]` runs the repo checks with no session (CI-safe): palette (banned 33FF6A / 44FF3D), `!important` and web-only CSS in GTK css, gtk-3.0 + gtk-3.20, source ≡ themes (GTK warn, xfwm fail, mixed XPMs), terminal scrollbar, saver desktop + id + no floaters hijack, spin static by default, ERRORS.md ≡ source/, bash -n.
+- `~/.local/bin/vault-os` points at the main checkout, so the live CLI changes only after this branch is merged there.
+
+### Findings for other lanes (from the first doctor run)
+
+- **TRM-05:** `config/xfce4/terminal/terminalrc` still has the PipBoy palette (`ColorForeground`, palette, `TabActivityColor` on the banned 33FF6A; well 070C09), and `install.sh` copies it to the live `terminalrc`. This is the only lint FAIL. Fix: seed from `source/xfce4-terminal/terminalrc.reduced` (as `vault-os install` does), or retoken.
+- **TRM-05:** `vaultos-terminal-phosphor` `apply_css` also writes `$SRC/terminal.css`, which is the tracked `source/xfce4-terminal/terminal.css` in the checkout. Any mode other than `reduced` dirties the repo.
+- **TRM-05 / Genius (sudo):** the installed `/usr/lib/xfce4-screensaver/vaultos-arch-spin` is the old wrapper with a hard-coded home path. It differs from `source/xfce4-screensaver/vaultos-arch-spin.wrapper`. Refresh it with `install-system.sh` when sudo is OK. The system desktop is fine: no `Hidden=`, Exec/TryExec on the wrapper, floaters stock.
+- **GTK-02 / HUD-04:** source/ and themes/ have drifted on `hud.css` (CANON + Reduced, gtk-3.0 + gtk-3.20) and on Reduced `lock.css`. Reduced gtk-3.20 `terminal.css` has also drifted (TRM-05 owns the terminal.css trees).
+- **GTK-02 / a11y:** `tokens-reduced.css` ≠ `source/tokens-reduced.css`. The source copy has the `reduced_phosphor` sentinel and comments.
+- **XWM-03:** clean. source ≡ themes for both packs, 60 XPMs each with hex + symbolic colors, and live `~/.themes` ≡ repo.
+- **ICO-06:** `icons/Vault.OS` is clean.
+- **VDS-01 call:** the legacy PipBoy-NV app themes (`config/vscode`, `config/discord`, `config/firefox`, `config/Kvantum/PipBoy-NV`, `themes/PipBoy-NV`, …) still use 33FF6A. Lint warns only. `install.sh` still installs the Firefox userChrome and the Discord theme from them.
+- Live `~/.themes/Vault.OS` gtk.css matches the unpushed local `main` (GTK motion commit), not `origin/main`. This is expected until that is pushed.
 
 ## Open — human sudo later
 
