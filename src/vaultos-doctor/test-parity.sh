@@ -61,7 +61,8 @@ echo ".q{color:#$HY}" >>"$B/config/discord/PipBoyNV.theme.css"
 echo "a { color: red $IMP; }" >>"$B/source/gtk-3.0/gtk.css"
 echo "label { text-trans""form: uppercase; } a:bef""ore { }" >>"$B/source/lock/lock.css"
 rm -f "$B/themes/Vault.OS-Reduced/gtk-3.20/gtk.css"
-x=$(ls "$B/themes/Vault.OS/xfwm4"/*.xpm | head -1)
+# glob, not `ls | head -1`: under pipefail ls can die of SIGPIPE (rc 141)
+xs=("$B/themes/Vault.OS/xfwm4"/*.xpm); x=${xs[0]}
 sed -i -E 's/ c #[0-9A-Fa-f]+//' "$x"
 echo extra >"$B/themes/Vault.OS/xfwm4/zz-only-in-theme.xpm"
 mkdir -p "$B/source/xfwm4/subdir" && echo s >"$B/source/xfwm4/subdir/file"
@@ -134,7 +135,7 @@ mkhome "$D"
 mkdir -p "$D/.themes/Vault.OS/gtk-3.0" "$D/.config/gtk-3.0" "$D/.config/gtk-4.0" \
   "$D/.local/share/applications/screensavers" "$D/.themes/Vault.OS/xfwm4"
 cp -a "$work/clean/themes/Vault.OS/xfwm4/." "$D/.themes/Vault.OS/xfwm4/"
-rm -f "$(ls "$D/.themes/Vault.OS/xfwm4"/*.xpm | head -1)"
+xs=("$D/.themes/Vault.OS/xfwm4"/*.xpm); rm -f "${xs[0]}"
 echo zz >"$D/.themes/Vault.OS/xfwm4/zz-extra"
 echo ".a{color:#$HX}" >"$D/.themes/Vault.OS/gtk-3.0/gtk.css"
 echo "b{x:y $IMP}" >"$D/.config/gtk-4.0/gtk.css"
