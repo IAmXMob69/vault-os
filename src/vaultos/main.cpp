@@ -139,7 +139,8 @@ void resolve_paths(const char* argv0) {
   if (!present(fs::path(g_root) / ".git") && present(dir / ".." / ".." / ".git")) g_root = fs::canonical(dir / ".." / "..", ec);
 #ifdef VAULTOS_SRC_ROOT
   // Installed to ~/.local/bin: fall back to the checkout it was built from.
-  if (!present(fs::path(g_root) / "overlay" / "VERSION") && present(fs::path(VAULTOS_SRC_ROOT) / ".git"))
+  // The system copy under /usr keeps /usr/lib/vaultos; a user copy follows its checkout.
+  if (dir.string().rfind("/usr/", 0) != 0 && present(fs::path(VAULTOS_SRC_ROOT) / ".git"))
     g_root = VAULTOS_SRC_ROOT;
 #endif
 
