@@ -184,6 +184,35 @@ awk -F: '$1=="dave"{print $2}' "$work/reset/etc/shadow" | grep -q '^\$' \
   && pass "reset-only set dave password" || fail "dave still locked"
 grep -q '^eve:\|^alice:' "$work/reset/etc/passwd" && fail "extra user on reset-only" || pass "reset-only did not add a user"
 
+# Rollback: a failure AFTER useradd (sudoers drop-in rejected) must remove
+# the half-created user, or the next boot sees an "existing user" and skips.
+prep_root "$work/rollback"
+mkdir -p "$work/fakebin"
+printf '#!/bin/sh\nexit 1\n' >"$work/fakebin/visudo"
+chmod +x "$work/fakebin/visudo"
+cat >"$work/rollback.conf" <<'EOF'
+hostname=vaultos
+timezone=UTC
+locale=en_US.UTF-8
+keymap=us
+username=zed
+password=pw-rollback
+skip_wifi=1
+online=1
+EOF
+if PATH="$work/fakebin:$PATH" run_wiz "$work/rollback" "$work/rollback.conf" >/dev/null 2>&1; then
+  fail "rollback: run succeeded despite visudo failure"
+else
+  pass "rollback: visudo failure exits non-zero"
+fi
+grep -q '^zed:' "$work/rollback/etc/passwd" && fail "rollback: zed left in passwd" || pass "rollback: zed removed from passwd"
+grep -q '^zed:' "$work/rollback/etc/shadow" && fail "rollback: zed left in shadow" || pass "rollback: zed removed from shadow"
+grep -qE '(^zed:|[:,]zed(,|$))' "$work/rollback/etc/group" && fail "rollback: zed left in group" || pass "rollback: zed removed from group"
+[[ -e "$work/rollback/home/zed" ]] && fail "rollback: /home/zed left" || pass "rollback: /home/zed removed"
+[[ -f "$work/rollback/var/lib/vaultos/firstboot-done" ]] && fail "rollback: stamp written" || pass "rollback: no stamp"
+grep -q 'rollback zed' "$work/rollback/var/log/vaultos-firstboot.log" \
+  && pass "rollback: logged" || fail "rollback: not logged"
+
 # Password mismatch via stdin (no answers password)
 prep_root "$work/mismatch"
 export VAULTOS_TEST_ROOT="$work/mismatch" VAULTOS_LIB="$ROOT"

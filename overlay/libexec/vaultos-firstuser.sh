@@ -434,7 +434,9 @@ test_useradd() {
   for g in "${_gs[@]}"; do
     [[ -z "$g" ]] && continue
     if grep -qE "^${g}:" "${P}/etc/group"; then
-      sed -i "s/^${g}:\\([^:]*\\):\\([^:]*\\):\\(.*\\)/${g}:\\1:\\2:\\3,${user}/" "${P}/etc/group"
+      awk -F: -v OFS=: -v g="$g" -v u="$user" \
+        '$1==g{$4 = ($4=="" ? u : $4 "," u)} {print}' \
+        "${P}/etc/group" >"${P}/etc/group.tmp" && mv "${P}/etc/group.tmp" "${P}/etc/group"
     fi
   done
 }
@@ -559,6 +561,11 @@ rollback_user() {
     mv "${P}/etc/passwd.tmp" "${P}/etc/passwd" 2>/dev/null || true
     grep -vE "^${u}:" "${P}/etc/shadow" >"${P}/etc/shadow.tmp" 2>/dev/null || true
     mv "${P}/etc/shadow.tmp" "${P}/etc/shadow" 2>/dev/null || true
+    awk -F: -v OFS=: -v u="$u" '$1==u{next} {
+        n=split($4, m, ","); s=""
+        for (i=1; i<=n; i++) if (m[i]!=u && m[i]!="") s = (s=="" ? m[i] : s "," m[i])
+        $4=s; print }' "${P}/etc/group" >"${P}/etc/group.tmp" 2>/dev/null \
+      && mv "${P}/etc/group.tmp" "${P}/etc/group" 2>/dev/null || true
     rm -rf "${P}/home/${u}"
   else
     userdel -r "$u" 2>/dev/null || true
@@ -567,8 +574,29 @@ rollback_user() {
 }
 
 CREATED_USER=""
-trap 'log "fail"; rollback_user; echo; echo "Setup failed. Reboot to try again."; exit 1' ERR
-trap 'log "interrupted"; rollback_user; echo; echo "Setup cancelled. Reboot to try again."; exit 1' INT
+# Roll back on ANY non-zero exit. An ERR trap alone is not enough: without
+# errtrace, set -e exits from inside a function (ensure_wheel_sudo,
+# set_lightdm_session, ...) without firing it, leaving a half-made user that
+# the next boot treats as an existing account and skips.
+CANCELLED=0
+on_exit() {
+  local rc=$?
+  trap - EXIT
+  if (( rc != 0 )); then
+    log "fail rc=$rc"
+    rollback_user || true
+    echo
+    if (( CANCELLED )); then
+      echo "Setup cancelled. Reboot to try again."
+    else
+      echo "Setup failed. Reboot to try again."
+    fi
+  fi
+  exit "$rc"
+}
+trap on_exit EXIT
+trap 'log "interrupted"; CANCELLED=1; exit 130' INT
+trap 'log "terminated"; CANCELLED=1; exit 143' TERM HUP
 
 clear 2>/dev/null || true
 prompt_machine
