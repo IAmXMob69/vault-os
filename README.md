@@ -25,7 +25,7 @@ Hostname [vaultos]:
 Timezone (type a zone, or a search like 'New_York') [UTC]:
 Locale [en_US.UTF-8]:
 Keyboard layout [us]:
-Connect Wi-Fi now? [y/N]:
+Connect Wi-Fi now? (y/n) [n]:          (only when offline with a Wi-Fi device)
 Username []:
 Password:
 Password (again):

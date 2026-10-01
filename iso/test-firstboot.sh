@@ -222,6 +222,29 @@ printf 'vaultos\nAmerica\n../../../etc/passwd\nUTC\n' | "$WIZ" >/dev/null 2>&1 |
   && pass "timezone rejects directory and .. path" \
   || fail "timezone accepted $(readlink "$work/tz/etc/localtime")"
 
+# skip_wifi=yes means skip (it used to be read as "yes, connect").
+for sw in yes 0; do
+  prep_root "$work/wifi$sw"
+  cat >"$work/wifi$sw.conf" <<EOF
+hostname=vaultos
+timezone=UTC
+locale=en_US.UTF-8
+keymap=us
+username=wendy
+password=pw-wifi
+online=0
+wifi_dev=wlan0
+skip_wifi=$sw
+wifi_ssid=testnet
+wifi_psk=testpsk
+EOF
+  run_wiz "$work/wifi$sw" "$work/wifi$sw.conf" >/dev/null 2>&1 || fail "wifi skip_wifi=$sw run failed"
+done
+grep -q 'wifi ssid=' "$work/wifiyes/var/log/vaultos-firstboot.log" \
+  && fail "skip_wifi=yes still connected" || pass "skip_wifi=yes skips Wi-Fi"
+grep -q 'wifi ssid=testnet' "$work/wifi0/var/log/vaultos-firstboot.log" \
+  && pass "skip_wifi=0 connects Wi-Fi" || fail "skip_wifi=0 did not connect"
+
 # Password mismatch via stdin (no answers password)
 prep_root "$work/mismatch"
 export VAULTOS_TEST_ROOT="$work/mismatch" VAULTOS_LIB="$ROOT"

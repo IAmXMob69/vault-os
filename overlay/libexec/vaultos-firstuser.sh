@@ -328,8 +328,14 @@ prompt_machine() {
   else
     echo "Network: offline."
     if wifi_device >/dev/null; then
-      ask skip_wifi n "Connect Wi-Fi now? [y/N]"
-      q="${REPLY,,}"
+      # skip_wifi=1 in the answers file means "skip". It used to be fed in as
+      # the answer to "Connect?", so skip_wifi=yes connected instead.
+      q="${ANSWERS[skip_wifi]:-}"
+      case "${q,,}" in
+        1|y|yes|true) q=n ;;
+        0|n|no|false) q=y ;;
+        *) ask connect_wifi n "Connect Wi-Fi now? (y/n)"; q="${REPLY,,}" ;;
+      esac
       if [[ "$q" == y || "$q" == yes ]]; then
         ask wifi_ssid "" "Wi-Fi SSID"
         ssid="$REPLY"
