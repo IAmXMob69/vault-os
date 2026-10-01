@@ -42,3 +42,4 @@ src/vaultos-firstuser/vaultos-firstuser
 src/*/*.o
 src/*/*.d
 .test-prefix/
+src/vaultos-xq/vaultos-xq
