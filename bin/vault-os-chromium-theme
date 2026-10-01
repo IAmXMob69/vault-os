@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 # Force Pip-Boy Chromium theme (never stock GTK appearance)
+# FALLBACK: the native port is src/vaultos-chromium-theme. When it is built
+# this script hands over to it; VAULTOS_NO_NATIVE=1 forces the Python path.
 import json
 import os
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+if os.environ.get("VAULTOS_NO_NATIVE") != "1":
+    for _d in (os.environ.get("VAULTOS_NATIVE_DIR"), os.path.expanduser("~/.local/bin")):
+        _n = os.path.join(_d, "vaultos-chromium-theme") if _d else ""
+        if _n and os.access(_n, os.X_OK):
+            os.execv(_n, [_n] + sys.argv[1:])
 
 home = Path(os.environ.get("HOME") or Path.home())
 pref = home / ".config/chromium/Default/Preferences"

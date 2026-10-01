@@ -4,7 +4,7 @@
 # in charge. A real compile error is reported and the loop carries on; the
 # exit status is non-zero if any tool failed to build.
 SUBDIRS = vaultos vaultos-mark vaultos-screensaver-proxy vaultos-lockmark vaultos-hud vaultos-firstuser \
-          vaultos-xq vaultos-close-all
+          vaultos-xq vaultos-close-all vaultos-chromium-theme
 PREFIX ?= $(HOME)/.local
 
 # pkg-config deps for tool Makefiles that predate common.mk (no check-deps target).
