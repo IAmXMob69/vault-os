@@ -43,3 +43,4 @@ src/*/*.o
 src/*/*.d
 .test-prefix/
 src/vaultos-xq/vaultos-xq
+src/vaultos-close-all/vaultos-close-all
