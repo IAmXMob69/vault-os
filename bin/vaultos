@@ -177,6 +177,11 @@ cmd_firstboot() {
       echo "stamps removed; reboot to run the wizard"
       ;;
     --run)
+      if [[ "$(id -u)" -ne 0 ]]; then
+        echo "firstboot --run needs root" >&2
+        return 1
+      fi
+      echo "wizard prompts on tty1 (Ctrl-Alt-F1)" >&2
       exec /usr/lib/vaultos/libexec/vaultos-firstuser.sh
       ;;
     *)

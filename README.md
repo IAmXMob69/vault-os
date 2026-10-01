@@ -33,11 +33,17 @@ Password (again):
 
 Then LightDM starts with session `vaultos`. The wheel sudoers drop-in is visudo-checked. Theme bits are copied from `/etc/skel`.
 
-Re-run (next boot shows the wizard again):
+Re-run on a fresh install (next boot shows the wizard again):
 
 ```bash
 sudo vaultos firstboot --reset
 ```
+
+The wizard only prompts when no UID>=1000 user has a usable password (or to
+set one for a locked user). If one exists it stamps `existing-user` and
+LightDM starts. Desktops set up with `overlay/install-system.sh` never enable
+`vaultos-firstuser.service`, so `--reset` alone does nothing there.
+`vaultos firstboot --run` needs root and prompts on tty1, not your terminal.
 
 Unattended:
 
