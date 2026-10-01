@@ -29,6 +29,7 @@
         <value type="int" value="6"/>
         <value type="int" value="7"/>
         <value type="int" value="8"/>
+        <value type="int" value="21"/>
         <value type="int" value="9"/>
         <value type="int" value="10"/>
       </property>
@@ -75,6 +76,12 @@
     <property name="plugin-8" type="string" value="systray">
       <property name="square-icons" type="bool" value="true"/>
       <property name="symbolic-icons" type="bool" value="true"/>
+    </property>
+    <property name="plugin-21" type="string" value="genmon">
+      <property name="command" type="string" value="sh -c 'exec &quot;$HOME/.local/bin/vaultos-hud&quot;'"/>
+      <property name="update-period" type="int" value="2000"/>
+      <property name="use-label" type="bool" value="false"/>
+      <property name="enable-single-row" type="bool" value="true"/>
     </property>
     <property name="plugin-9" type="string" value="notification-plugin"/>
     <property name="plugin-10" type="string" value="clock">
