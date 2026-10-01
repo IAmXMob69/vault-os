@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# vaultos-root — re-exec a command as root through the GUI polkit prompt.
+# Used by vault-os-lockdown and vault-os-system-fix: `vaultos-root "$0" "$@"`.
+# pkexec first (graphical agent); sudo only when pkexec is not installed.
+set -euo pipefail
+
+if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
+  exec "$@"
+fi
+if (($# == 0)); then
+  echo "usage: vaultos-root COMMAND [ARGS...]" >&2
+  exit 2
+fi
+
+user="$(id -un)"
+home="$(getent passwd "$user" | cut -d: -f6)"
+home="${home:-$HOME}"
+export DISPLAY="${DISPLAY:-:0}"
+export XAUTHORITY="${XAUTHORITY:-$home/.Xauthority}"
+export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
+
+# pkexec wants an absolute program path.
+prog="$1"; shift
+if [[ "$prog" == */* && "$prog" != /* ]]; then
+  prog="$(readlink -f -- "$prog")"
+elif [[ "$prog" != /* ]]; then
+  abs="$(type -P -- "$prog")" || { echo "vaultos-root: $prog: not found" >&2; exit 127; }
+  prog="$abs"
+fi
+
+if command -v pkexec >/dev/null 2>&1; then
+  exec pkexec env DISPLAY="$DISPLAY" XAUTHORITY="$XAUTHORITY" \
+    DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" \
+    SUDO_USER="$user" HOME="$home" \
+    "$prog" "$@"
+fi
+if command -v sudo >/dev/null 2>&1; then
+  exec sudo --preserve-env=DISPLAY,XAUTHORITY,DBUS_SESSION_BUS_ADDRESS \
+    env HOME="$home" "$prog" "$@"
+fi
+echo "vaultos-root: need pkexec (polkit) or sudo" >&2
+exit 1
