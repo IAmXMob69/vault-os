@@ -3,9 +3,9 @@
   --rc-bg: #070C09;
   --rc-bg2: #040806;
   --rc-elev: #0D1510;
-  --rc-fg: #33FF6A;
-  --rc-mid: #249B4C;
-  --rc-border: #147832;
+  --rc-fg: #1AFF6B;
+  --rc-mid: #129D43;
+  --rc-border: #0F7835;
   --lwt-accent-color: var(--rc-bg) !important;
   --lwt-text-color: var(--rc-fg) !important;
   --toolbar-bgcolor: var(--rc-bg) !important;
@@ -21,21 +21,21 @@
 #navigator-toolbox, #titlebar, #TabsToolbar, #nav-bar, #PersonalToolbar,
 #sidebar-main, #sidebar-box, toolbox, toolbar {
   background-color: #070C09 !important;
-  color: #33FF6A !important;
+  color: #1AFF6B !important;
   font-family: "Share Tech Mono", "VT323", monospace !important;
 }
-#navigator-toolbox { border-bottom: 1px solid #147832 !important; }
+#navigator-toolbox { border-bottom: 1px solid #0F7835 !important; }
 .tab-background { background: transparent !important; border-radius: 0 !important; }
 .tab-background[selected], .tab-background[selected="true"] {
   background: #0D1510 !important;
-  box-shadow: inset 0 -2px 0 #33FF6A !important;
+  box-shadow: inset 0 -2px 0 #1AFF6B !important;
 }
-.tab-label { color: #33FF6A !important; }
+.tab-label { color: #1AFF6B !important; }
 #urlbar, #urlbar-background, #searchbar {
   background-color: #040806 !important;
-  color: #33FF6A !important;
-  border: 1px solid #147832 !important;
+  color: #1AFF6B !important;
+  border: 1px solid #0F7835 !important;
   border-radius: 0 !important;
 }
-#urlbar-input { color: #33FF6A !important; caret-color: #33FF6A !important; }
-toolbarbutton { color: #33FF6A !important; fill: #33FF6A !important; }
+#urlbar-input { color: #1AFF6B !important; caret-color: #1AFF6B !important; }
+toolbarbutton { color: #1AFF6B !important; fill: #1AFF6B !important; }
