@@ -1117,3 +1117,60 @@ spinner:disabled.active {
   -gtk-icon-transform: none;
   animation: vaultos-spin 1s linear infinite;
 }
+
+/* ---------------------------------------------------------------
+   Motion. Interaction-only and one-shot: nothing loops, so idle
+   cost is zero. Honors gtk-enable-animations; Reduced and
+   "vault-os a11y motion off" turn it all off.
+   --------------------------------------------------------------- */
+
+/* Popup plates warm up like a CRT: a phosphor edge that fades out. */
+@keyframes vaultos-warmup {
+  from { box-shadow: inset 1px 1px 0 @bevel_hi, inset -1px -1px 0 @bevel_lo, inset 0 0 0 2px @phosphor_dim; }
+  to   { box-shadow: inset 1px 1px 0 @bevel_hi, inset -1px -1px 0 @bevel_lo, inset 0 0 0 0 @phosphor_dim; }
+}
+
+menu,
+.menu,
+.context-menu,
+popover.background {
+  animation: vaultos-warmup 180ms ease-out 1;
+}
+
+/* Selection strikes bright, then settles to the AAA inset plate. */
+@keyframes vaultos-strike {
+  from { background-color: alpha(@phosphor_primary, 0.28); }
+  to   { background-color: @theme_selected_bg_color; }
+}
+
+row:selected,
+treeview.view:selected,
+iconview:selected,
+flowboxchild:selected {
+  animation: vaultos-strike 220ms ease-out 1;
+}
+
+/* Hover and focus ease in instead of snapping. */
+button,
+entry,
+spinbutton,
+menuitem,
+modelbutton,
+notebook > header tab,
+row,
+check,
+radio,
+switch,
+scale slider {
+  transition: background-color 120ms ease-out,
+              color 120ms ease-out,
+              border-color 120ms ease-out,
+              box-shadow 120ms ease-out;
+}
+
+/* Presses latch fast, like a vault switch. */
+button:active,
+button:checked,
+switch:checked {
+  transition-duration: 60ms;
+}
