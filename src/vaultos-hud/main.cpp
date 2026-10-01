@@ -79,7 +79,7 @@ std::string uptime_str() {
 }
 
 std::string overseer() {
-  std::string name = "XMOB";
+  std::string name = "VAULT DWELLER";
   if (const char* home = std::getenv("HOME")) {
     std::ifstream f(std::string(home) + "/.config/Vault.OS/overseer");
     std::string line;

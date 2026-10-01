@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "vaultos-lockmark: missing %s\n", logo.c_str());
     return 1;
   }
-  L.overseer = "OVERSEER " + read_line(home() + "/.config/Vault.OS/overseer", "XMOB");
+  L.overseer = "OVERSEER " + read_line(home() + "/.config/Vault.OS/overseer", "VAULT DWELLER");
 
   if (force_full) L.animate = true;
   else if (force_reduced) L.animate = false;

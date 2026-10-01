@@ -3,7 +3,7 @@
 // types the overseer line, then goes fully static: no timer, ~0% CPU.
 //
 // Modes:  --boot (default)  --spin  --pulse  --static
-// Config: ~/.config/Vault.OS/overseer   one line, e.g. "XMOB"
+// Config: ~/.config/Vault.OS/overseer   one line, e.g. "VAULT DWELLER"
 //         ~/.config/Vault.OS/desktop-spin  boot|full|pulse|static|off
 // Other logos (replaces vaultos-spin-111 and the vaultos-spin-arch fallback):
 //   --logo PNG  --period SECONDS (spin, default 8)  --frame-ms N
@@ -276,7 +276,7 @@ int main(int argc, char** argv) {
     else if (a == "--rotate") m.rotate = true;
     else if (a == "--bare") m.bare = true;
   }
-  m.line2 = "OVERSEER " + read_line(cfg + "overseer", "XMOB");
+  m.line2 = "OVERSEER " + read_line(cfg + "overseer", "VAULT DWELLER");
 
   gtk_init(&argc, &argv);
   g_set_prgname("vaultos-mark");
