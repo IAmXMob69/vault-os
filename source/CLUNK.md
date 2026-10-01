@@ -9,7 +9,7 @@
 - Boot intro disabled (INTRO_ENABLED=0)
 - Panel plates = Vault.OS, not FNV neon skins
 - `vaultos-lock` no longer restarts the panel every call
-- `vaultos-watch` autostart **off** (was 15s xfconf storm; systemd timer 10 min)
+- `vaultos-watch` removed (was a 15s xfconf storm); the systemd timer runs every 10 min
 - Desktop: hide hidden files, icon size 40
 
 ## Still on specialists
