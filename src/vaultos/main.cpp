@@ -296,7 +296,11 @@ int cmd_firstboot(const string& a) {
     std::cout << "stamps removed; reboot to run the wizard\n";
     return 0;
   }
-  if (a == "--run") exec({"/usr/lib/vaultos/libexec/vaultos-firstuser.sh"});
+  if (a == "--run") {
+    if (!root()) { std::cerr << "firstboot --run needs root\n"; return 1; }
+    std::cerr << "wizard prompts on tty1 (Ctrl-Alt-F1)\n";
+    exec({"/usr/lib/vaultos/libexec/vaultos-firstuser.sh"});
+  }
   std::cerr << "usage: vaultos firstboot [status|--reset|--run]\n";
   return 2;
 }
