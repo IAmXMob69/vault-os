@@ -174,7 +174,19 @@ cp -f "$ROOT/config/environment.d/vault-os.conf" "$CFG/environment.d/vault-os.co
 [[ -f "$HOME/.xprofile" ]] || cp -f "$ROOT/config/xprofile" "$HOME/.xprofile"
 
 install_new "$ROOT/config/fallout-nv/vault-os.conf" "$CFG/fallout-nv/vault-os.conf"
-cp -f "$ROOT/config/xfce4/terminal/terminalrc" "$CFG/xfce4/terminal/terminalrc"
+# Terminal theme: source/xfce4-terminal is the single source of truth.
+# Copy the tree (phosphor dial reads it) and seed live terminalrc from reduced.
+if [[ -d "$ROOT/source/xfce4-terminal" ]]; then
+  mkdir -p "$HOME/Vault.OS/source/xfce4-terminal" \
+           "$DATA/xfce4/terminal/colorschemes" "$DATA/Vault.OS" "$CFG/Vault.OS"
+  cp -a "$ROOT/source/xfce4-terminal/." "$HOME/Vault.OS/source/xfce4-terminal/"
+  cp -f "$ROOT/source/xfce4-terminal/terminalrc.reduced" "$CFG/xfce4/terminal/terminalrc"
+  [[ -f "$ROOT/source/xfce4-terminal/Vault.OS.theme" ]] && \
+    cp -f "$ROOT/source/xfce4-terminal/Vault.OS.theme" "$DATA/xfce4/terminal/colorschemes/Vault.OS.theme"
+  [[ -f "$ROOT/source/xfce4-terminal/scanline.png" ]] && \
+    cp -f "$ROOT/source/xfce4-terminal/scanline.png" "$DATA/Vault.OS/scanline.png"
+  echo reduced > "$CFG/Vault.OS/terminal-phosphor"
+fi
 [[ -f "$ROOT/config/xfce4/helpers.rc" ]] && cp -f "$ROOT/config/xfce4/helpers.rc" "$CFG/xfce4/helpers.rc"
 
 for xml in xsettings.xml xfwm4.xml xfce4-notifyd.xml thunar.xml; do
