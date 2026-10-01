@@ -17,3 +17,5 @@
 # skip_wifi=1
 # wifi_ssid=
 # wifi_psk=
+#   (never put on a command line: nmcli gets it via passwd-file on a pipe,
+#    iwd via a 0600 profile in /var/lib/iwd)

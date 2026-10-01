@@ -13,6 +13,7 @@
 //   VAULTOS_LIB             data dir with overlay/skel (default /usr/lib/vaultos)
 //   VAULTOS_FIRSTBOOT_CONF  answers file (also kernel vaultos.firstboot=PATH)
 //   VAULTOS_TEST_CMDLINE    stands in for /proc/cmdline, only with VAULTOS_TEST_ROOT
+//   VAULTOS_TEST_WIFI       nmcli|iwctl: real Wi-Fi code against stubs (test root only)
 //
 // Failure handling matches the shell's EXIT trap: any error, EOF or signal
 // after useradd removes the half-made account again, keeps the answers file
@@ -26,6 +27,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
 #include <algorithm>
@@ -84,6 +86,11 @@ bool g_color = false;
 string G, Rd, S, A, N;  // phosphor, reduced phosphor, steel, amber (warn), reset
 
 bool in_test() { return !P.empty(); }
+
+string env_s(const char* k) {
+  const char* v = std::getenv(k);
+  return v ? string(v) : string();
+}
 
 void init_colors() {
   g_color = isatty(1) && std::getenv("NO_COLOR") == nullptr;
@@ -603,18 +610,166 @@ string wifi_device() {
   return "";
 }
 
-bool apply_wifi(const string& ssid, const string& psk) {
-  log("wifi ssid=" + ssid);
-  if (in_test()) return true;
+// Wi-Fi. The PSK never goes on a command line (ps, /proc/*/cmdline) or in
+// the log: nmcli reads it from `passwd-file /dev/fd/3` (a pipe), iwctl from
+// an iwd profile written 0600 under /var/lib/iwd. Same steps as the shell.
+// VAULTOS_TEST_WIFI=nmcli|iwctl (test root only) runs this against stubs.
+bool wifi_tool(const string& t) {
+  if (in_test()) return env_s("VAULTOS_TEST_WIFI") == t;
+  return vaultos::have(t);
+}
+
+// iwd profile name: the SSID as-is if only [A-Za-z0-9 _-], else "=" + hex.
+string iwd_name(const string& ssid) {
+  bool plain = !ssid.empty();
+  for (unsigned char c : ssid)
+    if (!(isalnum(c) && c < 128) && c != ' ' && c != '_' && c != '-') plain = false;
+  if (plain) return ssid;
+  static const char* hx = "0123456789abcdef";
+  string out = "=";
+  for (unsigned char c : ssid) { out += hx[c >> 4]; out += hx[c & 15]; }
+  return out;
+}
+
+// Run argv with DATA readable on fd 3 (a pipe), stdin inherited.
+int sys_fd3(const vector<string>& argv, const string& data) {
+  if (g_dry) return sys(argv);
+  int p[2];
+  if (pipe2(p, O_CLOEXEC) != 0) return 127;
+  // A PSK line is far below the pipe buffer, so this cannot block.
+  ssize_t w = write(p[1], data.data(), data.size());
+  close(p[1]);
+  if (w != ssize_t(data.size())) { close(p[0]); return 127; }
+  fflush(stdout);
+  pid_t pid = fork();
+  if (pid < 0) { close(p[0]); return 127; }
+  if (pid == 0) {
+    signal(SIGPIPE, SIG_DFL);
+    if (p[0] == 3) fcntl(3, F_SETFD, 0); else dup2(p[0], 3);
+    vector<char*> a;
+    for (auto& x : argv) a.push_back(const_cast<char*>(x.c_str()));
+    a.push_back(nullptr);
+    execvp(a[0], a.data());
+    _exit(127);
+  }
+  close(p[0]);
+  int st = 0;
+  while (waitpid(pid, &st, 0) < 0)
+    if (errno != EINTR) return 127;
+  return WIFEXITED(st) ? WEXITSTATUS(st) : 128 + WTERMSIG(st);
+}
+
+void wipe(string& s) { explicit_bzero(s.data(), s.size()); s.clear(); }
+
+bool wifi_nmcli(const string& ssid, const string& psk, const string& dev) {
+  vector<string> ifn;
+  if (!dev.empty()) ifn = {"ifname", dev};
+  if (psk.empty()) {
+    vector<string> a = {"nmcli", "device", "wifi", "connect", ssid};
+    a.insert(a.end(), ifn.begin(), ifn.end());
+    return sys(a) == 0;
+  }
+  string uuid = vaultos::chomp(vaultos::slurp("/proc/sys/kernel/random/uuid"));
+  vector<string> add = {"nmcli", "connection", "add", "type", "wifi", "con-name", ssid};
+  add.insert(add.end(), ifn.begin(), ifn.end());
+  add.push_back("ssid");
+  add.push_back(ssid);
+  for (const string& x : {string("connection.uuid"), uuid, string("wifi-sec.key-mgmt"), string("wpa-psk")})
+    add.push_back(x);
+  vaultos::RunOpts q;
+  q.quiet_out = true;
+  if (sys(add, q) != 0) return false;
+  // passwd-file: backslash escapes; unescaped edge spaces are stripped.
+  string line = "802-11-wireless-security.psk:";
+  for (char c : psk) {
+    if (c == '\\') line += "\\\\";
+    else if (c == ' ') line += "\\ ";
+    else if (c == '\t') line += "\\t";
+    else line += c;
+  }
+  line += '\n';
+  int rc = sys_fd3({"nmcli", "connection", "up", "uuid", uuid, "passwd-file", "/dev/fd/3"}, line);
+  wipe(line);
+  if (rc == 0) return true;
+  vaultos::RunOpts qq;
+  qq.quiet_out = qq.quiet_err = true;
+  sys({"nmcli", "connection", "delete", "uuid", uuid}, qq);
+  return false;
+}
+
+// mkdir -p under umask 077 (new components 0700).
+bool mkdir_700(const string& d) {
+  string cur;
+  for (size_t i = 0; i <= d.size(); ++i) {
+    if (i == d.size() || (d[i] == '/' && i > 0)) {
+      cur = d.substr(0, i);
+      if (mkdir(cur.c_str(), 0700) != 0 && errno != EEXIST) return false;
+    }
+  }
+  return vaultos::is_dir(d);
+}
+
+bool wifi_iwctl(const string& ssid, const string& psk, const string& dev) {
+  if (dev.empty()) return false;
+  string dir, f, old;
+  bool had = false;
+  if (!psk.empty()) {
+    dir = P + "/var/lib/iwd";
+    string name = iwd_name(ssid);
+    f = dir + "/" + name + ".psk";
+    old = dir + "/." + name + ".psk.vaultos-old";
+    string tmp = dir + "/." + name + ".psk.tmp";
+    if (g_dry) {
+      dry("write " + f + " (0600)");
+    } else {
+      if (!mkdir_700(dir)) return false;
+      if (vaultos::path_exists(f)) {
+        had = true;
+        string body;
+        struct stat st;
+        if (!vaultos::slurp(f, body) || stat(f.c_str(), &st) != 0) return false;
+        int fd = open(old.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
+        bool ok = fd >= 0 && write(fd, body.data(), body.size()) == ssize_t(body.size());
+        if (fd >= 0) { fchmod(fd, st.st_mode & 07777); close(fd); }
+        struct timespec ts[2] = {st.st_atim, st.st_mtim};
+        utimensat(AT_FDCWD, old.c_str(), ts, 0);
+        wipe(body);
+        if (!ok) return false;
+      }
+      // l_settings escapes: backslash, tab, and a leading space (\s).
+      string esc;
+      for (char c : psk) {
+        if (c == '\\') esc += "\\\\";
+        else if (c == '\t') esc += "\\t";
+        else esc += c;
+      }
+      if (!esc.empty() && esc[0] == ' ') esc = "\\s" + esc.substr(1);
+      string body = "[Security]\nPassphrase=" + esc + "\n";
+      wipe(esc);
+      int fd = open(tmp.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
+      bool ok = fd >= 0 && write(fd, body.data(), body.size()) == ssize_t(body.size());
+      if (fd >= 0) { fchmod(fd, 0600); close(fd); }
+      wipe(body);
+      if (!ok || rename(tmp.c_str(), f.c_str()) != 0) return false;
+      if (!in_test()) sleep(1);  // let iwd pick the profile up (inotify)
+    }
+  }
   vaultos::RunOpts in;
   in.null_in = true;
-  if (vaultos::have("nmcli") && sys({"nmcli", "device", "wifi", "connect", ssid, "password", psk}, in) == 0)
-    return true;
-  if (vaultos::have("iwctl")) {
-    string dev = wifi_device();
-    if (dev.empty()) return false;
-    return sys({"iwctl", "--passphrase", psk, "station", dev, "connect", ssid}, in) == 0;
+  int rc = sys({"iwctl", "station", dev, "connect", ssid}, in);
+  if (!psk.empty() && !g_dry) {
+    if (rc == 0) unlink(old.c_str());
+    else if (had) rename(old.c_str(), f.c_str());
+    else unlink(f.c_str());
   }
+  return rc == 0;
+}
+
+bool apply_wifi(const string& ssid, const string& psk) {
+  log("wifi ssid=" + ssid);
+  if (in_test() && env_s("VAULTOS_TEST_WIFI").empty()) return true;
+  if (wifi_tool("nmcli") && wifi_nmcli(ssid, psk, wifi_device())) return true;
+  if (wifi_tool("iwctl")) return wifi_iwctl(ssid, psk, wifi_device());
   return false;
 }
 

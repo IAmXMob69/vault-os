@@ -5,6 +5,7 @@
 # VAULTOS_TEST_ROOT  prefix all /etc /var /home paths (harness only)
 # VAULTOS_FIRSTBOOT_CONF  answers file (also kernel vaultos.firstboot=PATH)
 # VAULTOS_TEST_CMDLINE  stands in for /proc/cmdline (only with VAULTOS_TEST_ROOT)
+# VAULTOS_TEST_WIFI     nmcli|iwctl: run the real Wi-Fi code against stubs (test root only)
 # The C++ port (src/vaultos-firstuser) does the same; this script is its fallback.
 set -euo pipefail
 
@@ -372,19 +373,95 @@ wifi_device() {
     | awk -F: '$1=="wifi"{print $2; f=1; exit} END{exit !f}'
 }
 
+# Wi-Fi. The PSK never goes on a command line (ps, /proc/*/cmdline) or in
+# the log: nmcli gets it through `passwd-file /dev/fd/3` on a pipe, iwctl
+# through an iwd profile written 0600 under /var/lib/iwd. Only bash
+# builtins (printf, parameter expansion) ever touch it.
+# VAULTOS_TEST_WIFI=nmcli|iwctl (test root only) runs the real code against
+# stub tools on PATH and says which one exists.
+wifi_tool() {
+  if in_test; then [[ "${VAULTOS_TEST_WIFI:-}" == "$1" ]] && return 0; return 1; fi
+  command -v "$1" >/dev/null 2>&1
+}
+
+# iwd profile name: the SSID as-is if only [A-Za-z0-9 _-], else "=" + hex.
+iwd_name() {
+  local LC_ALL=C
+  if [[ -n "$1" && "$1" != *[!A-Za-z0-9\ _-]* ]]; then
+    printf '%s' "$1"
+  else
+    printf '=%s' "$(printf '%s' "$1" | od -An -tx1 -v | tr -d ' \n')"
+  fi
+}
+
+wifi_nmcli() {
+  local ssid="$1" psk="$2" dev="$3" uuid esc
+  if [[ -z "$psk" ]]; then
+    nmcli device wifi connect "$ssid" ${dev:+ifname "$dev"}
+    return
+  fi
+  uuid=$(</proc/sys/kernel/random/uuid)
+  nmcli connection add type wifi con-name "$ssid" ${dev:+ifname "$dev"} ssid "$ssid" \
+    connection.uuid "$uuid" wifi-sec.key-mgmt wpa-psk >/dev/null || return 1
+  # passwd-file: backslash escapes; unescaped edge spaces are stripped.
+  esc=${psk//\\/'\\'}
+  esc=${esc// /'\ '}
+  esc=${esc//$'\t'/'\t'}
+  if nmcli connection up uuid "$uuid" passwd-file /dev/fd/3 \
+    3<<<"802-11-wireless-security.psk:$esc"; then
+    esc=; return 0
+  fi
+  esc=
+  nmcli connection delete uuid "$uuid" >/dev/null 2>&1 || true
+  return 1
+}
+
+wifi_iwctl() {
+  local ssid="$1" psk="$2" dev="$3" dir name f esc had=0 rc
+  [[ -n "$dev" ]] || return 1
+  if [[ -n "$psk" ]]; then
+    dir="${P}/var/lib/iwd"
+    name=$(iwd_name "$ssid")
+    f="$dir/$name.psk"
+    ( umask 077; mkdir -p "$dir" ) || return 1
+    if [[ -e "$f" ]]; then had=1; cp -p "$f" "$dir/.$name.psk.vaultos-old" || return 1; fi
+    # l_settings escapes: backslash, tab, and a leading space (\s).
+    esc=${psk//\\/'\\'}
+    esc=${esc//$'\t'/'\t'}
+    [[ "$esc" == " "* ]] && esc="\\s${esc:1}"
+    ( umask 077; printf '[Security]\nPassphrase=%s\n' "$esc" >"$dir/.$name.psk.tmp" ) || return 1
+    esc=
+    chmod 600 "$dir/.$name.psk.tmp" && mv -f "$dir/.$name.psk.tmp" "$f" || return 1
+    in_test || sleep 1   # let iwd pick the profile up (inotify)
+  fi
+  iwctl station "$dev" connect "$ssid" </dev/null
+  rc=$?
+  if [[ -n "$psk" ]]; then
+    if [[ $rc -eq 0 ]]; then
+      rm -f "$dir/.$name.psk.vaultos-old"
+    elif [[ $had -eq 1 ]]; then
+      mv -f "$dir/.$name.psk.vaultos-old" "$f"
+    else
+      rm -f "$f"
+    fi
+  fi
+  return $rc
+}
+
 apply_wifi() {
-  local ssid="$1" psk="$2"
+  local ssid="$1" psk="$2" dev
   log "wifi ssid=$ssid"
-  in_test && return 0
-  if command -v nmcli >/dev/null 2>&1; then
-    nmcli device wifi connect "$ssid" password "$psk" && return 0
-  fi
-  if command -v iwctl >/dev/null 2>&1; then
-    local dev
+  in_test && [[ -z "${VAULTOS_TEST_WIFI:-}" ]] && return 0
+  if wifi_tool nmcli; then
     dev=$(wifi_device || true)
-    [[ -n "$dev" ]] || return 1
-    iwctl --passphrase "$psk" station "$dev" connect "$ssid" || return 1
+    wifi_nmcli "$ssid" "$psk" "$dev" && return 0
   fi
+  if wifi_tool iwctl; then
+    dev=$(wifi_device || true)
+    wifi_iwctl "$ssid" "$psk" "$dev" || return 1
+    return 0
+  fi
+  return 1
 }
 
 prompt_machine() {
@@ -542,7 +619,7 @@ set_password() {
   local user="$1" pw="$2"
   if in_test; then
     local hash
-    hash=$(openssl passwd -6 "$pw" 2>/dev/null || printf '$6$testsalt$testhash')
+    hash=$(openssl passwd -6 -stdin <<<"$pw" 2>/dev/null || printf '$6$testsalt$testhash')
     if grep -qE "^${user}:" "${P}/etc/shadow" 2>/dev/null; then
       sed -i "s|^${user}:[^:]*:|${user}:${hash}:|" "${P}/etc/shadow"
     else
@@ -653,6 +730,10 @@ prompt_account() {
 
   groups=$(existing_groups wheel video audio input network)
   home="${P}/home/${user}"
+  # Mark before creating: a signal between useradd writing /etc/passwd and
+  # this line used to leave the account behind (the trap had no name).
+  # The name was checked free above, so rolling back a failed useradd is safe.
+  CREATED_USER="$user"
   if in_test; then
     test_useradd "$user" "$groups"
   else
@@ -663,7 +744,6 @@ prompt_account() {
       useradd -m -s /bin/bash "$user"
     fi
   fi
-  CREATED_USER="$user"
 
   if ! set_password "$user" "$PW"; then
     echo "Could not set password."

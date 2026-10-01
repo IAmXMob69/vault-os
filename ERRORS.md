@@ -384,3 +384,13 @@ Do not leave `vaultos-spin-arch --full` running for days on HD 630 — it burns 
 - **Symptom:** The no-test-root branches (systemctl, identity-apply, /var/log) can't be run on a dev box without writing system state.
 - **Do instead:** `unshare -rm` gives a private user+mount namespace where `mount --bind TMP /var/lib` works unprivileged; put stub `systemctl`/`identity-apply.sh` first in PATH/`VAULTOS_LIB`. See `src/vaultos-boot/test-parity.sh`.
 - **Logged:** 2026-09-30 cpp-tools
+
+### DO NOT pass a Wi-Fi PSK (or any secret) as a command-line argument
+- **Symptom:** Both wizards ran `nmcli device wifi connect SSID password PSK` and `iwctl --passphrase PSK …`. Any local user can read the PSK from `ps` or `/proc/PID/cmdline` while the command runs. The shell test path also ran `openssl passwd -6 "$pw"`.
+- **Do instead:** nmcli: `connection add … wifi-sec.key-mgmt wpa-psk` with no secret, then `connection up uuid U passwd-file /dev/fd/3 3<<<"802-11-wireless-security.psk:ESCAPED"` (passwd-file takes backslash escapes and strips unescaped edge spaces, so escape `\`, spaces and tabs). iwctl: write `/var/lib/iwd/<name>.psk` 0600 (`[Security]` `Passphrase=`; escape `\`, tab, and a leading space as `\s`; name is the SSID or `=`+hex), then `iwctl station DEV connect SSID`. In bash, only builtins may touch the secret. `iso/test-firstboot.sh` stubs nmcli/iwctl, scans every `/proc/*/cmdline` with a random marker in the PSK, and diffs both wizards.
+- **Logged:** 2026-09-30 cpp-tools
+
+### DO NOT record "I created X" only after creating X
+- **Symptom:** The shell wizard set `CREATED_USER` after useradd returned. A SIGTERM between the passwd write and that line left the account behind, because the EXIT trap had no name to roll back (the SIGTERM test failed intermittently).
+- **Do instead:** Set the rollback marker before the step that creates the thing, and make the rollback safe when nothing was made (the name was checked free, so `userdel` of a missing user is a no-op).
+- **Logged:** 2026-09-30 cpp-tools

@@ -483,6 +483,124 @@ if [[ -n "$CXX_WIZ" && " $WIZARDS " == *" sh "* ]]; then
   TAG=""
 fi
 
+# --- Wi-Fi PSK never on a command line, never logged (both wizards) ---
+# Stub nmcli/iwctl record their argv, every process's /proc/*/cmdline while
+# they run, and what they were handed as the secret (passwd-file or iwd
+# profile). VAULTOS_TEST_WIFI makes the wizards run the real Wi-Fi code
+# against them. Then the two wizards' results are diffed.
+stub="$work/wifistub"
+mkdir -p "$stub"
+cat >"$stub/nmcli" <<'STUB'
+#!/bin/bash
+d="$STUB_DIR"
+{ printf 'nmcli'; printf ' [%s]' "$@"; echo; } >>"$d/argv"
+for f in /proc/[0-9]*/cmdline; do tr '\0' ' ' <"$f" 2>/dev/null; echo; done >>"$d/procs"
+if [[ "$1 $2" == "connection up" ]]; then
+  while [[ $# -gt 0 && "$1" != passwd-file ]]; do shift; done
+  [[ -n "${2:-}" ]] && { cat "$2"; echo "<eof>"; } >>"$d/secret"
+  exit "${STUB_UP_RC:-0}"
+fi
+exit 0
+STUB
+cat >"$stub/iwctl" <<'STUB'
+#!/bin/bash
+d="$STUB_DIR"
+{ printf 'iwctl'; printf ' [%s]' "$@"; echo; } >>"$d/argv"
+for f in /proc/[0-9]*/cmdline; do tr '\0' ' ' <"$f" 2>/dev/null; echo; done >>"$d/procs"
+for f in "$VAULTOS_TEST_ROOT"/var/lib/iwd/*.psk; do
+  [[ -f "$f" ]] && { echo "== ${f##*/} $(stat -c %a "$f")"; cat "$f"; } >>"$d/secret"
+done
+exit "${STUB_UP_RC:-0}"
+STUB
+chmod +x "$stub/nmcli" "$stub/iwctl"
+# Random marker: the command line that started this harness may contain a
+# fixed one, and /proc/*/cmdline would then "leak" it.
+MARK="m$(od -An -N6 -tx1 /dev/urandom | tr -d ' \n')"
+PSK=" ${MARK}\\x y\$z'q"$'\t'"end"     # leading space, backslash, $, quote, tab
+NM_LINE="802-11-wireless-security.psk:\\ ${MARK}\\\\x\\ y\$z'q\\tend"
+IWD_LINE="Passphrase=\\s${MARK}\\\\x y\$z'q\\tend"
+wifi_run() {  # wiz backend scen -> $work/wf-<scen>-<backend>-<wz>/
+  local wz=$1 be=$2 scen=$3 d="$work/wf-$3-$2-$1" ssid=café-net psk_args=()
+  rm -rf "$d"; mkdir -p "$d"
+  prep_root "$d/root"
+  case "$scen" in
+    ok|fail) psk_args=("wifi_psk=$PSK") ;;
+    restore) psk_args=("wifi_psk=$PSK"); ssid=home_net
+             mkdir -p "$d/root/var/lib/iwd"; printf '[Security]\nPassphrase=oldpass1\n' >"$d/root/var/lib/iwd/home_net.psk"
+             chmod 600 "$d/root/var/lib/iwd/home_net.psk" ;;
+    open) ;;   # no wifi_psk: read (empty) from the keyboard
+  esac
+  write_conf "$d/conf" hostname=wfhost timezone=UTC locale=en_US.UTF-8 keymap=us username=wally password=pw-wifi \
+    online=0 wifi_dev=wlan0 skip_wifi=0 "wifi_ssid=$ssid" "${psk_args[@]}"
+  [[ "$wz" == sh ]] && WIZ="$SH_WIZ" || WIZ="$CXX_WIZ"
+  local rc=0
+  [[ "$scen" == fail || "$scen" == restore ]] && rc=1
+  : >"$d/argv"; : >"$d/procs"; : >"$d/secret"
+  STUB_DIR="$d" STUB_UP_RC=$rc VAULTOS_TEST_WIFI=$be PATH="$stub:$PATH" \
+    run_wiz "$d/root" "$d/conf" >"$d/out" 2>&1 || true
+}
+if [[ -n "$CXX_WIZ" && " $WIZARDS " == *" sh "* ]]; then
+  TAG=wifi
+  for be in nmcli iwctl; do
+    for scen in ok fail open restore; do
+      [[ "$be" == nmcli && "$scen" == restore ]] && continue
+      for wz in sh cxx; do wifi_run "$wz" "$be" "$scen"; done
+      a="$work/wf-$scen-$be-sh"; b="$work/wf-$scen-$be-cxx"
+      for wz in sh cxx; do
+        d="$work/wf-$scen-$be-$wz"
+        if grep -qF -- "$MARK" "$d/argv" "$d/procs" "$d/out" "$d/root/var/log/vaultos-firstboot.log"; then
+          fail "$be/$scen [$wz]: PSK seen in argv, /proc/*/cmdline, output or log"
+        else
+          pass "$be/$scen [$wz]: PSK not in argv, /proc/*/cmdline, output or log"
+        fi
+        [[ -s "$d/argv" ]] || fail "$be/$scen [$wz]: stub never ran"
+      done
+      d="$a"
+      case "$be/$scen" in
+        nmcli/ok|nmcli/fail)
+          grep -qxF -- "$NM_LINE" "$d/secret" && pass "$be/$scen: PSK reached nmcli via passwd-file, escaped" \
+            || { fail "$be/$scen: passwd-file content"; cat "$d/secret"; } ;;
+        nmcli/open)
+          grep -qF '[device] [wifi] [connect] [café-net] [ifname] [wlan0]' "$d/argv" && [[ ! -s "$d/secret" ]] \
+            && pass "$be/open: open network uses device wifi connect, no secret" || fail "$be/open argv" ;;
+        iwctl/ok|iwctl/fail)
+          grep -qxF -- "$IWD_LINE" "$d/secret" && grep -q '^== =636166c3a92d6e6574.psk 600$' "$d/secret" \
+            && pass "$be/$scen: iwd profile =hex(SSID).psk 0600 with escaped passphrase" \
+            || { fail "$be/$scen: iwd profile"; cat "$d/secret"; } ;;
+        iwctl/open)
+          [[ ! -s "$d/secret" ]] && pass "iwctl/open: no profile written" || fail "iwctl/open wrote a profile" ;;
+        iwctl/restore) : ;;
+      esac
+      case "$be/$scen" in
+        nmcli/fail) grep -qF '[connection] [delete] [uuid]' "$d/argv" && pass "nmcli/fail: half-made profile deleted" \
+                      || fail "nmcli/fail: profile not deleted" ;;
+        iwctl/ok) [[ -f "$d/root/var/lib/iwd/=636166c3a92d6e6574.psk" ]] && pass "iwctl/ok: profile kept" || fail "iwctl/ok: profile gone" ;;
+        iwctl/fail) [[ -z "$(ls -A "$d/root/var/lib/iwd")" ]] && pass "iwctl/fail: new profile removed" \
+                      || { fail "iwctl/fail: leftovers"; ls -la "$d/root/var/lib/iwd"; } ;;
+        iwctl/restore) [[ "$(cat "$d/root/var/lib/iwd/home_net.psk")" == $'[Security]\nPassphrase=oldpass1' ]] \
+                         && [[ "$(ls -A "$d/root/var/lib/iwd")" == home_net.psk ]] \
+                         && pass "iwctl/restore: previous profile restored on failure" || fail "iwctl/restore" ;;
+      esac
+      want=0; [[ "$scen" == fail || "$scen" == restore ]] && want=1
+      [[ "$(grep -c 'Wi-Fi connect failed' "$a/out")" == "$want" ]] \
+        && pass "$be/$scen: failure reported only when the connect fails" || fail "$be/$scen: failure message"
+      for x in a b; do
+        d=${!x}
+        { sed -E 's/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/UUID/g' "$d/argv"
+          echo "-- secret"; cat "$d/secret"
+          # The wizards' screen styling differs (banner, indent); compare
+          # only the Wi-Fi outcome line.
+          echo "-- out"; grep -c 'Wi-Fi connect failed' "$d/out" || true
+          echo "-- tree"; snapshot "$d/root" | sed "s|$d/|D/|g"
+          [[ -e "$d/conf" ]] && echo "answers kept $(stat -c %a "$d/conf")"; } >"$d.cmp"
+      done
+      diff -u "$a.cmp" "$b.cmp" >"$a.diff" && pass "$be/$scen: shell and C++ identical (argv, secret, output, tree)" \
+        || { fail "$be/$scen: shell and C++ differ"; cat "$a.diff"; }
+    done
+  done
+  TAG=""
+fi
+
 # Identity script does not write firstboot-done
 prep_root "$work/id"
 VAULTOS_TEST_ROOT="$work/id" VAULTOS_LIB="$ROOT" "$IDEN" || true
