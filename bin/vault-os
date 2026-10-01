@@ -125,7 +125,65 @@ _xq_vals_equal() {
   awk -v a="$a" -v b="$b" 'BEGIN{exit !(a+0==b+0)}'
 }
 
+# Native batch client (src/vaultos-xq): one libxfconf connection, compares
+# before writing. xq_set/xq_get use it when present and fall back to
+# xfconf-query otherwise. VAULTOS_XQ=/path overrides, VAULTOS_XQ= disables.
+if [[ -z "${VAULTOS_XQ+x}" ]]; then
+  VAULTOS_XQ="$(command -v vaultos-xq 2>/dev/null || true)"
+fi
+[[ -n "$VAULTOS_XQ" && ! -x "$VAULTOS_XQ" ]] && VAULTOS_XQ=""
+_XQ_QUEUE=0
+_XQ_LINES=()
+_XQ_CMDS=()
+
+# xq_begin ... xq_commit: queue xq_set calls and send them in one batch.
+# Only wrap runs of xq_set/xq_get (xq_get flushes first); direct
+# xfconf-query calls inside the run would see stale values.
+xq_begin() {
+  [[ -n "$VAULTOS_XQ" ]] || return 0
+  _XQ_QUEUE=1
+  _XQ_LINES=()
+  _XQ_CMDS=()
+}
+
+_xq_flush() {
+  ((${#_XQ_LINES[@]})) || return 0
+  local lines=("${_XQ_LINES[@]}") cmds=("${_XQ_CMDS[@]}") c
+  _XQ_LINES=()
+  _XQ_CMDS=()
+  printf '%s\n' "${lines[@]}" | "$VAULTOS_XQ" batch 2>/dev/null && return 0
+  # Batch failed (xfconfd away, odd type): replay through xfconf-query.
+  # Safe to repeat, the fallback skips values that already match.
+  for c in "${cmds[@]}"; do
+    eval "_xq_set_query $c"
+  done
+}
+
+xq_commit() {
+  _xq_flush
+  _XQ_QUEUE=0
+}
+
 xq_set() {
+  if [[ -n "$VAULTOS_XQ" ]]; then
+    if ((_XQ_QUEUE)) && [[ "$*" != *$'\t'* && "$*" != *$'\n'* ]]; then
+      local line="set"$'\t'"$1"$'\t'"$2" a=("$@") i
+      for ((i=2; i<${#a[@]}; i++)); do
+        case "${a[i]}" in
+          -t) line+=$'\t'"${a[i+1]}"; i=$((i+1)) ;;
+          -s) line+=$'\t'"${a[i+1]}"; i=$((i+1)) ;;
+        esac
+      done
+      _XQ_LINES+=("$line")
+      _XQ_CMDS+=("$(printf '%q ' "$@")")
+      return 0
+    fi
+    "$VAULTOS_XQ" set "$@" 2>/dev/null && return 0
+  fi
+  _xq_set_query "$@"
+}
+
+_xq_set_query() {
   # Set in place. Skip when already equal (avoids xfwm/panel reload storms).
   # Create if missing. Only delete+recreate on a type mismatch.
   have xfconf-query || return 0
@@ -198,6 +256,14 @@ write_vault_os_env() {
   mv -f "$tmp" "$dest"
 }
 xq_get() {
+  # Queued sets go out first so the read sees them. A single get costs the
+  # same either way (~9 ms), so xfconf-query stays the reader; vaultos-xq
+  # only steps in when xfconf-query is missing.
+  [[ -n "$VAULTOS_XQ" ]] && _xq_flush
+  if ! have xfconf-query && [[ -n "$VAULTOS_XQ" ]]; then
+    "$VAULTOS_XQ" get "$1" "$2" 2>/dev/null || true
+    return 0
+  fi
   have xfconf-query || { echo ""; return 0; }
   xfconf-query -c "$1" -p "$2" 2>/dev/null || true
 }
@@ -499,6 +565,7 @@ cmd_ensure_panel() {
   log "ensure panels"
 
   # Always write FULL position strings — XFCE truncating to p=N loses the bottom bar
+  xq_begin
   xq_set xfce4-panel /panels -t int -s 1 -t int -s 2
 
   xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
@@ -525,6 +592,7 @@ cmd_ensure_panel() {
   if [[ -f "${PANEL2_BG_IMAGE:-}" ]]; then
     xq_set xfce4-panel /panels/panel-2/background-image -t string -s "$PANEL2_BG_IMAGE"
   fi
+  xq_commit
   local p
   for p in 1 2; do
     if have xfconf-query; then
@@ -708,6 +776,7 @@ cmd_ensure_theme() {
   fi
 
   # Pin notify + panel plates only when they drifted (xq_set is a no-op if equal).
+  xq_begin
   xq_set xfce4-notifyd /theme -t string -s "Vault.OS"
   local top="${PANEL1_BG_IMAGE:-$HOME/.local/share/backgrounds/Vault.OS/panel-top.png}"
   local dock="${PANEL2_BG_IMAGE:-$HOME/.local/share/backgrounds/Vault.OS/panel-dock.png}"
@@ -727,6 +796,7 @@ cmd_ensure_theme() {
   xq_set xfce4-power-manager /xfce4-power-manager/blank-on-ac -t int -s 0
   xq_set xfce4-power-manager /xfce4-power-manager/dpms-on-ac-sleep -t int -s 0
   xq_set xfce4-power-manager /xfce4-power-manager/dpms-on-ac-off -t int -s 0
+  xq_commit
   if xq_get xfce4-panel /plugins/plugin-1 2>/dev/null | grep -qx whiskermenu; then
     local pwr="$HOME/.local/bin/vault-os-power"
     if [[ -x "$pwr" ]]; then

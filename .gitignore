@@ -38,3 +38,10 @@ src/vaultos-lockmark/vaultos-lockmark
 src/vaultos/vaultos
 src/vaultos-hud/vaultos-hud
 src/vaultos-firstuser/vaultos-firstuser
+# Native build products (src/common.mk: -MMD dep files, objects, test installs)
+src/*/*.o
+src/*/*.d
+.test-prefix/
+src/vaultos-xq/vaultos-xq
+src/vaultos-close-all/vaultos-close-all
+src/vaultos-chromium-theme/vaultos-chromium-theme

@@ -1,0 +1,18 @@
+#!/bin/bash
+# Vault 111 overlay entry. Native vaultos-mark when it is built, the Python
+# ~/.local/bin/vaultos-spin-111 otherwise.
+# Same standing rule as the desktop mark: static unless
+# ~/.config/Vault.OS/desktop-spin says full, then 12 s per turn at 33 ms
+# frames in the screen plane, like the Python overlay.
+set -euo pipefail
+export DISPLAY="${DISPLAY:-:0.0}"
+LOGO="$HOME/.local/share/backgrounds/Vault.OS/vault-111-logo.png"
+MARK="$HOME/.local/bin/vaultos-mark"
+if [[ -x "$MARK" ]]; then
+  mode="$(cat "$HOME/.config/Vault.OS/desktop-spin" 2>/dev/null || echo static)"
+  [[ "$mode" == off ]] && exit 0
+  case "$mode" in full|spin) flag=--spin ;; *) flag=--static ;; esac
+  exec "$MARK" "$flag" --logo "$LOGO" --rotate --bare --size 0 \
+    --period 12 --frame-ms 33 --instance 111
+fi
+exec "$HOME/.local/bin/vaultos-spin-111" "$@"

@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
 # Close all application windows (Wnck). Skip panel/desktop.
+# FALLBACK: the native port is src/vaultos-close-all (vaultos-close-all).
+# When it is built this script hands over to it straight away; set
+# VAULTOS_NO_NATIVE=1 to force the Python path. --dry-run lists windows only.
 import os
 import sys
+
+if os.environ.get("VAULTOS_NO_NATIVE") != "1":
+    for _d in (os.environ.get("VAULTOS_NATIVE_DIR"), os.path.expanduser("~/.local/bin")):
+        _n = os.path.join(_d, "vaultos-close-all") if _d else ""
+        if _n and os.access(_n, os.X_OK):
+            os.execv(_n, [_n] + sys.argv[1:])
+
+DRY = "--dry-run" in sys.argv[1:]
 
 os.environ.setdefault("DISPLAY", os.environ.get("DISPLAY", ":0"))
 os.environ.setdefault("GDK_BACKEND", "x11")
@@ -48,10 +59,18 @@ for win in list(screen.get_windows() or []):
             Wnck.WindowType.UTILITY,
         ):
             continue
+        if DRY:
+            print(f"CLOSE      0x{win.get_xid():08x}  {wclass:<24} {win.get_name() or ''}")
+            closed += 1
+            continue
         win.close(Gtk.get_current_event_time())
         closed += 1
     except Exception as e:
         sys.stderr.write(f"skip: {e}\n")
+
+if DRY:
+    print(f"would close {closed}")
+    sys.exit(0)
 
 GLib.timeout_add(200, Gtk.main_quit)
 Gtk.main()

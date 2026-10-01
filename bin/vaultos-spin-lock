@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Vault.OS lock/screensaver — Arch code mark Y-axis spin on vault-black.
 
+FALLBACK: the native C++ port is src/vaultos-lockmark (vaultos-lockmark).
+vaultos-spin-lock-run and the vaultos-arch-spin wrapper prefer it and only
+run this script when the binary is not built.
+
 Embeds into xfce4-screensaver via Gtk.Plug + $XSCREENSAVER_WINDOW.
 Lock/idle default: spin (--full). Static only for Vault.OS-Reduced / --reduced-phosphor.
 Unlock chrome (lock.css) stays the opaque plate — this is the saver surface only.
