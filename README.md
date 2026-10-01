@@ -51,6 +51,12 @@ Unattended:
 - Kernel: `vaultos.firstboot=/etc/vaultos/firstboot.conf`
 - Or drop answers in `/etc/vaultos/firstboot.conf` (see `overlay/firstboot.conf.example`)
 
+The answers file must be a regular file owned `root:root`, mode `0600`
+(`sudo install -m 0600 -o root -g root answers /etc/vaultos/firstboot.conf`).
+A looser mode is tightened with a warning; a symlink or a file not owned by
+root is ignored. After a successful run the file is shredded (`shred -u`,
+else `rm`). After a failed run it is kept at `0600` for the next boot.
+
 ```text
 hostname=vaultos
 timezone=UTC

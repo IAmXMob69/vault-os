@@ -94,6 +94,9 @@ awk -F: '$1=="alice"{print $2}' "$work/ok/etc/shadow" | grep -q '^\$' \
   && pass "alice has password hash" || fail "alice shadow hash"
 [[ -f "$work/ok/home/alice/.config/fallout-nv/vault-os.conf" ]] \
   && pass "skel theme seed" || fail "no skel seed"
+[[ -e "$work/ok.conf" ]] && fail "answers file left after success" || pass "answers file deleted after success"
+grep -qE 'answers file .*(shredded|removed)' "$work/ok/var/log/vaultos-firstboot.log" \
+  && pass "answers deletion logged" || fail "answers deletion not logged"
 
 # Identity script does not write firstboot-done
 prep_root "$work/id"
@@ -200,6 +203,7 @@ password=pw-rollback
 skip_wifi=1
 online=1
 EOF
+chmod 0644 "$work/rollback.conf"
 if PATH="$work/fakebin:$PATH" run_wiz "$work/rollback" "$work/rollback.conf" >/dev/null 2>&1; then
   fail "rollback: run succeeded despite visudo failure"
 else
@@ -212,6 +216,13 @@ grep -qE '(^zed:|[:,]zed(,|$))' "$work/rollback/etc/group" && fail "rollback: ze
 [[ -f "$work/rollback/var/lib/vaultos/firstboot-done" ]] && fail "rollback: stamp written" || pass "rollback: no stamp"
 grep -q 'rollback zed' "$work/rollback/var/log/vaultos-firstboot.log" \
   && pass "rollback: logged" || fail "rollback: not logged"
+[[ -f "$work/rollback.conf" ]] && pass "rollback: answers file kept for retry" || fail "rollback: answers file gone"
+[[ "$(stat -c %a "$work/rollback.conf" 2>/dev/null)" == 600 ]] \
+  && pass "rollback: answers file is 0600" || fail "rollback: answers mode $(stat -c %a "$work/rollback.conf" 2>/dev/null)"
+grep -q '^password=pw-rollback$' "$work/rollback.conf" \
+  && pass "rollback: answers still usable for retry" || fail "rollback: answers lost the password"
+grep -q 'was mode 644' "$work/rollback/var/log/vaultos-firstboot.log" \
+  && pass "rollback: loose answers mode warned" || fail "rollback: no warning for mode 644"
 
 # Timezone must be a zone file, not a directory or a path escape.
 prep_root "$work/tz"
@@ -306,6 +317,53 @@ PYTTY
 else
   echo "SKIP  tty typeahead (no python3)"
 fi
+
+# Answers file with loose mode: tightened with a warning, used, then deleted.
+prep_root "$work/loose"
+cat >"$work/loose.conf" <<'EOF'
+hostname=vaultos
+timezone=UTC
+locale=en_US.UTF-8
+keymap=us
+username=lou
+password=pw-loose
+skip_wifi=1
+online=1
+EOF
+chmod 0644 "$work/loose.conf"
+run_wiz "$work/loose" "$work/loose.conf" >/dev/null 2>&1 && pass "loose answers: run ok" || fail "loose answers: run failed"
+grep -q 'was mode 644' "$work/loose/var/log/vaultos-firstboot.log" \
+  && pass "loose answers: warned" || fail "loose answers: no warning"
+grep -q '^lou:' "$work/loose/etc/passwd" && pass "loose answers: still used" || fail "loose answers: not used"
+[[ -e "$work/loose.conf" ]] && fail "loose answers: file left" || pass "loose answers: file deleted"
+
+# Symlinked answers file: refused (not read, not deleted, target untouched).
+prep_root "$work/symlink"
+cat >"$work/symlink-target.conf" <<'EOF'
+hostname=vaultos
+timezone=UTC
+locale=en_US.UTF-8
+keymap=us
+username=sym
+password=pw-sym
+skip_wifi=1
+online=1
+EOF
+chmod 0600 "$work/symlink-target.conf"
+ln -s "$work/symlink-target.conf" "$work/symlink.conf"
+run_wiz "$work/symlink" "$work/symlink.conf" >/dev/null 2>&1 || true
+grep -q '^sym:' "$work/symlink/etc/passwd" && fail "symlink answers: used" || pass "symlink answers: refused"
+grep -q '^password=pw-sym$' "$work/symlink-target.conf" \
+  && pass "symlink answers: target untouched" || fail "symlink answers: target changed"
+
+# skip=1 path also removes the answers file.
+prep_root "$work/skipconf"
+printf 'skip=1\npassword=pw-skip\n' >"$work/skipconf.conf"
+chmod 0600 "$work/skipconf.conf"
+run_wiz "$work/skipconf" "$work/skipconf.conf" >/dev/null 2>&1 || fail "skip answers: run failed"
+grep -q 'reason=skip' "$work/skipconf/var/lib/vaultos/firstboot-done" 2>/dev/null \
+  && pass "skip answers: stamped skip" || fail "skip answers: no skip stamp"
+[[ -e "$work/skipconf.conf" ]] && fail "skip answers: file left" || pass "skip answers: file deleted"
 
 # Password mismatch via stdin (no answers password)
 prep_root "$work/mismatch"

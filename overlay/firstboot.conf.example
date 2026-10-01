@@ -1,4 +1,7 @@
-# Copy to /etc/vaultos/firstboot.conf for unattended first boot.
+# Copy to /etc/vaultos/firstboot.conf for unattended first boot:
+#   install -m 0600 -o root -g root firstboot.conf /etc/vaultos/firstboot.conf
+# Must be root:root 0600 (looser is tightened with a warning; symlinks and
+# non-root owners are ignored). Shredded after a successful first boot.
 # Also accepted via kernel cmdline: vaultos.firstboot=/etc/vaultos/firstboot.conf
 # Skip the wizard entirely: vaultos.firstboot=skip
 #

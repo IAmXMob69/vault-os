@@ -57,10 +57,83 @@ parse_cmdline() {
   done
 }
 
+# --- answers file hygiene ----------------------------------------------------
+# The answers file can hold password= and wifi_psk= in clear text. Only read
+# it when it is a regular file owned by root:root with mode 0600 (tightened
+# with a warning if loose; refused if not root-owned or a symlink). After a
+# successful run it is shredded; after a failed run it stays, still 0600, so
+# the next boot can retry.
+ANSWER_PATH=""
+STAMPED=0
+
+warn() { echo "vaultos-firstboot: $*" >&2; log "warn: $*"; }
+
+answers_owner() {
+  # root:root on a real system; the harness user under VAULTOS_TEST_ROOT.
+  if in_test; then echo "$(id -u) $(id -g)"; else echo "0 0"; fi
+}
+
+answers_file_secure() {
+  local f="$1" uid gid mode want_u want_g
+  read -r want_u want_g < <(answers_owner)
+  if [[ -L "$f" || ! -f "$f" ]]; then
+    warn "answers file $f is not a regular file; ignoring it"
+    return 1
+  fi
+  read -r uid gid mode < <(stat -c '%u %g %a' "$f")
+  if [[ "$uid" != "$want_u" ]]; then
+    warn "answers file $f is owned by uid $uid, not root; ignoring it"
+    return 1
+  fi
+  if [[ "$gid" != "$want_g" ]] || (( 8#$mode & 8#7177 )); then
+    warn "answers file $f was mode $mode group $gid; setting 0600 root:root. A password in it may already have been readable."
+    if ! { chown "$want_u:$want_g" "$f" && chmod 0600 "$f"; }; then
+      warn "could not secure $f; ignoring it"
+      return 1
+    fi
+  fi
+  return 0
+}
+
+remove_answers() {
+  local f="$ANSWER_PATH"
+  [[ -n "$f" && -f "$f" && ! -L "$f" ]] || return 0
+  if command -v shred >/dev/null 2>&1 && shred -u -z "$f" 2>/dev/null; then
+    log "answers file $f shredded"
+  elif rm -f "$f" 2>/dev/null; then
+    log "answers file $f removed (shred unavailable or failed)"
+  else
+    # Read-only media or similar: at least drop the secrets.
+    sed -i -E '/^[[:space:]]*(password|wifi_psk)[[:space:]]*=/d' "$f" 2>/dev/null \
+      && warn "could not delete $f; removed password keys from it" \
+      || warn "could not delete or scrub $f; remove it by hand"
+  fi
+  ANSWER_PATH=""
+}
+
+keep_answers_for_retry() {
+  local f="$ANSWER_PATH" want_u want_g
+  [[ -n "$f" && -f "$f" && ! -L "$f" ]] || return 0
+  read -r want_u want_g < <(answers_owner)
+  chown "$want_u:$want_g" "$f" 2>/dev/null || true
+  chmod 0600 "$f" 2>/dev/null || true
+  log "answers file $f kept (0600) for the next attempt"
+}
+
+finish_ok() {
+  # The stamp is the commit point: after it, never roll back.
+  stamp_ok "$@"
+  STAMPED=1
+  remove_answers || true
+}
+
 load_answers() {
   local f="${VAULTOS_FIRSTBOOT_CONF:-$ANSWER_FILE}"
   [[ -z "$f" && -f "$CONF_DEFAULT" ]] && f="$CONF_DEFAULT"
-  [[ -n "$f" && -f "$f" ]] || return 0
+  [[ -n "$f" ]] || return 0
+  [[ -e "$f" || -L "$f" ]] || return 0
+  answers_file_secure "$f" || return 0
+  ANSWER_PATH="$f"
   log "answers $f"
   local line k v
   while IFS= read -r line || [[ -n "$line" ]]; do
@@ -82,7 +155,7 @@ load_answers
 [[ "${ANSWERS[skip]:-}" == "1" ]] && SKIP=1
 
 if [[ "$SKIP" -eq 1 ]]; then
-  stamp_ok skip
+  finish_ok skip
   exit 0
 fi
 
@@ -120,7 +193,7 @@ RESET_ONLY=""
 if existing=$(first_login_user); then
   h=$(shadow_hash_for "$existing" || true)
   if hash_usable "$h"; then
-    stamp_ok existing-user "$existing"
+    finish_ok existing-user "$existing"
     exit 0
   fi
   RESET_ONLY="$existing"
@@ -625,9 +698,16 @@ on_exit() {
   local rc=$?
   trap - EXIT
   restore_tty
+  if (( rc != 0 && STAMPED )); then
+    # Account and stamp are in place; a late error (e.g. a hung-up tty on
+    # the final echo) must not delete the user or block LightDM.
+    log "error rc=$rc after stamp; keeping account"
+    exit 0
+  fi
   if (( rc != 0 )); then
     log "fail rc=$rc"
     rollback_user || true
+    keep_answers_for_retry || true
     echo
     if (( CANCELLED )); then
       echo "Setup cancelled. Reboot to try again."
@@ -644,7 +724,7 @@ trap 'log "terminated"; CANCELLED=1; exit 143' TERM HUP
 clear 2>/dev/null || true
 prompt_machine
 prompt_account
-stamp_ok created "${CREATED_USER:-$RESET_ONLY}"
+finish_ok created "${CREATED_USER:-$RESET_ONLY}"
 echo "Continuing to login…"
 sleep 1
 exit 0
