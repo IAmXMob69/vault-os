@@ -376,6 +376,47 @@ else
 fi
 grep -q '^alice:' "$work/mismatch/etc/passwd" && fail "alice left after mismatch abort" || pass "mismatch rolled back / no user"
 
+# --- vaultos firstboot --run needs root (shell and C++ CLI) ---
+if [[ "$(id -u)" -ne 0 ]]; then
+  out=$(VAULTOS_LIB="$ROOT" bash "$ROOT/bin/vaultos" firstboot --run </dev/null 2>&1) && rc=0 || rc=$?
+  [[ "$rc" -ne 0 && "$out" == *"needs root"* ]] \
+    && pass "shell vaultos firstboot --run refuses non-root" || fail "shell vaultos firstboot --run ran as non-root (rc=$rc)"
+fi
+
+# --- native C++ wizard (src/vaultos-firstuser), dry-run only ---
+if command -v "${CXX:-g++}" >/dev/null 2>&1; then
+  cxx_out="$work/cxx"
+  mkdir -p "$cxx_out"
+  if "${CXX:-g++}" -O2 -std=c++17 -Wall -Wextra -Werror "$ROOT/src/vaultos-firstuser/main.cpp" \
+       -o "$cxx_out/vaultos-firstuser" 2>"$cxx_out/build.log" \
+     && "${CXX:-g++}" -O2 -std=c++17 -Wall -Wextra -Werror -DVAULTOS_SRC_ROOT="\"$ROOT\"" \
+       "$ROOT/src/vaultos/main.cpp" -o "$cxx_out/vaultos" 2>>"$cxx_out/build.log"; then
+    pass "C++ firstuser/vaultos build without warnings"
+    FU="$cxx_out/vaultos-firstuser"
+    out=$(printf 'root\nBad Name!\nzed\n' | "$FU" --dry-run 2>&1) && rc=0 || rc=$?
+    [[ "$rc" -eq 0 && "$out" == *"useradd -m -G wheel"*" zed"* && "$out" == *"reason=created user=zed"* ]] \
+      && pass "C++ wizard: rejects root, creates zed" || fail "C++ wizard: happy path (rc=$rc)"
+    out=$(printf 'zed\n' | VAULTOS_FIRSTUSER_TEST_FAIL=passwd "$FU" --dry-run 2>&1) && rc=0 || rc=$?
+    [[ "$rc" -ne 0 && "$out" == *"rollback: userdel -r zed"* && "$out" != *"would stamp"* ]] \
+      && pass "C++ wizard: failed passwd rolls back, no stamp" || fail "C++ wizard: no rollback on passwd failure (rc=$rc)"
+    out=$(printf 'zed\n' | VAULTOS_FIRSTUSER_TEST_FAIL=useradd "$FU" --dry-run 2>&1) && rc=0 || rc=$?
+    [[ "$rc" -ne 0 && "$out" != *"rollback:"* && "$out" != *"would stamp"* ]] \
+      && pass "C++ wizard: failed useradd exits 1, nothing to roll back" || fail "C++ wizard: useradd failure path (rc=$rc)"
+    "$FU" --dry-run </dev/null >/dev/null 2>&1 && fail "C++ wizard: EOF at name prompt succeeded" \
+      || pass "C++ wizard: EOF at name prompt fails without stamping"
+    if [[ "$(id -u)" -ne 0 ]]; then
+      out=$("$cxx_out/vaultos" firstboot --run </dev/null 2>&1) && rc=0 || rc=$?
+      [[ "$rc" -ne 0 && "$out" == *"needs root"* ]] \
+        && pass "C++ vaultos firstboot --run refuses non-root" || fail "C++ vaultos firstboot --run ran as non-root (rc=$rc)"
+    fi
+  else
+    fail "C++ firstuser/vaultos build (see $cxx_out/build.log)"
+    cat "$cxx_out/build.log" >&2
+  fi
+else
+  echo "SKIP  C++ wizard tests (no g++)"
+fi
+
 echo
 if [[ "$FAIL" -eq 0 ]]; then
   echo "All first-boot tests passed."
