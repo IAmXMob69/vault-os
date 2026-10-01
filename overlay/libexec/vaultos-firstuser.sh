@@ -190,7 +190,10 @@ list_timezones() {
 
 valid_timezone() {
   local tz="$1"
-  [[ -e "${P}/usr/share/zoneinfo/$tz" || -e "/usr/share/zoneinfo/$tz" ]]
+  # A zone is a file under zoneinfo. Reject directories ("America"), absolute
+  # paths, and ".." so /etc/localtime never points outside zoneinfo.
+  [[ -n "$tz" && "$tz" != /* && "$tz" != *..* ]] || return 1
+  [[ -f "${P}/usr/share/zoneinfo/$tz" || -f "/usr/share/zoneinfo/$tz" ]]
 }
 
 apply_timezone() {

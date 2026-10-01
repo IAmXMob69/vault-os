@@ -213,6 +213,15 @@ grep -qE '(^zed:|[:,]zed(,|$))' "$work/rollback/etc/group" && fail "rollback: ze
 grep -q 'rollback zed' "$work/rollback/var/log/vaultos-firstboot.log" \
   && pass "rollback: logged" || fail "rollback: not logged"
 
+# Timezone must be a zone file, not a directory or a path escape.
+prep_root "$work/tz"
+export VAULTOS_TEST_ROOT="$work/tz" VAULTOS_LIB="$ROOT"
+unset VAULTOS_FIRSTBOOT_CONF
+printf 'vaultos\nAmerica\n../../../etc/passwd\nUTC\n' | "$WIZ" >/dev/null 2>&1 || true
+[[ "$(readlink "$work/tz/etc/localtime")" == */zoneinfo/UTC ]] \
+  && pass "timezone rejects directory and .. path" \
+  || fail "timezone accepted $(readlink "$work/tz/etc/localtime")"
+
 # Password mismatch via stdin (no answers password)
 prep_root "$work/mismatch"
 export VAULTOS_TEST_ROOT="$work/mismatch" VAULTOS_LIB="$ROOT"
