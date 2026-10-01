@@ -1,5 +1,5 @@
 /* Vault.OS tokens — REDUCED PHOSPHOR / CLEAR TERMINAL
-   VDS-01 first-class a11y variant. Import INSTEAD of tokens.css when
+   High-contrast / reduced-effects variant. Import INSTEAD of tokens.css when
    Reduced mode wants CRT/bloom/spin down and maximum readable chrome.
    Same hue family. No freelance greens.
 */
@@ -71,10 +71,3 @@
 @define-color link_color               @phosphor_primary;
 
 /* Effects OFF — enforceable hooks for craft CSS / overlays */
-:root {
-  --glow: none;
-  --bloom: 0;
-  --scanline-opacity: 0;
-  --spin: 0;
-  --reduced-phosphor: 1;
-}

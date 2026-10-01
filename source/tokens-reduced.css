@@ -1,5 +1,5 @@
 /* Vault.OS tokens — REDUCED PHOSPHOR / CLEAR TERMINAL
-   VDS-01 first-class a11y variant. Import INSTEAD of tokens.css when
+   High-contrast / reduced-effects variant. Import INSTEAD of tokens.css when
    Reduced mode wants CRT/bloom/spin down and maximum readable chrome.
    Same hue family. No freelance greens.
 */
@@ -55,16 +55,12 @@
 @define-color status_warn   @amber_warn;
 @define-color status_danger @rad_red;
 
-/* Effect flags (0 = off). GTK can't read :root vars from @define-color alone;
-   craft CSS should check both. */
-@define-color reduced_phosphor #FFFFFF; /* sentinel: variant active */
-
 @define-color theme_bg_color           @panel_black;
 @define-color theme_fg_color           @phosphor_primary;
 @define-color theme_base_color         @inset;
 @define-color theme_text_color         @phos_hot;
-@define-color theme_selected_bg_color  @inset; /* was ghost — failed AA with hot fg */
-@define-color theme_selected_fg_color  @phosphor_primary; /* 15+ AAA on inset; LED rail is the cue */
+@define-color theme_selected_bg_color  @inset;
+@define-color theme_selected_fg_color  @phosphor_primary;
 @define-color theme_unfocused_bg_color @panel_black;
 @define-color theme_unfocused_fg_color @steel;
 @define-color borders                  @bevel_hi;
@@ -75,10 +71,3 @@
 @define-color link_color               @phosphor_primary;
 
 /* Effects OFF — enforceable hooks for craft CSS / overlays */
-:root {
-  --glow: none;
-  --bloom: 0;
-  --scanline-opacity: 0;
-  --spin: 0;
-  --reduced-phosphor: 1;
-}
