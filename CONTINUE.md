@@ -69,6 +69,22 @@ Needs the maintainer before going live: merging, `make -C src install` into
 `~/.local/bin`, pointing the Hidden `vaultos-spin-111` autostart at
 `vaultos-spin-111-run`, and a real lock/idle test of the saver on `:0`.
 
+## C++ first-boot wizard (branch `cpp-firstuser`, not merged, not pushed)
+
+- `src/vaultos-firstuser` now covers everything the shell wizard does:
+  answers file (root:root 0600, tightened/refused, shredded on success, kept
+  0600 on failure), boot options `vaultos.firstboot=skip|PATH`, hostname
+  (+ /etc/hosts), timezone with validation and search, locale (locale.gen),
+  keymap (vconsole + X11), Wi-Fi (`skip_wifi`, nmcli/iwctl), reset-only for a
+  locked user, rollback on any failure or signal, typeahead drain, `--dry-run`,
+  and a root check for real runs. Builds with `common.mk` (`-lcrypt`).
+- `iso/test-firstboot.sh` runs the same scenarios against both wizards plus a
+  tree/mode/log diff (`VAULTOS_TEST_WIZARDS=sh|cxx` to run one).
+- Shell wizard fixes found on the way: bad `hostname=` answer looped forever,
+  real-mode Wi-Fi detection always said "device found", no root check, and
+  test-mode rollback left the fake shadow 0644.
+- Not switched: the ISO and `vaultos firstboot --run` still run the `.sh`.
+
 ## Landed
 
 - `vault-os` 1.5.17 — install path + greeter system installer targets Vault.OS

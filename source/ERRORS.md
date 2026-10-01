@@ -332,3 +332,35 @@ Do not leave `vaultos-spin-arch --full` running for days on HD 630 — it burns 
 - **Symptom:** A helper that is `0755` in the repo and in `iso/profile/airootfs` boots as `0644` on the ISO, so its systemd unit or caller fails with `Permission denied`.
 - **Why:** mkarchiso drops the exec bit on airootfs files unless the path is listed in `file_permissions` in `profiledef.sh`. `install -m 0755` in `prepare-profile.sh` is not enough on its own.
 - **Do instead:** Add every new script under `airootfs` to the `file_permissions` block that `iso/prepare-profile.sh` writes (`["/path"]="0:0:755"`), next to `vaultos-install` and the `vaultos-*.sh` libexec helpers.
+
+## First-boot wizard (shell + C++ port)
+
+### DO NOT stamp only `firstuser-done` from a wizard
+- **Symptom:** The old C++ `vaultos-firstuser` wrote `/var/lib/vaultos/firstuser-done` only. `vaultos-firstuser.service` has `ConditionPathExists=!/var/lib/vaultos/firstboot-done`, so the wizard would have started again on every boot.
+- **Do instead:** Write `firstboot-done` (the commit point) and copy it to `firstuser-done`, as the shell wizard does. `iso/test-firstboot.sh` checks both stamps for both wizards.
+- **Logged:** 2026-09-30 cpp-firstuser
+
+### DO NOT re-ask from the answers file without clearing the bad answer
+- **Symptom:** `hostname=bad_host!` in `firstboot.conf` made the shell wizard print "Use letters, digits…" forever. Every other prompt cleared `ANSWERS[key]` on a bad value; the hostname loop did not.
+- **Do instead:** Clear the key so the next round falls back to the keyboard (EOF on a headless boot fails cleanly and rolls back). The harness runs this case under `timeout`.
+- **Logged:** 2026-09-30 cpp-firstuser
+
+### DO NOT read wizard prompts through a buffered stream (`std::cin`, `fgets`)
+- **Symptom:** Typed-ahead keys survive `tcflush()`. stdio/iostream pull them into a user-space buffer, and the next prompt reads them as the username.
+- **Do instead:** Read fd 0 with `read(2)`, one byte at a time, and flush with `tcflush(TCIFLUSH)` until the keyboard has been quiet for 50 ms (the shell's `read -t 0.05` loop). No `SA_RESTART`, so Ctrl-C unblocks the read and rolls back.
+- **Logged:** 2026-09-30 cpp-firstuser
+
+### DO NOT compare wizard file modes under the developer's umask
+- **Symptom:** On a box with `umask 077` the shell wizard writes `/etc/hostname` etc. 0600, but systemd runs it with 0022 (0644). Parity diffs of modes then mean nothing.
+- **Do instead:** `iso/test-firstboot.sh` sets `umask 022`. The C++ `put()` creates new files `0666 & ~umask`, like a shell redirect, and keeps the mode of files it replaces.
+- **Logged:** 2026-09-30 cpp-firstuser
+
+### DO NOT `mv` a rewritten copy over `/etc/shadow` (even in a fake root)
+- **Symptom:** The shell wizard's test-mode rollback did `grep -v … >shadow.tmp && mv shadow.tmp shadow`, leaving the fake shadow 0644 (the parity diff caught it).
+- **Do instead:** `cat tmp >file` (keeps the mode) or write and rename with the old mode, as the C++ port does.
+- **Logged:** 2026-09-30 cpp-firstuser
+
+### DO NOT measure a child's memory with `ru_maxrss` from a big parent
+- **Symptom:** Shell and C++ wizards both showed 17 MiB peak RSS. Linux keeps the RSS high-water mark across `execve`, so a Python `fork()`+exec reports Python's size.
+- **Do instead:** Launch through a tiny static C launcher (`fork`, `execv`, `wait4`) and read `ru_maxrss` there.
+- **Logged:** 2026-09-30 cpp-firstuser

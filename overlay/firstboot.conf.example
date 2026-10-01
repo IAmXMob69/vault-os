@@ -4,6 +4,9 @@
 # non-root owners are ignored). Shredded after a successful first boot.
 # Also accepted via kernel cmdline: vaultos.firstboot=/etc/vaultos/firstboot.conf
 # Skip the wizard entirely: vaultos.firstboot=skip
+# Read the same way by the shell wizard and its C++ port (vaultos-firstuser).
+# A bad value falls back to the keyboard prompt; with no keyboard the run
+# fails, the account is rolled back and this file is kept for the next boot.
 #
 # hostname=vaultos
 # timezone=UTC

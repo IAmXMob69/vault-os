@@ -38,7 +38,7 @@ Backup lands in `/var/lib/vaultos/backups/phase1-<timestamp>/`.
 | `/usr/bin/vaultos` | Distro CLI (`status version doctor overlay update iso`) |
 | `vaultos-core.service` | Oneshot, RemainAfterExit, WantedBy=multi-user. Not ordered before LightDM. |
 | `vaultos-firstboot.service` | Identity (os-release) + NetworkManager. Stamps `identity-applied`, not `firstboot-done`. |
-| `vaultos-firstuser.service` | Fresh-install TTY wizard (machine + account). Before LightDM, Conflicts getty@tty1. Stamps `firstboot-done` only on success. Not enabled by `install-system.sh`. |
+| `vaultos-firstuser.service` | Fresh-install TTY wizard (machine + account). Before LightDM, Conflicts getty@tty1. Stamps `firstboot-done` only on success. Not enabled by `install-system.sh`. Runs `libexec/vaultos-firstuser.sh`; the C++ port `src/vaultos-firstuser` covers the same features and is tested side by side, but is not installed yet. |
 
 Theme/session CLI remains `vault-os` (hyphen). XFCE watch stays a **user** unit.
 

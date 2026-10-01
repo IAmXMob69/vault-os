@@ -4,10 +4,16 @@
 #
 # VAULTOS_TEST_ROOT  prefix all /etc /var /home paths (harness only)
 # VAULTOS_FIRSTBOOT_CONF  answers file (also kernel vaultos.firstboot=PATH)
+# VAULTOS_TEST_CMDLINE  stands in for /proc/cmdline (only with VAULTOS_TEST_ROOT)
+# The C++ port (src/vaultos-firstuser) does the same; this script is its fallback.
 set -euo pipefail
 
 P="${VAULTOS_TEST_ROOT:-}"
 LIB="${VAULTOS_LIB:-/usr/lib/vaultos}"
+if [[ -z "$P" && "$(id -u)" -ne 0 ]]; then
+  echo "vaultos-firstuser needs root (or VAULTOS_TEST_ROOT for a fake root)" >&2
+  exit 1
+fi
 STAMP="${P}/var/lib/vaultos/firstboot-done"
 USER_STAMP="${P}/var/lib/vaultos/firstuser-done"
 LOG="${P}/var/log/vaultos-firstboot.log"
@@ -46,10 +52,14 @@ ANSWER_FILE=""
 declare -A ANSWERS=()
 
 parse_cmdline() {
-  [[ -r /proc/cmdline ]] || return 0
-  local t
-  # shellcheck disable=SC2013
-  for t in $(cat /proc/cmdline); do
+  local t cl
+  if in_test && [[ -n "${VAULTOS_TEST_CMDLINE+x}" ]]; then
+    cl="$VAULTOS_TEST_CMDLINE"
+  else
+    [[ -r /proc/cmdline ]] || return 0
+    cl="$(cat /proc/cmdline)"
+  fi
+  for t in $cl; do
     case "$t" in
       vaultos.firstboot=skip) SKIP=1 ;;
       vaultos.firstboot=*) ANSWER_FILE="${t#vaultos.firstboot=}" ;;
@@ -357,7 +367,9 @@ net_online() {
 wifi_device() {
   in_test && { echo "${ANSWERS[wifi_dev]:-}"; [[ -n "${ANSWERS[wifi_dev]:-}" ]]; return; }
   command -v nmcli >/dev/null 2>&1 || return 1
-  nmcli -t -f TYPE,DEVICE device status 2>/dev/null | awk -F: '$1=="wifi"{print $2; exit}'
+  # Fail when there is no Wi-Fi device (awk alone always exited 0).
+  nmcli -t -f TYPE,DEVICE device status 2>/dev/null \
+    | awk -F: '$1=="wifi"{print $2; f=1; exit} END{exit !f}'
 }
 
 apply_wifi() {
@@ -388,6 +400,8 @@ prompt_machine() {
     h="${REPLY,,}"
     valid_hostname "$h" && break
     echo "Use letters, digits, and hyphen (RFC 1123). Try again."
+    # Without this a bad hostname= in the answers file looped forever.
+    ANSWERS[hostname]=""
   done
   apply_hostname "$h"
 
@@ -672,15 +686,17 @@ rollback_user() {
   [[ -n "$u" ]] || return 0
   log "rollback $u"
   if in_test; then
+    # cat > keeps each file's mode (mv would leave the fake shadow 0644).
     grep -vE "^${u}:" "${P}/etc/passwd" >"${P}/etc/passwd.tmp" 2>/dev/null || true
-    mv "${P}/etc/passwd.tmp" "${P}/etc/passwd" 2>/dev/null || true
+    cat "${P}/etc/passwd.tmp" >"${P}/etc/passwd" 2>/dev/null || true
     grep -vE "^${u}:" "${P}/etc/shadow" >"${P}/etc/shadow.tmp" 2>/dev/null || true
-    mv "${P}/etc/shadow.tmp" "${P}/etc/shadow" 2>/dev/null || true
+    cat "${P}/etc/shadow.tmp" >"${P}/etc/shadow" 2>/dev/null || true
     awk -F: -v OFS=: -v u="$u" '$1==u{next} {
         n=split($4, m, ","); s=""
         for (i=1; i<=n; i++) if (m[i]!=u && m[i]!="") s = (s=="" ? m[i] : s "," m[i])
         $4=s; print }' "${P}/etc/group" >"${P}/etc/group.tmp" 2>/dev/null \
-      && mv "${P}/etc/group.tmp" "${P}/etc/group" 2>/dev/null || true
+      && cat "${P}/etc/group.tmp" >"${P}/etc/group" 2>/dev/null || true
+    rm -f "${P}/etc/passwd.tmp" "${P}/etc/shadow.tmp" "${P}/etc/group.tmp"
     rm -rf "${P}/home/${u}"
   else
     userdel -r "$u" 2>/dev/null || true

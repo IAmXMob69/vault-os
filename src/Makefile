@@ -8,10 +8,9 @@ SUBDIRS = vaultos vaultos-mark vaultos-screensaver-proxy vaultos-lockmark vaulto
 PREFIX ?= $(HOME)/.local
 
 # pkg-config deps for tool Makefiles that predate common.mk (no check-deps target).
-LEGACY = vaultos vaultos-hud vaultos-firstuser vaultos-mark vaultos-screensaver-proxy vaultos-lockmark
+LEGACY = vaultos vaultos-hud vaultos-mark vaultos-screensaver-proxy vaultos-lockmark
 DEPS_vaultos =
 DEPS_vaultos-hud =
-DEPS_vaultos-firstuser =
 DEPS_vaultos-mark = gtk+-3.0 cairo
 DEPS_vaultos-screensaver-proxy = gio-2.0 gio-unix-2.0 x11
 DEPS_vaultos-lockmark = gtk+-3.0 gtk+-x11-3.0 cairo
