@@ -314,5 +314,5 @@ if (( SYSTEM == 1 )); then
   "$HOME/.local/bin/vault-os-install-system-theme" || warn "system theme install failed"
 fi
 
-info "Done. Log out and back in (or run: vault-os doctor)"
+info "Done. Log out and back in (or run: vault-os doctor --fix)"
 printf '%s\n' '' '  Theme   Vault.OS' '  Icons   Vault.OS' '  Cursor  Vault.OS' '  Walls   ~/.local/share/backgrounds/' '  Pick a wallpaper in Settings -> Desktop' ''

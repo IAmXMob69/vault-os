@@ -1021,7 +1021,20 @@ cmd_status() {
 
 
 cmd_doctor() {
-  log "doctor: diagnose + repair"
+  # Read-only diagnosis. No ensure-*, no xfconf writes, no panel/xfdesktop
+  # restarts. Repairs live behind `vault-os doctor --fix` (or ensure-*).
+  local ec=0
+  cmd_status || ec=1
+  if [[ "$ec" -ne 0 ]]; then
+    printf '\nUnhealthy. Repair with: vault-os doctor --fix\n'
+  fi
+  return "$ec"
+}
+
+cmd_doctor_fix() {
+  # Explicit repair pass (was the old default `doctor`). Only restarts the
+  # panel when it is actually unhealthy; a healthy panel is left alone.
+  log "doctor --fix: diagnose + repair"
   cmd_apply || true
   cmd_ensure_coverage || true
   ensure_xfdesktop || true
@@ -1029,25 +1042,19 @@ cmd_doctor() {
   xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
   xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
 
-  if pgrep -x xfce4-panel >/dev/null 2>&1; then
-    local p2
-    p2=$(xq_get xfce4-panel /panels/panel-2/length | head -1)
-    if _panel_num_ok "${p2:-0}" 50; then
-      xfce4-panel -r 2>/dev/null || true
-      sleep 0.5
-      xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
-      xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
-    else
-      killall xfce4-panel 2>/dev/null || true
-      sleep 0.5
-      nohup xfce4-panel >>"${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/panel.log" 2>&1 &
-      sleep 0.8
-      xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
-      xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
-    fi
+  local p2
+  p2=$(xq_get xfce4-panel /panels/panel-2/length | head -1)
+  if ! pgrep -x xfce4-panel >/dev/null 2>&1 || ! _panel_num_ok "${p2:-0}" 50; then
+    warn "panel unhealthy (length=${p2:-?}) — restarting xfce4-panel"
+    killall xfce4-panel 2>/dev/null || true
+    sleep 0.5
+    nohup xfce4-panel >>"${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/panel.log" 2>&1 &
+    sleep 0.8
+    xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
+    xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
   fi
 
-  if cmd_status; then
+  if cmd_status >/dev/null; then
     local live="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
     local good="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/xfce4-panel.xml.known-good"
     [[ -f "$live" ]] && cp -a "$live" "$good" && log "snapshot panel config"
@@ -1201,7 +1208,7 @@ cmd_selftest() {
   [[ -d "$HOME/.themes/$THEME_NAME" ]] || { err "theme dir"; fail=1; }
   have xfconf-query || { err "xfconf-query missing"; fail=1; }
   have mpv || warn "mpv missing"
-  if cmd_status; then log "selftest PASS"; else warn "selftest issues — run: vault-os doctor"; fail=1; fi
+  if cmd_status; then log "selftest PASS"; else warn "selftest issues — run: vault-os doctor --fix"; fail=1; fi
   return "$fail"
 }
 
@@ -1364,7 +1371,8 @@ usage() {
     '  ensure-coverage Qt/sounds/flatpak/chromium theme extras' \
     '  ensure-all      Theme + coverage + desktop + panel (watch timer)' \
     '  coverage        Print theme integration coverage report' \
-    '  doctor          Diagnose + full repair' \
+    '  doctor          Read-only health check (exit 1 if unhealthy)' \
+    '  doctor --fix    Diagnose + repair (apply, coverage, panel; restart only if unhealthy)' \
     '  intro           Play boot intro now' \
     '  intro-enable    Enable intro on login' \
     '  intro-disable   Disable intro on login' \
@@ -1393,7 +1401,14 @@ main() {
     ensure-coverage)       cmd_ensure_coverage ;;
     ensure-all)            cmd_ensure_all ;;
     coverage)              cmd_coverage ;;
-    doctor|repair|fix)   cmd_doctor; cmd_status ;;
+    doctor)
+      case "${2:-}" in
+        "")    cmd_doctor ;;
+        --fix) cmd_doctor_fix; cmd_status ;;
+        *)     err "usage: vault-os doctor [--fix]"; exit 2 ;;
+      esac
+      ;;
+    repair|fix)            cmd_doctor_fix; cmd_status ;;
     intro|play-intro)      cmd_intro ;;
     intro-enable|enable)   cmd_intro_enable ;;
     intro-disable|disable) cmd_intro_disable ;;
