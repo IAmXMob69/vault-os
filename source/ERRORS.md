@@ -325,3 +325,10 @@ Fresh `vault-os install` must copy the full `source/xfce4-terminal/` tree and se
 
 ## Desktop Arch spin CPU
 Do not leave `vaultos-spin-arch --full` running for days on HD 630 — it burns CPU. Default desktop mark is `--reduced-phosphor` (static). Opt into spin with `~/.config/Vault.OS/desktop-spin=full`. Autostart must call `vaultos-spin-arch-autostart`, not a hard `--full` Exec.
+
+## ISO / mkarchiso
+
+### DO NOT rely on the exec bit of scripts copied into `airootfs`
+- **Symptom:** A helper that is `0755` in the repo and in `iso/profile/airootfs` boots as `0644` on the ISO, so its systemd unit or caller fails with `Permission denied`.
+- **Why:** mkarchiso drops the exec bit on airootfs files unless the path is listed in `file_permissions` in `profiledef.sh`. `install -m 0755` in `prepare-profile.sh` is not enough on its own.
+- **Do instead:** Add every new script under `airootfs` to the `file_permissions` block that `iso/prepare-profile.sh` writes (`["/path"]="0:0:755"`), next to `vaultos-install` and the `vaultos-*.sh` libexec helpers.

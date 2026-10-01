@@ -125,6 +125,9 @@ install -m 0755 "$ROOT/bin/vault-os-lock" "$HOME/.local/bin/vault-os-lock"
 install -m 0755 "$ROOT/bin/vault-os-close-all" "$HOME/.local/bin/vault-os-close-all"
 install -m 0755 "$ROOT/bin/vault-os-install-system-theme" "$HOME/.local/bin/vault-os-install-system-theme"
 install -m 0755 "$ROOT/bin/vault-os-chromium-theme" "$HOME/.local/bin/vault-os-chromium-theme"
+# GUI pkexec helper for vault-os-lockdown / vault-os-system-fix (link, so it tracks the checkout)
+chmod 0755 "$ROOT/bin/vaultos-root"
+ln -sfn "$ROOT/bin/vaultos-root" "$HOME/.local/bin/vaultos-root"
 ok "binaries in ~/.local/bin"
 if command -v g++ >/dev/null && pkg-config --exists gtk+-3.0 gio-unix-2.0 x11 2>/dev/null; then
   make -s -C "$ROOT/src" install PREFIX="$HOME/.local" && ok "native helpers built (C++)" \
@@ -314,5 +317,5 @@ if (( SYSTEM == 1 )); then
   "$HOME/.local/bin/vault-os-install-system-theme" || warn "system theme install failed"
 fi
 
-info "Done. Log out and back in (or run: vault-os doctor)"
+info "Done. Log out and back in (or run: vault-os doctor --fix)"
 printf '%s\n' '' '  Theme   Vault.OS' '  Icons   Vault.OS' '  Cursor  Vault.OS' '  Walls   ~/.local/share/backgrounds/' '  Pick a wallpaper in Settings -> Desktop' ''

@@ -1020,8 +1020,610 @@ cmd_status() {
 }
 
 
+# ── Design bar / pitfall checks (doctor + lint) ────────────────────────────
+# Rules come from DESIGN.md "Code quality bar" and ERRORS.md. Repo checks are
+# read-only and need no X session, so `vault-os lint [PATH]` can run in CI.
+# Patterns are split so this file never matches its own checks.
+_CHK_FAIL=0
+_CHK_WARN=0
+_BANNED_HEX_RE='(#|0x)(33FF6A|44FF3D)|rgba?\(\s*(51\s*,\s*255\s*,\s*106|68\s*,\s*255\s*,\s*61)\b'
+_SB_NONE_RE='ScrollingBar''=NONE|TERMINAL_SCROLLBAR_''NONE'
+_IMPORTANT_RE='!\s*import''ant'
+_CSS_JUNK_RE='text-trans''form|:(before|after)\b|-GtkNote''book-'
+
+_chk() {
+  # _chk OK|WARN|FAIL|SKIP label detail...
+  local v="$1" label="$2"; shift 2
+  case "$v" in
+    FAIL) _CHK_FAIL=$((_CHK_FAIL + 1)) ;;
+    WARN) _CHK_WARN=$((_CHK_WARN + 1)) ;;
+  esac
+  printf '%-14s %-4s %s\n' "$label" "$v" "$*"
+}
+
+_chk_list() {
+  # Indent evidence lines from stdin; cap at $1 (default 8).
+  local max="${1:-8}" n=0 line
+  while IFS= read -r line; do
+    n=$((n + 1))
+    if (( n <= max )); then printf '                    %s\n' "$line"; fi
+  done
+  if (( n > max )); then printf '                    … +%d more\n' "$((n - max))"; fi
+  return 0
+}
+
+_repo_root() {
+  # The checkout this script lives in wins, so a worktree lints itself.
+  local cand self
+  self="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || printf '%s' "${BASH_SOURCE[0]}")"
+  for cand in "$(cd "$(dirname "$self")/.." 2>/dev/null && pwd)" "${VAULT_OS_ROOT:-}" \
+              "$HOME/Projects/vault-os" "$HOME/Vault.OS"; do
+    [[ -n "$cand" && -d "$cand/themes/Vault.OS" && -d "$cand/source" ]] && { printf '%s\n' "$cand"; return 0; }
+  done
+  return 1
+}
+
+# perl: print "relpath:line: text" for lines matching RE (case-insensitive).
+# CSS block comments are blanked first (newlines kept) so a comment that
+# states a rule does not trip it.
+# shellcheck disable=SC2016  # perl source, not shell
+_SCAN_PL='
+my ($re, $root) = (shift, shift);
+for my $f (@ARGV) {
+  open(my $fh, "<", $f) or next; local $/; my $t = <$fh>; close $fh;
+  next unless defined $t;
+  if ($f =~ /\.css$/) { $t =~ s{/\*.*?\*/}{ my $c = $&; $c =~ s/[^\n]//g; $c }gse; }
+  my $n = 0;
+  for my $l (split /\n/, $t, -1) {
+    $n++;
+    next unless $l =~ /$re/i;
+    (my $r = $f) =~ s{^\Q$root\E/}{};
+    (my $s = $l) =~ s/^\s+//;
+    print "$r:$n: " . substr($s, 0, 110) . "\n";
+  }
+}'
+
+_scan() {
+  # _scan ROOT REGEX GLOB path...   (GLOB: "*" or e.g. "*.css")
+  local root="$1" re="$2" glob="$3"; shift 3
+  local p files=()
+  for p in "$@"; do
+    [[ -e "$p" ]] || continue
+    while IFS= read -r -d '' f; do files+=("$f"); done < <(
+      find "$p" \( -name __pycache__ -o -name .git \) -prune -o -type f -name "$glob" \
+        ! -name '*.md' ! -name '*.bak' ! -name '*.bak-*' ! -name '*~' -print0 2>/dev/null)
+  done
+  ((${#files[@]})) || return 0
+  # Skip binaries (png etc.): grep -I lists text files that can match at all.
+  local text=()
+  while IFS= read -r f; do text+=("$f"); done < <(grep -IliE -- "${re//\\s/[[:space:]]}" "${files[@]}" 2>/dev/null || true)
+  ((${#text[@]})) || return 0
+  perl -e "$_SCAN_PL" "$re" "$root" "${text[@]}"
+}
+
+_dir_diff() {
+  # _dir_diff A B [extra diff -x patterns...] -> differing/missing entries
+  # (ignores docs, generators, caches)
+  local a="$1" b="$2" x ex=(); shift 2
+  for x in README.md '*.py' __pycache__ '*.bak' '*.bak-*' "$@"; do ex+=(-x "$x"); done
+  diff -rq "${ex[@]}" "$a" "$b" 2>/dev/null | sed -e "s|$a/||g" -e "s|$b/||g" || true
+}
+
+_xpm_class() {
+  # hexsym: every color has "c #hex s name"; symonly: "s name" only; mixed: other
+  awk '
+    /^"/ {
+      if (!hdr) { split(substr($0, 2), a, " "); n = a[3] + 0; hdr = 1; next }
+      if (n > 0) {
+        n--
+        if ($0 ~ / c [Nn]one/) next
+        tot++
+        hx = ($0 ~ / c #[0-9A-Fa-f]+/); sy = ($0 ~ / s [A-Za-z_0-9]+/)
+        if (hx && sy) both++; else if (sy && !hx) so++
+      }
+    }
+    END {
+      if (tot == 0) print "none"
+      else if (both == tot) print "hexsym"
+      else if (so == tot) print "symonly"
+      else print "mixed"
+    }' "$1"
+}
+
+_lint_repo() {
+  local R="$1"
+  local hits
+
+  # 1. One palette (DESIGN bar #1)
+  local ship=() legacy=() p
+  for p in themes/Vault.OS themes/Vault.OS-Reduced source bin icons/Vault.OS overlay \
+           iso/airootfs tokens.css tokens-reduced.css install.sh \
+           config/gtk-3.0 config/gtk-4.0 config/gtkrc-2.0 config/xfce4 config/fallout-nv \
+           config/environment.d extras/panel extras/lightdm extras/dock; do
+    [[ -e "$R/$p" ]] && ship+=("$R/$p")
+  done
+  for p in themes/PipBoy-NV icons/PipBoy-Dock config/pipboy config/Kvantum/PipBoy-NV \
+           config/vscode config/discord config/firefox config/chromium; do
+    [[ -e "$R/$p" ]] && legacy+=("$R/$p")
+  done
+  hits="$(_scan "$R" "$_BANNED_HEX_RE" '*' "${ship[@]}")"
+  if [[ -z "$hits" ]]; then
+    _chk OK palette "no banned phosphor hexes (33FF6A/44FF3D) in Vault.OS trees"
+  else
+    _chk FAIL palette "banned phosphor hex in shipped Vault.OS files (canon 1AFF6B, Reduced 66FF9C):"
+    printf '%s\n' "$hits" | _chk_list 12
+  fi
+  if ((${#legacy[@]})); then
+    hits="$(_scan "$R" "$_BANNED_HEX_RE" '*' "${legacy[@]}" | cut -d: -f1 | sort -u)"
+    if [[ -n "$hits" ]]; then
+      _chk WARN palette-old "legacy PipBoy-NV app themes still carry banned hexes ($(printf '%s\n' "$hits" | wc -l) files)"
+      printf '%s\n' "$hits" | _chk_list 8
+    else
+      _chk OK palette-old "legacy PipBoy-NV app themes free of banned phosphor colours"
+    fi
+  fi
+
+  # 2/3. CssProvider clean (DESIGN bar #5, ERRORS GTK rules)
+  local gtkcss=()
+  for p in themes/Vault.OS themes/Vault.OS-Reduced source/gtk-2.0 source/gtk-3.0 source/gtk-3.20 \
+           source/gtk-reduced/gtk-3.0 source/gtk-reduced/gtk-3.20 source/gtk-overlay source/lock \
+           source/lightdm source/xfce4-notifyd source/xfce4-panel source/xfce4-terminal \
+           config/gtk-3.0 config/gtk-4.0; do
+    [[ -e "$R/$p" ]] && gtkcss+=("$R/$p")
+  done
+  hits="$(_scan "$R" "$_IMPORTANT_RE" '*.css' "${gtkcss[@]}")"
+  if [[ -z "$hits" ]]; then
+    _chk OK gtk-important "no !-important in GTK css"
+  else
+    _chk FAIL gtk-important "GTK CssProvider treats !-important as junk:"
+    printf '%s\n' "$hits" | _chk_list 12
+  fi
+  hits="$(_scan "$R" "$_CSS_JUNK_RE" '*.css' "${gtkcss[@]}")"
+  if [[ -z "$hits" ]]; then
+    _chk OK gtk-webcss "no text-transform / :before / :after / -GtkNotebook-* in GTK css"
+  else
+    _chk FAIL gtk-webcss "web-only CSS in GTK themes (CssProvider parse errors):"
+    printf '%s\n' "$hits" | _chk_list 12
+  fi
+
+  # 4. gtk-3.0 + gtk-3.20 both ship (GTK 3.24 loads 3.20 first)
+  local pair miss=()
+  for pair in themes/Vault.OS themes/Vault.OS-Reduced source source/gtk-reduced; do
+    [[ -d "$R/$pair" ]] || continue
+    [[ -f "$R/$pair/gtk-3.0/gtk.css" ]]  || miss+=("$pair/gtk-3.0/gtk.css")
+    [[ -f "$R/$pair/gtk-3.20/gtk.css" ]] || miss+=("$pair/gtk-3.20/gtk.css")
+  done
+  if ((${#miss[@]})); then
+    _chk FAIL gtk-dirs "missing: ${miss[*]}"
+  else
+    _chk OK gtk-dirs "gtk-3.0 + gtk-3.20 in both packs (themes + source)"
+  fi
+
+  # 5. GTK source ≡ themes (DESIGN bar #2) — shared files only
+  local src dst f d out=""
+  for pair in "source/gtk-3.0:themes/Vault.OS/gtk-3.0" "source/gtk-3.20:themes/Vault.OS/gtk-3.20" \
+              "source/gtk-reduced/gtk-3.0:themes/Vault.OS-Reduced/gtk-3.0" \
+              "source/gtk-reduced/gtk-3.20:themes/Vault.OS-Reduced/gtk-3.20"; do
+    src="$R/${pair%%:*}"; dst="$R/${pair##*:}"
+    [[ -d "$src" && -d "$dst" ]] || continue
+    for f in "$src"/*.css; do
+      [[ -f "$f" ]] || continue
+      d="$dst/${f##*/}"
+      [[ -f "$d" ]] || continue
+      cmp -s "$f" "$d" || out+="${pair%%:*}/${f##*/} ≠ ${pair##*:}/${f##*/}"$'\n'
+    done
+  done
+  if [[ -z "$out" ]]; then
+    _chk OK gtk-sync "source/ ≡ themes/ for shared GTK css"
+  else
+    _chk WARN gtk-sync "source/ and themes/ GTK css drifted (GTK-02 / HUD-04):"
+    printf '%s' "$out" | _chk_list 12
+  fi
+
+  # 6/7. xfwm doors: source ≡ themes, and no mixed decoration trees
+  local label
+  for pair in "source/xfwm4:themes/Vault.OS/xfwm4:CANON" "source/xfwm4-reduced:themes/Vault.OS-Reduced/xfwm4:Reduced"; do
+    IFS=: read -r src dst label <<<"$pair"
+    if [[ ! -d "$R/$src" || ! -d "$R/$dst" ]]; then
+      _chk SKIP "xfwm-$label" "$src or $dst not in repo"
+      continue
+    fi
+    out="$(_dir_diff "$R/$src" "$R/$dst")"
+    if [[ -z "$out" ]]; then
+      _chk OK "xfwm-$label" "$src ≡ $dst"
+    else
+      _chk FAIL "xfwm-$label" "$src and $dst differ (replace the whole dir):"
+      printf '%s\n' "$out" | _chk_list 10
+    fi
+    [[ -f "$R/$dst/themerc" ]] || _chk FAIL "xfwm-$label" "$dst/themerc missing"
+    local x cls classes="" odd=()
+    declare -A _xpm_n=()
+    for x in "$R/$dst"/*.xpm; do
+      [[ -f "$x" ]] || continue
+      cls="$(_xpm_class "$x")"
+      _xpm_n[$cls]=$(( ${_xpm_n[$cls]:-0} + 1 ))
+      [[ "$cls" == hexsym ]] || odd+=("${x##*/}($cls)")
+    done
+    for cls in "${!_xpm_n[@]}"; do classes+="$cls=${_xpm_n[$cls]} "; done
+    if (( ${#_xpm_n[@]} > 1 )) || [[ -n "${_xpm_n[mixed]:-}" ]]; then
+      _chk FAIL "xfwm-$label" "mixed XPM tree (${classes% }): replace the whole dir"
+      printf '%s\n' "${odd[@]}" | _chk_list 8
+    elif (( ${#_xpm_n[@]} == 1 )); then
+      _chk OK "xfwm-$label" "XPMs one color style (${classes% })"
+    fi
+    unset _xpm_n
+  done
+
+  # 8. Terminal scrollbar stays (ERRORS: terminal scrollbar hide)
+  local tfiles=() bad="" missing=""
+  for f in "$R"/source/xfce4-terminal/terminalrc* "$R"/config/xfce4/terminal/terminalrc*; do
+    [[ -f "$f" ]] && tfiles+=("$f")
+  done
+  if ((${#tfiles[@]} == 0)); then
+    _chk SKIP terminal "no terminalrc* in repo"
+  else
+    bad="$(_scan "$R" "$_SB_NONE_RE" '*' "${tfiles[@]}" "$R/bin/vaultos-terminal-phosphor" "$R/bin/vault-os")"
+    for f in "${tfiles[@]}"; do
+      grep -qx 'ScrollingBar=TERMINAL_SCROLLBAR_RIGHT' "$f" || missing+="${f#"$R"/} "
+    done
+    if [[ -n "$bad" ]]; then
+      _chk FAIL terminal "scrollbar forced off:"
+      printf '%s\n' "$bad" | _chk_list 8
+    fi
+    if [[ -n "$missing" ]]; then
+      _chk FAIL terminal "no ScrollingBar=TERMINAL_SCROLLBAR_RIGHT in: $missing"
+    fi
+    if [[ -f "$R/bin/vaultos-terminal-phosphor" ]] && ! grep -q 'TERMINAL_SCROLLBAR_RIGHT' "$R/bin/vaultos-terminal-phosphor"; then
+      _chk WARN terminal "vaultos-terminal-phosphor does not pin TERMINAL_SCROLLBAR_RIGHT"
+    fi
+    [[ -z "$bad$missing" ]] && _chk OK terminal "${#tfiles[@]} terminalrc* keep TERMINAL_SCROLLBAR_RIGHT; none forced off"
+  fi
+
+  # 9. Screensaver (ERRORS standing order: screensavers-vaultos-arch-spin)
+  local sd="$R/source/xfce4-screensaver/vaultos-arch-spin.desktop" wrap=/usr/lib/xfce4-screensaver/vaultos-arch-spin
+  if [[ -f "$sd" ]]; then
+    out=""
+    grep -q '^Hidden=' "$sd" && out+="Hidden= present; "
+    grep -qx "Exec=$wrap" "$sd" || out+="Exec≠$wrap; "
+    grep -qx "TryExec=$wrap" "$sd" || out+="TryExec≠$wrap; "
+    if [[ -z "$out" ]]; then
+      _chk OK saver-src "vaultos-arch-spin.desktop: no Hidden=, Exec/TryExec → $wrap"
+    else
+      _chk FAIL saver-src "source/xfce4-screensaver/vaultos-arch-spin.desktop: $out"
+    fi
+  else
+    _chk SKIP saver-src "source/xfce4-screensaver/vaultos-arch-spin.desktop not in repo"
+  fi
+  if grep -q 'saver_want="screensavers-vaultos-arch-spin"' "$R/bin/vault-os" 2>/dev/null; then
+    _chk OK saver-id "ensure-theme pins screensavers-vaultos-arch-spin"
+  else
+    _chk FAIL saver-id "bin/vault-os ensure-theme does not pin screensavers-vaultos-arch-spin"
+  fi
+  out="$(find "$R" -path "$R/.git" -prune -o -name 'xfce-floaters.desktop*' -type f \
+         -exec grep -l '^Exec=.*vaultos' {} + 2>/dev/null | sed "s|^$R/||" || true)"
+  if [[ -n "$out" ]]; then
+    _chk FAIL saver-floaters "repo ships a hijacked xfce-floaters.desktop:"
+    printf '%s\n' "$out" | _chk_list 4
+  else
+    _chk OK saver-floaters "no xfce-floaters.desktop hijack shipped"
+  fi
+
+  # 10. Desktop spin: static default, full only via desktop-spin=full
+  local auto="$R/bin/vaultos-spin-arch-autostart"
+  if [[ -f "$auto" ]]; then
+    local tmp got_def got_full got_junk
+    tmp="$(mktemp -d "${TMPDIR:-/tmp}/vault-os-lint.XXXXXX")"
+    mkdir -p "$tmp/.local/bin" "$tmp/.config/Vault.OS"
+    printf '#!/bin/sh\necho "$*"\n' >"$tmp/.local/bin/vaultos-spin-arch"
+    chmod +x "$tmp/.local/bin/vaultos-spin-arch"
+    _spin_run() { env -i HOME="$tmp" XDG_CONFIG_HOME="$tmp/.config" PATH=/usr/bin:/bin \
+                    bash "$auto" 2>/dev/null </dev/null || true; }
+    got_def="$(_spin_run)"
+    echo full >"$tmp/.config/Vault.OS/desktop-spin"; got_full="$(_spin_run)"
+    echo bogus >"$tmp/.config/Vault.OS/desktop-spin"; got_junk="$(_spin_run)"
+    rm -rf "$tmp"
+    unset -f _spin_run
+    if [[ -z "$got_def$got_full" ]]; then
+      _chk WARN spin-default "could not exercise vaultos-spin-arch-autostart (no vaultos-spin-arch call)"
+    elif [[ "$got_def" == *--full* || "$got_junk" == *--full* ]]; then
+      _chk FAIL spin-default "autostart spins without desktop-spin=full (default='$got_def' junk='$got_junk')"
+    elif [[ "$got_full" != *--full* ]]; then
+      _chk WARN spin-default "desktop-spin=full does not pass --full (got '$got_full')"
+    else
+      _chk OK spin-default "static by default ('$got_def'); --full only with desktop-spin=full"
+    fi
+  else
+    _chk SKIP spin-default "bin/vaultos-spin-arch-autostart not in repo"
+  fi
+  out="$(grep -rlE --exclude-dir=.git --include='*.desktop' '^Exec=.*vaultos-spin-arch( |$).*--full' "$R" 2>/dev/null | sed "s|^$R/||" || true)"
+  if [[ -n "$out" ]]; then
+    _chk FAIL spin-autostart "hard --full Exec (use vaultos-spin-arch-autostart):"
+    printf '%s\n' "$out" | _chk_list 4
+  else
+    _chk OK spin-autostart "no shipped .desktop hard-codes vaultos-spin-arch --full"
+  fi
+
+  # 11. Repo hygiene: doc + token copies in source/
+  if [[ -f "$R/ERRORS.md" && -f "$R/source/ERRORS.md" ]]; then
+    if cmp -s "$R/ERRORS.md" "$R/source/ERRORS.md"; then
+      _chk OK errors-sync "ERRORS.md ≡ source/ERRORS.md"
+    else
+      _chk FAIL errors-sync "ERRORS.md and source/ERRORS.md differ (keep in sync)"
+    fi
+  else
+    _chk SKIP errors-sync "ERRORS.md or source/ERRORS.md missing"
+  fi
+  for f in DESIGN.md:design-sync tokens.css:tokens-sync tokens-reduced.css:tokensR-sync; do
+    label="${f##*:}"; f="${f%%:*}"
+    [[ -f "$R/$f" && -f "$R/source/$f" ]] || continue
+    if cmp -s "$R/$f" "$R/source/$f"; then
+      _chk OK "$label" "$f ≡ source/$f"
+    else
+      _chk WARN "$label" "$f and source/$f differ"
+    fi
+  done
+
+  # 12. Shell syntax on shipped helpers
+  out=""
+  for f in "$R"/bin/* "$R"/install.sh "$R"/source/xfce4-screensaver/install-system.sh; do
+    [[ -f "$f" ]] || continue
+    head -n1 "$f" | grep -qE '^#!.*\b(bash|sh)\b' || continue
+    bash -n "$f" 2>/dev/null || out+="${f#"$R"/} "
+  done
+  if [[ -z "$out" ]]; then
+    _chk OK shell-syntax "bash -n clean on bin/ + installers"
+  else
+    _chk FAIL shell-syntax "bash -n fails: $out"
+  fi
+  return 0
+}
+
+# shellcheck disable=SC2088  # "~/..." strings are display text
+_doctor_live() {
+  local R="$1" out f
+
+  # Installed CLI should be this checkout (ERRORS: don't leave ~/.local/bin behind)
+  local inst="$HOME/.local/bin/vault-os" iv
+  if [[ -e "$inst" ]]; then
+    if [[ -n "$R" && "$(readlink -f "$inst")" == "$(readlink -f "$R/bin/vault-os")" ]]; then
+      _chk OK cli "~/.local/bin/vault-os → this checkout"
+    else
+      iv="$(grep -m1 '^readonly VERSION=' "$inst" 2>/dev/null | cut -d'"' -f2 || true)"
+      if [[ "$iv" == "$VERSION" ]]; then
+        _chk OK cli "~/.local/bin/vault-os $iv → $(readlink -f "$inst")"
+      else
+        _chk WARN cli "~/.local/bin/vault-os ${iv:-?} ≠ this $VERSION ($(readlink -f "$inst"))"
+      fi
+    fi
+  else
+    _chk WARN cli "~/.local/bin/vault-os missing (vault-os install)"
+  fi
+
+  # Live GTK packs
+  local livep=() t
+  for t in Vault.OS Vault.OS-Reduced; do
+    [[ -d "$HOME/.themes/$t" ]] && livep+=("$HOME/.themes/$t")
+  done
+  [[ -f "$HOME/.config/gtk-3.0/gtk.css" ]] && livep+=("$HOME/.config/gtk-3.0/gtk.css")
+  [[ -f "$HOME/.config/gtk-4.0/gtk.css" ]] && livep+=("$HOME/.config/gtk-4.0/gtk.css")
+  out="$(_scan "$HOME" "$_BANNED_HEX_RE" '*' "${livep[@]}"; _scan "$HOME" "$_IMPORTANT_RE" '*.css' "${livep[@]}")"
+  if [[ -z "$out" ]]; then
+    _chk OK live-gtk "no banned hexes / !-important in ~/.themes Vault.OS* + GTK overlays"
+  else
+    _chk FAIL live-gtk "live theme/overlay breaks the palette or CssProvider rules:"
+    printf '%s\n' "$out" | _chk_list 10
+  fi
+  out=""
+  for t in Vault.OS Vault.OS-Reduced; do
+    [[ -d "$HOME/.themes/$t" ]] || { out+="$t(not installed) "; continue; }
+    [[ -f "$HOME/.themes/$t/gtk-3.0/gtk.css" ]]  || out+="$t/gtk-3.0 "
+    [[ -f "$HOME/.themes/$t/gtk-3.20/gtk.css" ]] || out+="$t/gtk-3.20 "
+  done
+  if [[ -z "$out" ]]; then
+    _chk OK live-gtk-dirs "~/.themes packs ship gtk-3.0 + gtk-3.20"
+  else
+    _chk FAIL live-gtk-dirs "missing: $out"
+  fi
+  if [[ -f "$HOME/.config/gtk-3.0/gtk.css" ]]; then
+    if grep -v '^[[:space:]]*/\*' "$HOME/.config/gtk-3.0/gtk.css" | grep -qi 'spinner'; then
+      _chk WARN gtk-overlay "~/.config/gtk-3.0/gtk.css carries a spinner override (HUD @import only)"
+    else
+      _chk OK gtk-overlay "~/.config/gtk-3.0/gtk.css is HUD import only"
+    fi
+  fi
+
+  # Live packs vs this checkout (install drift — fix with: vault-os install)
+  if [[ -n "$R" ]]; then
+    local pair src dst label
+    for pair in "themes/Vault.OS/xfwm4:Vault.OS/xfwm4:xfwm" "themes/Vault.OS-Reduced/xfwm4:Vault.OS-Reduced/xfwm4:xfwm-R" \
+                "themes/Vault.OS/gtk-3.0:Vault.OS/gtk-3.0:gtk3" "themes/Vault.OS/gtk-3.20:Vault.OS/gtk-3.20:gtk320" \
+                "themes/Vault.OS-Reduced/gtk-3.0:Vault.OS-Reduced/gtk-3.0:gtk3-R" \
+                "themes/Vault.OS-Reduced/gtk-3.20:Vault.OS-Reduced/gtk-3.20:gtk320-R"; do
+      IFS=: read -r src dst label <<<"$pair"
+      [[ -d "$R/$src" && -d "$HOME/.themes/$dst" ]] || continue
+      # terminal.css is rewritten at runtime by vaultos-terminal-phosphor (checked below)
+      out="$(_dir_diff "$R/$src" "$HOME/.themes/$dst" terminal.css)"
+      if [[ -z "$out" ]]; then
+        _chk OK "live-$label" "~/.themes/$dst ≡ repo"
+      else
+        _chk WARN "live-$label" "~/.themes/$dst differs from repo $src (vault-os install to sync):"
+        printf '%s\n' "$out" | _chk_list 6
+      fi
+    done
+  fi
+
+  # Terminal CRT dial owns ~/.themes/Vault.OS/gtk-*/terminal.css
+  local pm tsrc
+  pm="$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS/terminal-phosphor" 2>/dev/null || echo reduced)"
+  case "$pm" in full|reduced|clear) ;; *) pm=reduced ;; esac
+  tsrc="${R:+$R/source/xfce4-terminal/terminal.$pm.css}"
+  if [[ -n "$tsrc" && -f "$tsrc" ]]; then
+    out=""
+    for t in gtk-3.0 gtk-3.20; do
+      f="$HOME/.themes/Vault.OS/$t/terminal.css"
+      [[ -f "$f" ]] || continue
+      cmp -s "$f" "$tsrc" || out+="$t "
+    done
+    if [[ -z "$out" ]]; then
+      _chk OK live-term-css "~/.themes/Vault.OS terminal.css = phosphor dial '$pm'"
+    else
+      _chk WARN live-term-css "terminal.css in $out≠ source terminal.$pm.css (vaultos-terminal-phosphor $pm)"
+    fi
+  fi
+
+  # Terminal scrollbar (live)
+  local trc="$HOME/.config/xfce4/terminal/terminalrc" sb
+  if [[ -f "$trc" ]] && grep -qE "$_SB_NONE_RE" "$trc"; then
+    _chk FAIL live-term "terminalrc forces the scrollbar off"
+  fi
+  sb="$(xq_get xfce4-terminal /scrolling-bar | head -1)"
+  case "$sb" in
+    TERMINAL_SCROLLBAR_RIGHT) _chk OK live-term "xfce4-terminal /scrolling-bar = RIGHT" ;;
+    "") if [[ -f "$trc" ]] && grep -qx 'ScrollingBar=TERMINAL_SCROLLBAR_RIGHT' "$trc"; then
+          _chk OK live-term "terminalrc ScrollingBar=TERMINAL_SCROLLBAR_RIGHT (xfconf unset)"
+        else
+          _chk WARN live-term "scrollbar not pinned to RIGHT (xfconf unset)"
+        fi ;;
+    *) _chk FAIL live-term "xfce4-terminal /scrolling-bar = $sb (want TERMINAL_SCROLLBAR_RIGHT)" ;;
+  esac
+
+  # Screensaver (standing order). System-file fixes need sudo:
+  # source/xfce4-screensaver/install-system.sh
+  local saver sysd=/usr/share/applications/screensavers/vaultos-arch-spin.desktop
+  local wrap=/usr/lib/xfce4-screensaver/vaultos-arch-spin
+  saver="$(xq_get xfce4-screensaver /saver/themes/list | tail -1)"
+  if [[ "$saver" == "screensavers-vaultos-arch-spin" ]]; then
+    _chk OK live-saver "theme = screensavers-vaultos-arch-spin"
+  else
+    _chk FAIL live-saver "theme = '${saver:-unset}' (want screensavers-vaultos-arch-spin)"
+  fi
+  if [[ -f "$sysd" ]]; then
+    out=""
+    grep -q '^Hidden=' "$sysd" && out+="Hidden= present; "
+    grep -qx "Exec=$wrap" "$sysd" || out+="Exec≠$wrap; "
+    grep -qx "TryExec=$wrap" "$sysd" || out+="TryExec≠$wrap; "
+    if [[ -z "$out" ]]; then
+      _chk OK live-saver "system desktop: no Hidden=, Exec/TryExec → $wrap"
+    else
+      _chk FAIL live-saver "$sysd: $out(sudo: install-system.sh)"
+    fi
+  else
+    _chk FAIL live-saver "$sysd missing (sudo: source/xfce4-screensaver/install-system.sh)"
+  fi
+  if [[ -x "$wrap" ]]; then
+    if [[ -n "$R" && -f "$R/source/xfce4-screensaver/vaultos-arch-spin.wrapper" ]] \
+       && ! cmp -s "$wrap" "$R/source/xfce4-screensaver/vaultos-arch-spin.wrapper"; then
+      _chk WARN live-saver "$wrap differs from source wrapper (sudo re-run install-system.sh to refresh)"
+    else
+      _chk OK live-saver "$wrap present"
+    fi
+  else
+    _chk FAIL live-saver "$wrap missing or not executable (sudo: install-system.sh)"
+  fi
+  local fl=/usr/share/applications/screensavers/xfce-floaters.desktop
+  if [[ -f "$fl" ]] && grep -qE '^(Try)?Exec=.*vaultos' "$fl"; then
+    _chk FAIL live-saver "stock xfce-floaters.desktop is hijacked (restore .vaultos-stock; needs sudo)"
+  elif [[ -f "$HOME/.local/share/applications/screensavers/xfce-floaters.desktop" ]]; then
+    _chk FAIL live-saver "user-local xfce-floaters.desktop override → (null) Exec; remove it"
+  else
+    _chk OK live-saver "stock xfce-floaters.desktop untouched"
+  fi
+
+  # Lock command must never be xflock4
+  local lc
+  lc="$(xq_get xfce4-session /general/LockCommand | head -1)"
+  case "$lc" in
+    *xflock4*) _chk FAIL live-lock "LockCommand = $lc (never xflock4)" ;;
+    "")        _chk WARN live-lock "LockCommand unset (want vaultos-session-lock)" ;;
+    *)         _chk OK live-lock "LockCommand = ${lc/#$HOME/\~}" ;;
+  esac
+
+  # Desktop Arch spin: autostart through the wrapper; static unless opted in
+  local mode found=0
+  mode="$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/Vault.OS/desktop-spin" 2>/dev/null || echo reduced)"
+  for f in "${XDG_CONFIG_HOME:-$HOME/.config}"/autostart/*.desktop; do
+    [[ -f "$f" ]] || continue
+    grep -qE '^Exec=.*vaultos-spin-arch' "$f" || continue
+    grep -qx 'Hidden=true' "$f" && continue
+    found=1
+    if grep -qE '^Exec=.*--full' "$f" || ! grep -qE '^Exec=.*vaultos-spin-arch-autostart' "$f"; then
+      _chk FAIL live-spin "${f/#$HOME/\~}: $(grep -m1 '^Exec=' "$f") (use vaultos-spin-arch-autostart)"
+    else
+      _chk OK live-spin "${f##*/} → vaultos-spin-arch-autostart"
+    fi
+  done
+  (( found )) || _chk WARN live-spin "no enabled desktop Arch spin autostart"
+  case "$mode" in
+    full) _chk OK spin-mode "full (opt-in via ~/.config/Vault.OS/desktop-spin=full)" ;;
+    off)  _chk OK spin-mode "off (desktop-spin=off)" ;;
+    *)    _chk OK spin-mode "static (default)" ;;
+  esac
+  if [[ "$mode" != full ]] && pgrep -af 'vaultos-spin-arch' 2>/dev/null | grep -- '--instance desktop' | grep -q -- '--full'; then
+    _chk WARN spin-mode "desktop spin running --full without desktop-spin=full (CPU on HD 630)"
+  fi
+
+  # Reduced locks with CANON (DESIGN bar #3) — read-only
+  local gt wm
+  gt="$(xq_get xsettings /Net/ThemeName | head -1)"
+  wm="$(xq_get xfwm4 /general/theme | head -1)"
+  if [[ "$gt" == "Vault.OS-Reduced" || "$wm" == "Vault.OS-Reduced" || "${THEME_NAME:-}" == "Vault.OS-Reduced" ]]; then
+    if [[ "$gt" == "Vault.OS-Reduced" && "$wm" == "Vault.OS-Reduced" && "${THEME_NAME:-}" == "Vault.OS-Reduced" ]]; then
+      _chk OK reduced "Reduced: GTK + xfwm + conf all Vault.OS-Reduced"
+    else
+      _chk WARN reduced "Reduced mismatch: gtk=$gt xfwm=$wm conf=${THEME_NAME:-?} (vault-os ensure-theme)"
+    fi
+  else
+    _chk OK reduced "CANON: gtk=${gt:-?} xfwm=${wm:-?} (Reduced not active)"
+  fi
+  return 0
+}
+
+_chk_summary() {
+  printf '\n%s: %d FAIL, %d WARN\n' "$1" "$_CHK_FAIL" "$_CHK_WARN"
+  (( _CHK_FAIL == 0 ))
+}
+
+cmd_lint() {
+  # vault-os lint [PATH] — repo-only design-bar checks (no X session needed)
+  local R="${1:-}"
+  if [[ -z "$R" ]]; then
+    R="$(_repo_root)" || { printf 'vault-os lint: no checkout found (pass a path)\n' >&2; return 2; }
+  fi
+  R="$(cd "$R" && pwd)" || return 2
+  [[ -d "$R/themes/Vault.OS" ]] || { printf 'vault-os lint: %s is not a Vault.OS checkout\n' "$R" >&2; return 2; }
+  printf 'vault-os lint %s\n' "$R"
+  printf '───────────────\n'
+  _CHK_FAIL=0; _CHK_WARN=0
+  _lint_repo "$R"
+  _chk_summary lint
+}
+
 cmd_doctor() {
-  log "doctor: diagnose + repair"
+  # Read-only diagnosis. No ensure-*, no xfconf writes, no panel/xfdesktop
+  # restarts. Repairs live behind `vault-os doctor --fix` (or ensure-*).
+  local ec=0 R
+  cmd_status || ec=1
+  _CHK_FAIL=0; _CHK_WARN=0
+  R="$(_repo_root || true)"
+  printf '\nlive rules\n───────────────\n'
+  _doctor_live "$R"
+  printf '\nrepo lint %s\n───────────────\n' "${R:-(none)}"
+  if [[ -n "$R" ]]; then
+    _lint_repo "$R"
+  else
+    _chk SKIP lint "no Vault.OS checkout found (set VAULT_OS_ROOT)"
+  fi
+  _chk_summary doctor || ec=1
+  if [[ "$ec" -ne 0 ]]; then
+    printf 'Unhealthy. Session drift: vault-os doctor --fix. Repo FAILs and sudo items above need a commit or a human.\n'
+  fi
+  return "$ec"
+}
+
+cmd_doctor_fix() {
+  # Explicit repair pass (was the old default `doctor`). Only restarts the
+  # panel when it is actually unhealthy; a healthy panel is left alone.
+  log "doctor --fix: diagnose + repair"
   cmd_apply || true
   cmd_ensure_coverage || true
   ensure_xfdesktop || true
@@ -1029,25 +1631,19 @@ cmd_doctor() {
   xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
   xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
 
-  if pgrep -x xfce4-panel >/dev/null 2>&1; then
-    local p2
-    p2=$(xq_get xfce4-panel /panels/panel-2/length | head -1)
-    if _panel_num_ok "${p2:-0}" 50; then
-      xfce4-panel -r 2>/dev/null || true
-      sleep 0.5
-      xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
-      xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
-    else
-      killall xfce4-panel 2>/dev/null || true
-      sleep 0.5
-      nohup xfce4-panel >>"${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/panel.log" 2>&1 &
-      sleep 0.8
-      xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
-      xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
-    fi
+  local p2
+  p2=$(xq_get xfce4-panel /panels/panel-2/length | head -1)
+  if ! pgrep -x xfce4-panel >/dev/null 2>&1 || ! _panel_num_ok "${p2:-0}" 50; then
+    warn "panel unhealthy (length=${p2:-?}) — restarting xfce4-panel"
+    killall xfce4-panel 2>/dev/null || true
+    sleep 0.5
+    nohup xfce4-panel >>"${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/panel.log" 2>&1 &
+    sleep 0.8
+    xq_set xfce4-panel /panels/panel-1/position -t string -s "$PANEL1_POSITION"
+    xq_set xfce4-panel /panels/panel-2/position -t string -s "$PANEL2_POSITION"
   fi
 
-  if cmd_status; then
+  if cmd_status >/dev/null; then
     local live="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
     local good="${XDG_CONFIG_HOME:-$HOME/.config}/fallout-nv/xfce4-panel.xml.known-good"
     [[ -f "$live" ]] && cp -a "$live" "$good" && log "snapshot panel config"
@@ -1120,7 +1716,8 @@ cmd_install() {
   # Control-plane helpers
   local bin
   for bin in vault-os vaultos-lock vaultos-session-lock vaultos-spin-arch \
-             vaultos-spin-lock vaultos-spin-lock-run vaultos-spin-arch-autostart vaultos-terminal-phosphor vaultos-watch; do
+             vaultos-spin-lock vaultos-spin-lock-run vaultos-spin-arch-autostart vaultos-terminal-phosphor \
+             vaultos-root; do
     if [[ -f "$root/bin/$bin" ]]; then
       ln -sfn "$root/bin/$bin" "$HOME/.local/bin/$bin"
       chmod +x "$root/bin/$bin" 2>/dev/null || true
@@ -1201,7 +1798,7 @@ cmd_selftest() {
   [[ -d "$HOME/.themes/$THEME_NAME" ]] || { err "theme dir"; fail=1; }
   have xfconf-query || { err "xfconf-query missing"; fail=1; }
   have mpv || warn "mpv missing"
-  if cmd_status; then log "selftest PASS"; else warn "selftest issues — run: vault-os doctor"; fail=1; fi
+  if cmd_status; then log "selftest PASS"; else warn "selftest issues — run: vault-os doctor --fix"; fail=1; fi
   return "$fail"
 }
 
@@ -1364,7 +1961,9 @@ usage() {
     '  ensure-coverage Qt/sounds/flatpak/chromium theme extras' \
     '  ensure-all      Theme + coverage + desktop + panel (watch timer)' \
     '  coverage        Print theme integration coverage report' \
-    '  doctor          Diagnose + full repair' \
+    '  doctor          Read-only: status + live rules + repo lint (exit 1 on FAIL)' \
+    '  doctor --fix    Repair (apply, coverage, panel; restart only if unhealthy), then doctor' \
+    '  lint [PATH]     Repo design-bar lint: palette, GTK css, xfwm sync, terminal, saver, spin' \
     '  intro           Play boot intro now' \
     '  intro-enable    Enable intro on login' \
     '  intro-disable   Disable intro on login' \
@@ -1380,6 +1979,11 @@ usage() {
 }
 
 main() {
+  # Repo lint runs without a session (CI-safe): no load_config side effects.
+  if [[ "${1:-}" == "lint" ]]; then
+    cmd_lint "${2:-}"
+    return
+  fi
   load_config
   local cmd="${1:-status}"
   case "$cmd" in
@@ -1393,7 +1997,14 @@ main() {
     ensure-coverage)       cmd_ensure_coverage ;;
     ensure-all)            cmd_ensure_all ;;
     coverage)              cmd_coverage ;;
-    doctor|repair|fix)   cmd_doctor; cmd_status ;;
+    doctor)
+      case "${2:-}" in
+        "")    cmd_doctor ;;
+        --fix) cmd_doctor_fix; cmd_doctor ;;
+        *)     err "usage: vault-os doctor [--fix]"; exit 2 ;;
+      esac
+      ;;
+    repair|fix)            cmd_doctor_fix; cmd_status ;;
     intro|play-intro)      cmd_intro ;;
     intro-enable|enable)   cmd_intro_enable ;;
     intro-disable|disable) cmd_intro_disable ;;

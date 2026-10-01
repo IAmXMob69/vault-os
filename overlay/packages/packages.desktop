@@ -18,3 +18,11 @@ xfce4-screensaver
 xfce4-power-manager
 xfce4-pulseaudio-plugin
 xfce4-taskmanager
+xfconf
+gtk3
+# Python fallbacks (spin, lock spin, screensaver, close-all) — keep these
+python
+python-gobject
+python-cairo
+libwnck3
+libnotify

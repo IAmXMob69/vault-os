@@ -7,19 +7,19 @@
  */
 
 /* ── Palette ─────────────────────────────────────────────── */
-@define-color pb_fg        #33FF6A;
-@define-color pb_fg_bri    #B8FFCC;
-@define-color pb_fg_dim    #2A9B4E;
-@define-color pb_mute      #1A3D28;
+@define-color pb_fg        #1AFF6B;
+@define-color pb_fg_bri    #B6FFD0;
+@define-color pb_fg_dim    #129D43;
+@define-color pb_mute      #0B3E1D;
 @define-color pb_bg        #070C09;
 @define-color pb_elev      #0D1510;
 @define-color pb_mid       #121C15;
-@define-color pb_sel       #1B5C32;
-@define-color pb_sel_soft  alpha(#1B5C32, 0.55);
+@define-color pb_sel       #0D5E2A;
+@define-color pb_sel_soft  alpha(#0D5E2A, 0.55);
 @define-color pb_warn      #FFB000;
 @define-color pb_error     #FF4D4D;
-@define-color pb_glow      alpha(#33FF6A, 0.18);
-@define-color pb_border    #1F4A30;
+@define-color pb_glow      alpha(#1AFF6B, 0.18);
+@define-color pb_border    #0C4D23;
 @define-color pb_inset     #040806;
 
 /* ── Base (Materia-style: avoid deadly wildcards on bg) ──── */
@@ -350,7 +350,7 @@ progressbar trough, levelbar trough {
   min-height: 8px;
 }
 progressbar progress, levelbar block.filled {
-  background-image: linear-gradient(90deg, #1a6b35 0%, @pb_fg 60%, @pb_fg_bri 100%);
+  background-image: linear-gradient(90deg, #0e6b30 0%, @pb_fg 60%, @pb_fg_bri 100%);
   border-radius: 2px;
   box-shadow: 0 0 12px alpha(@pb_fg, 0.45);
 }

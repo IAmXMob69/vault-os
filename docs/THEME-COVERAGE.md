@@ -19,7 +19,8 @@ What Vault.OS owns in a normal Arch + XFCE session.
 ```bash
 vault-os status
 vault-os ensure-theme
-vault-os doctor
+vault-os doctor        # read-only
+vault-os doctor --fix  # repair
 ```
 
 System greeter / Plymouth need sudo once — [`BOOT.md`](../BOOT.md), [`SYSTEM-INSTALL.md`](SYSTEM-INSTALL.md).

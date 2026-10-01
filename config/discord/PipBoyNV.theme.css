@@ -7,17 +7,17 @@
 :root {
   --pb-bg: #070C09;
   --pb-elev: #0D1510;
-  --pb-fg: #33FF6A;
-  --pb-dim: #1A4A2A;
-  --pb-border: #147832;
-  --pb-bright: #B8FFCC;
+  --pb-fg: #1AFF6B;
+  --pb-dim: #0C4C23;
+  --pb-border: #0F7835;
+  --pb-bright: #B6FFD0;
 }
 .theme-dark, .theme-light {
   --background-primary: var(--pb-bg) !important;
   --background-secondary: #060A08 !important;
   --background-secondary-alt: var(--pb-elev) !important;
   --background-tertiary: #040806 !important;
-  --background-accent: #1B5C32 !important;
+  --background-accent: #0D5E2A !important;
   --background-floating: #0A100C !important;
   --channeltextarea-background: #040806 !important;
   --interactive-normal: var(--pb-fg) !important;
@@ -28,7 +28,7 @@
   --header-primary: var(--pb-bright) !important;
   --header-secondary: var(--pb-fg) !important;
   --brand-experiment: var(--pb-fg) !important;
-  --brand-experiment-560: #1B5C32 !important;
+  --brand-experiment-560: #0D5E2A !important;
 }
 /* scrollbar */
 ::-webkit-scrollbar-thumb { background: var(--pb-border) !important; }
