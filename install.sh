@@ -126,11 +126,17 @@ install -m 0755 "$ROOT/bin/vault-os-close-all" "$HOME/.local/bin/vault-os-close-
 install -m 0755 "$ROOT/bin/vault-os-install-system-theme" "$HOME/.local/bin/vault-os-install-system-theme"
 install -m 0755 "$ROOT/bin/vault-os-chromium-theme" "$HOME/.local/bin/vault-os-chromium-theme"
 ok "binaries in ~/.local/bin"
-if command -v g++ >/dev/null && pkg-config --exists gtk+-3.0 gio-unix-2.0 x11 2>/dev/null; then
-  make -s -C "$ROOT/src" install PREFIX="$HOME/.local" && ok "native helpers built (C++)" \
-    || warn "C++ helpers failed to build, Python fallbacks stay in place"
+# Native C++ helpers. src/Makefile checks each tool's own g++/pkg-config
+# deps and skips just that tool when something is missing; every native
+# binary has a script fallback, so a skipped or failed tool changes nothing.
+if command -v g++ >/dev/null && command -v make >/dev/null && command -v pkg-config >/dev/null; then
+  if make -s -C "$ROOT/src" install PREFIX="$HOME/.local"; then
+    ok "native helpers built (C++); any 'skip' above keeps its script fallback"
+  else
+    warn "some C++ helpers failed to build, their script fallbacks stay in place"
+  fi
 else
-  warn "g++ or GTK headers missing, skipping C++ helpers"
+  warn "g++, make or pkg-config missing, skipping C++ helpers (script fallbacks stay in place)"
 fi
 
 # ---------------------------------------------------------------------------
