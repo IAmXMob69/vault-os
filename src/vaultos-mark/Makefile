@@ -3,6 +3,8 @@ CXXFLAGS ?= -O2 -std=c++17 -Wall -Wextra
 PKGS = gtk+-3.0 cairo
 PREFIX ?= $(HOME)/.local
 
+all: vaultos-mark
+
 vaultos-mark: main.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@ $$(pkg-config --cflags --libs $(PKGS)) -lm
 
@@ -11,4 +13,4 @@ install: vaultos-mark
 
 clean:
 	rm -f vaultos-mark
-.PHONY: install clean
+.PHONY: all install clean

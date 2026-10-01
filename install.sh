@@ -126,6 +126,12 @@ install -m 0755 "$ROOT/bin/vault-os-close-all" "$HOME/.local/bin/vault-os-close-
 install -m 0755 "$ROOT/bin/vault-os-install-system-theme" "$HOME/.local/bin/vault-os-install-system-theme"
 install -m 0755 "$ROOT/bin/vault-os-chromium-theme" "$HOME/.local/bin/vault-os-chromium-theme"
 ok "binaries in ~/.local/bin"
+if command -v g++ >/dev/null && pkg-config --exists gtk+-3.0 gio-unix-2.0 x11 2>/dev/null; then
+  make -s -C "$ROOT/src" install PREFIX="$HOME/.local" && ok "native helpers built (C++)" \
+    || warn "C++ helpers failed to build, Python fallbacks stay in place"
+else
+  warn "g++ or GTK headers missing, skipping C++ helpers"
+fi
 
 # ---------------------------------------------------------------------------
 # Configs

@@ -33,3 +33,4 @@ lib/
 scripts/geolock-apply.sh
 scripts/__pycache__/
 src/vaultos-mark/vaultos-mark
+src/vaultos-screensaver-proxy/vaultos-screensaver-proxy
