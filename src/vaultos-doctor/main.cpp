@@ -367,7 +367,7 @@ void replace_all(string& s, const string& from, const string& to) {
 }
 
 string dir_diff(const string& a, const string& b, vector<string> extra = {}) {
-  vector<string> ex = {"README.md", "*.py", "__pycache__", "*.bak", "*.bak-*"};
+  vector<string> ex = {"README.md", "*.py", "__pycache__", "*.bak", "*.bak-*", "*.vaultos-bak-*"};
   ex.insert(ex.end(), extra.begin(), extra.end());
   string out;
   if (!is_dir(a) || !is_dir(b)) return "";

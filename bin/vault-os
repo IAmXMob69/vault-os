@@ -1178,7 +1178,7 @@ _dir_diff() {
   # _dir_diff A B [extra diff -x patterns...] -> differing/missing entries
   # (ignores docs, generators, caches)
   local a="$1" b="$2" x ex=(); shift 2
-  for x in README.md '*.py' __pycache__ '*.bak' '*.bak-*' "$@"; do ex+=(-x "$x"); done
+  for x in README.md '*.py' __pycache__ '*.bak' '*.bak-*' '*.vaultos-bak-*' "$@"; do ex+=(-x "$x"); done
   diff -rq "${ex[@]}" "$a" "$b" 2>/dev/null | sed -e "s|$a/||g" -e "s|$b/||g" || true
 }
 
