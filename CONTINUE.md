@@ -1,5 +1,13 @@
 # CONTINUE
 
+## Landed — 1.5.23
+
+- `install.sh` copies a file aside before it replaces the bytes (`name.vaultos-bak-<utc>`). A failed backup stops the run (E102) and leaves the file. Unknown option is E100. Missing rsync is E101. A missing package list is E103.
+- The default install is the Vault.OS session. `--legacy` adds the Pip-Boy packs, app skins, the bashrc hook, and Kvantum `PipBoy-NV`. Qt canon style is `gtk2`.
+- `~/.themes/Vault.OS/gtk-3.0/terminal.css` and `gtk-3.20/terminal.css` are seeded from `terminal.reduced.css`.
+- The first-boot password prompt turns echo off before the prompt is shown.
+- `--packages` installs `overlay/packages/packages.desktop` with `pacman -S --needed`, plus `qt5ct`, `qt6ct`, and `rsync`. It does not restart XFCE or LightDM.
+
 ## Landed — 1.5.22
 
 - `install.sh` no longer aborts when an optional picom profile is missing. It ships `picom-anim.conf` and `picom-reduced.conf`, and the status colors are phosphor `#1AFF6B` (the old `38;2;51;255;106` truecolor was banned `#33FF6A` and lint now catches that form).

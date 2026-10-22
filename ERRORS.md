@@ -410,6 +410,27 @@ Do not leave `vaultos-spin-arch --full` running for days on HD 630 — it burns 
 - **Do instead:** Absence is WARN. A desktop that exists but is Hidden, has the wrong Exec, or hijacks `xfce-floaters.desktop` is still FAIL.
 - **Logged:** 2026-10-21
 
+### DO NOT overwrite a home config from install.sh without a backup
+- **Symptom:** `./install.sh` replaced GTK, Qt, picom, terminal, and autostart files in place. A second run threw away local edits.
+- **Do instead:** Copy a file whose bytes would change to `name.vaultos-bak-YYYYMMDDTHHMMSSZ` beside it. rsync keeps replaced files in a sibling `*.vaultos-bak-<utc>` directory and excludes `*.vaultos-bak-*` so the next sync leaves those copies. `terminal.css` is not part of the theme sync; it is seeded from `terminal.reduced.css`. If the backup copy fails, stop and leave the original.
+- **Refusals:** E100 unknown option. E101 rsync is not installed, so files cannot be copied. E102 could not back up the file, so it was left unchanged. E103 `--packages` but `overlay/packages/packages.desktop` is missing.
+- **Logged:** 2026-10-22
+
+### DO NOT print a secret prompt before echo is off
+- **Symptom:** `iso/test-firstboot.sh` reports `[cxx] tty: password echoed` when the suite has no controlling terminal. The wizard wrote `Password:` and only then cleared echo, so a fast reply showed up on the pty.
+- **Do instead:** Turn echo off before writing the password prompt (shell `stty -echo`, C++ `tcsetattr` without `ECHO`), read the line, then restore the saved terminal settings. Same for the Wi-Fi password prompt.
+- **Logged:** 2026-10-22
+
+### DO NOT point Qt at a Kvantum theme the tree does not ship
+- **Symptom:** `qt5ct` and `qt6ct` set `style=kvantum`, and `kvantum.kvconfig` named `Vault.OS`. The only Kvantum theme in the tree is `PipBoy-NV`, so Qt did not follow the GTK theme.
+- **Do instead:** Canon configs set `style=gtk2`. `./install.sh --legacy` installs the Pip-Boy packs and switches those two files to `style=kvantum` with `theme=PipBoy-NV`.
+- **Logged:** 2026-10-22
+
+### DO NOT leave installed terminal.css off the phosphor dial
+- **Symptom:** `vault-os doctor` warns `live-term-css` because `~/.themes/Vault.OS/gtk-3.0/terminal.css` and `gtk-3.20/terminal.css` differ from `source/xfce4-terminal/terminal.reduced.css`.
+- **Do instead:** After the theme copy, install `terminal.reduced.css` over both, with a backup. The screensaver wrapper under `/usr/lib/xfce4-screensaver/` stays a WARN until someone runs `install-system.sh`. Do not restart LightDM for that.
+- **Logged:** 2026-10-22
+
 ### DO NOT record "I created X" only after creating X
 - **Symptom:** The shell wizard set `CREATED_USER` after useradd returned. A SIGTERM between the passwd write and that line left the account behind, because the EXIT trap had no name to roll back (the SIGTERM test failed intermittently).
 - **Do instead:** Set the rollback marker before the step that creates the thing, and make the rollback safe when nothing was made (the name was checked free, so `userdel` of a missing user is a no-op).

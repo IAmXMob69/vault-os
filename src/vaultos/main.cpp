@@ -150,7 +150,7 @@ void resolve_paths(const char* argv0) {
   if (co && *co) g_checkout = co;
   else if (present(fs::path(g_root) / ".git")) g_checkout = g_root;
   string v = trim(slurp(fs::path(g_lib) / "overlay" / "VERSION"));
-  g_version = v.empty() ? "1.5.19" : v;
+  g_version = v.empty() ? "1.5.23" : v;
   g_ident = (fs::path(g_lib) / "overlay" / "identity-apply.sh").string();
   g_pkgsh = (fs::path(g_lib) / "libexec" / "vaultos-packages.sh").string();
   if (!is_exec(g_pkgsh)) g_pkgsh = (fs::path(g_lib) / "overlay" / "libexec" / "vaultos-packages.sh").string();

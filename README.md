@@ -90,9 +90,12 @@ Design notes live in [`DESIGN.md`](DESIGN.md). Colors are in [`tokens.css`](toke
 ## Install
 
 ```bash
+./install.sh --no-apply
 ./bin/vault-os install
 vault-os status
 ```
+
+`./install.sh` copies desktop files into the home directory and backs up a file it would change. `--legacy` also installs the Pip-Boy packs. It does not restart XFCE or LightDM. A refusal prints one sentence and an E-code (`E100` unknown option, `E101` rsync missing, `E102` backup failed, `E103` package list missing).
 
 That drops themes and icons into `~/.themes` / `~/.icons`, plates into `~/.local/share/backgrounds/Vault.OS`, links the helpers in `~/.local/bin`, writes a Vault.OS conf, and runs `ensure-theme`.
 

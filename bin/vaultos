@@ -22,7 +22,7 @@ elif [[ -d "$ROOT/.git" ]]; then
 else
   CHECKOUT=""
 fi
-VERSION="$(tr -d '\n' <"$LIB/overlay/VERSION" 2>/dev/null || echo 1.5.19)"
+VERSION="$(tr -d '\n' <"$LIB/overlay/VERSION" 2>/dev/null || echo 1.5.23)"
 IDENT="$LIB/overlay/identity-apply.sh"
 PKGSH="$LIB/libexec/vaultos-packages.sh"
 [[ -x "$PKGSH" ]] || PKGSH="$LIB/overlay/libexec/vaultos-packages.sh"

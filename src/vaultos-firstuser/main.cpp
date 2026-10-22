@@ -20,7 +20,9 @@
 // (0600) for a retry, and prints "Setup failed/cancelled". The stamp is the
 // commit point; after it nothing is rolled back. Typeahead is thrown away
 // before every prompt and echo is off during slow steps, so keys pressed early
-// never become the username or show a password in clear.
+// never become the username or show a password in clear. Secret prompts turn
+// echo off before the prompt is written; a key that arrives with the prompt
+// used to be painted by the pty.
 #include <crypt.h>
 #include <fcntl.h>
 #include <grp.h>
@@ -457,6 +459,36 @@ bool read_line(string& line, bool secret = false) {
   return nl;
 }
 
+// Echo off first, then the prompt, then the line. Restores the saved termios.
+bool read_secret(const string& prompt, string& line) {
+  line.clear();
+  struct termios old;
+  bool tty = isatty(0) && tcgetattr(0, &old) == 0;
+  if (tty) {
+    struct termios t = old;
+    t.c_lflag &= ~tcflag_t(ECHO | ECHONL);
+    tcsetattr(0, TCSANOW, &t);
+  }
+  out(prompt);
+  bool nl = false;
+  for (;;) {
+    char c;
+    ssize_t n = read(0, &c, 1);
+    if (n < 0 && errno == EINTR) {
+      if (g_sig) {
+        if (tty) tcsetattr(0, TCSANOW, &old);
+        checkpoint();
+      }
+      continue;
+    }
+    if (n <= 0) break;
+    if (c == '\n') { nl = true; break; }
+    line += c;
+  }
+  if (tty) tcsetattr(0, TCSANOW, &old);
+  return nl;
+}
+
 // ask KEY DEFAULT PROMPT — answers file first, else the keyboard.
 void ask(const string& key, const string& def, const string& prompt) {
   checkpoint();
@@ -863,8 +895,7 @@ void prompt_machine() {
   string psk = answer("wifi_psk");
   if (psk.empty()) {
     drain_input();
-    out(G + "  Wi-Fi password: " + N);
-    read_line(psk, true);
+    read_secret(G + "  Wi-Fi password: " + N, psk);
     say();
     checkpoint();
   }
@@ -936,13 +967,11 @@ string read_password() {
   for (;;) {
     string p1, p2;
     drain_input();
-    out(G + "  Password: " + N);
-    if (!read_line(p1, true)) { say(); throw Abort{1}; }
+    if (!read_secret(G + "  Password: " + N, p1)) { say(); throw Abort{1}; }
     say();
     checkpoint();
     drain_input();
-    out(G + "  Password (again): " + N);
-    if (!read_line(p2, true)) { say(); throw Abort{1}; }
+    if (!read_secret(G + "  Password (again): " + N, p2)) { say(); throw Abort{1}; }
     say();
     checkpoint();
     if (p1.empty()) { bad("Password cannot be empty."); continue; }

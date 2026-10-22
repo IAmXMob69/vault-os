@@ -247,6 +247,23 @@ drain_input() {
   restore_tty
 }
 
+# Echo off before the prompt is written. Result is in REPLY.
+read_secret() {
+  local prompt="$1" saved=""
+  REPLY=""
+  if [[ -t 0 ]]; then
+    saved="$(stty -g 2>/dev/null || true)"
+    [[ -n "$saved" ]] && stty -echo 2>/dev/null || true
+  fi
+  printf '%s' "$prompt"
+  if ! IFS= read -r REPLY; then
+    [[ -n "$saved" ]] && stty "$saved" 2>/dev/null || true
+    return 1
+  fi
+  [[ -n "$saved" ]] && stty "$saved" 2>/dev/null || true
+  printf '\n'
+}
+
 ask() {
   # ask KEY DEFAULT PROMPT
   local key="$1" def="$2" prompt="$3"
@@ -538,9 +555,8 @@ prompt_machine() {
             psk="${ANSWERS[wifi_psk]}"
           else
             drain_input
-            printf 'Wi-Fi password: '
-            IFS= read -rs psk || true
-            echo
+            read_secret 'Wi-Fi password: ' || true
+            psk="$REPLY"
           fi
           apply_wifi "$ssid" "$psk" || echo "Wi-Fi connect failed; you can set it up after login."
         fi
@@ -595,13 +611,11 @@ read_password() {
   fi
   while true; do
     drain_input
-    printf 'Password: '
-    IFS= read -rs p1 || return 1
-    echo
+    read_secret 'Password: ' || return 1
+    p1="$REPLY"
     drain_input
-    printf 'Password (again): '
-    IFS= read -rs p2 || return 1
-    echo
+    read_secret 'Password (again): ' || return 1
+    p2="$REPLY"
     if [[ -z "$p1" ]]; then
       echo "Password cannot be empty."
       continue
