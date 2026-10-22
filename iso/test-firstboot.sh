@@ -635,6 +635,21 @@ if [[ -n "$CXX_WIZ" ]]; then
   TAG=""
 fi
 
+# Dispatcher: native when it is executable, shell otherwise.
+disp="$work/disp"
+mkdir -p "$disp"
+printf '#!/bin/bash\necho NATIVE\n' >"$disp/native"
+printf '#!/bin/bash\necho SCRIPT\n' >"$disp/script"
+chmod +x "$disp/native" "$disp/script"
+out=$("$ROOT/overlay/libexec/vaultos-run.sh" "$disp/native" "$disp/script")
+[[ "$out" == "NATIVE" ]] && pass "vaultos-run prefers native" || fail "vaultos-run did not prefer native ($out)"
+out=$(VAULTOS_FORCE_SHELL=1 "$ROOT/overlay/libexec/vaultos-run.sh" "$disp/native" "$disp/script")
+[[ "$out" == "SCRIPT" ]] && pass "vaultos-run honors VAULTOS_FORCE_SHELL" || fail "vaultos-run ignored FORCE_SHELL ($out)"
+rm -f "$disp/native"
+out=$("$ROOT/overlay/libexec/vaultos-run.sh" "$disp/missing" "$disp/script")
+[[ "$out" == "SCRIPT" ]] && pass "vaultos-run falls back to the script" || fail "vaultos-run fallback ($out)"
+grep -q 'vaultos-run.sh' "$UNIT" && pass "firstuser unit goes through vaultos-run" || fail "firstuser unit still calls the script directly"
+
 echo
 if [[ "$FAIL" -eq 0 ]]; then
   echo "All first-boot tests passed."

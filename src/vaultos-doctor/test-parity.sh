@@ -39,7 +39,9 @@ copy_tree() {
   mkdir -p "$1"
   git -C "$ROOT" ls-files -z | tar -C "$ROOT" --null -T - -cf - | tar -C "$1" -xf -
   # The working copy of the checks under test, not the committed one.
+  # install.sh is scanned for the palette, so the snapshot must be current too.
   cp "$ROOT/bin/vault-os" "$1/bin/vault-os"
+  cp "$ROOT/install.sh" "$1/install.sh"
 }
 
 # --- lint: clean tree ---
@@ -73,6 +75,7 @@ sed -i '/^ScrollingBar=/d' "$B/source/xfce4-terminal/terminalrc.clear"
 echo 'Hidden=false' >>"$B/source/xfce4-screensaver/vaultos-arch-spin.desktop"
 mkdir -p "$B/extras/zz" && printf '[Desktop Entry]\nExec=/usr/bin/vaultos-thing\n' >"$B/extras/zz/xfce-floaters.desktop.bak"
 printf '[Desktop Entry]\nExec=vaultos-spin-arch --instance desktop --full\n' >"$B/extras/zz/spin.desktop"
+printf 'echo "\\033[38;2;51;255;106m"\n' >>"$B/install.sh"
 echo drift >>"$B/source/ERRORS.md"
 echo '/* drift */' >>"$B/source/tokens.css"
 printf '#!/bin/bash\nif then fi\n' >"$B/bin/zz-broken"

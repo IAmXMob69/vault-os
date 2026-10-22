@@ -1098,7 +1098,8 @@ cmd_status() {
 # Patterns are split so this file never matches its own checks.
 _CHK_FAIL=0
 _CHK_WARN=0
-_BANNED_HEX_RE='(#|0x)(33FF6A|44FF3D)|rgba?\(\s*(51\s*,\s*255\s*,\s*106|68\s*,\s*255\s*,\s*61)\b'
+# Truecolor tails are split so this file does not match its own check.
+_BANNED_HEX_RE='(#|0x)(33FF6A|44FF3D)|rgba?\(\s*(51\s*,\s*255\s*,\s*106|68\s*,\s*255\s*,\s*61)\b|38;2;51;255;''106m|38;2;68;255;''61m'
 _SB_NONE_RE='ScrollingBar''=NONE|TERMINAL_SCROLLBAR_''NONE'
 _IMPORTANT_RE='!\s*import''ant'
 _CSS_JUNK_RE='text-trans''form|:(before|after)\b|-GtkNote''book-'
@@ -1580,7 +1581,8 @@ _doctor_live() {
       _chk FAIL live-saver "$sysd: $out(sudo: install-system.sh)"
     fi
   else
-    _chk FAIL live-saver "$sysd missing (sudo: source/xfce4-screensaver/install-system.sh)"
+    # A user install never has these. Wrong contents stay FAIL; absence is sudo-later.
+    _chk WARN live-saver "$sysd missing (sudo: source/xfce4-screensaver/install-system.sh)"
   fi
   if [[ -x "$wrap" ]]; then
     if [[ -n "$R" && -f "$R/source/xfce4-screensaver/vaultos-arch-spin.wrapper" ]] \
@@ -1590,7 +1592,7 @@ _doctor_live() {
       _chk OK live-saver "$wrap present"
     fi
   else
-    _chk FAIL live-saver "$wrap missing or not executable (sudo: install-system.sh)"
+    _chk WARN live-saver "$wrap missing or not executable (sudo: install-system.sh)"
   fi
   local fl=/usr/share/applications/screensavers/xfce-floaters.desktop
   if [[ -f "$fl" ]] && grep -qE '^(Try)?Exec=.*vaultos' "$fl"; then
@@ -1893,14 +1895,23 @@ cmd_selftest() {
 }
 
 _a11y_picom() {
-  local want="$1" pc="$HOME/.config/picom.conf"
-  [[ -f "$pc" ]] || return 0
+  local want="$1" pc="$HOME/.config/picom.conf" cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
+  local profile
   if [[ "$want" == "off" ]]; then
-    sed -i 's/^fading *= *true/fading = false/' "$pc"
-    sed -i 's/fade = true/fade = false/' "$pc"
+    profile="$cfg/picom-reduced.conf"
   else
-    sed -i 's/^fading *= *false/fading = true/' "$pc"
-    sed -i 's/fade = false/fade = true/' "$pc"
+    profile="$cfg/picom-anim.conf"
+  fi
+  if [[ -f "$profile" ]]; then
+    cp -f "$profile" "$pc"
+  elif [[ -f "$pc" ]]; then
+    if [[ "$want" == "off" ]]; then
+      sed -i 's/^fading *= *true/fading = false/' "$pc"
+      sed -i 's/fade = true/fade = false/' "$pc"
+    else
+      sed -i 's/^fading *= *false/fading = true/' "$pc"
+      sed -i 's/fade = false/fade = true/' "$pc"
+    fi
   fi
   pkill -HUP -x picom 2>/dev/null || true
 }

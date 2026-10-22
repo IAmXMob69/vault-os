@@ -10,7 +10,7 @@ Before=vaultos-firstuser.service vaultos-core.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/lib/vaultos/libexec/vaultos-firstboot.sh
+ExecStart=/usr/lib/vaultos/libexec/vaultos-run.sh /usr/lib/vaultos/libexec/vaultos-boot /usr/lib/vaultos/libexec/vaultos-firstboot.sh identity
 Nice=10
 TimeoutStartSec=60
 

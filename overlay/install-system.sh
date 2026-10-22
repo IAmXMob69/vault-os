@@ -26,6 +26,19 @@ install -m 0644 "$SRC/overlay/identity/"* "$LIB/overlay/identity/"
 install -m 0755 "$SRC/overlay/libexec/vaultos-core.sh" "$LIB/libexec/vaultos-core.sh"
 install -m 0755 "$SRC/overlay/libexec/vaultos-firstboot.sh" "$LIB/libexec/vaultos-firstboot.sh"
 install -m 0755 "$SRC/overlay/libexec/vaultos-firstuser.sh" "$LIB/libexec/vaultos-firstuser.sh"
+install -m 0755 "$SRC/overlay/libexec/vaultos-run.sh" "$LIB/libexec/vaultos-run.sh"
+# Native boot helper and wizard, when they build. The shell scripts stay the fallback.
+install_native() {
+  local name="$1" built="$SRC/src/$name/$name"
+  if [[ ! -x "$built" ]] && command -v g++ >/dev/null && command -v make >/dev/null; then
+    make -C "$SRC/src/$name" || echo "vaultos: $name did not build; shell fallback stays" >&2
+  fi
+  if [[ -x "$built" ]]; then
+    install -m 0755 "$built" "$LIB/libexec/$name"
+  fi
+}
+install_native vaultos-boot
+install_native vaultos-firstuser
 install -m 0644 "$SRC/overlay/systemd/vaultos-core.service" /usr/lib/systemd/system/vaultos-core.service
 install -m 0644 "$SRC/overlay/systemd/vaultos-firstboot.service" /usr/lib/systemd/system/vaultos-firstboot.service
 install -m 0644 "$SRC/overlay/systemd/vaultos-firstuser.service" /usr/lib/systemd/system/vaultos-firstuser.service

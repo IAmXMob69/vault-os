@@ -69,8 +69,10 @@ skip_wifi=1
 
 Tests (fake root, does not touch this machine): `iso/test-firstboot.sh`. It
 runs every scenario against the shell wizard and against the C++ port
-(`src/vaultos-firstuser`), then diffs what each leaves behind. The ISO still
-ships the shell wizard; the C++ binary is not wired in yet.
+(`src/vaultos-firstuser`), then diffs what each leaves behind. Boot units and
+`vaultos firstboot --run` go through `vaultos-run.sh`: the C++ wizard and the
+boot helpers run when they are installed under `/usr/lib/vaultos/libexec`, and
+the shell scripts stay the fallback. `VAULTOS_FORCE_SHELL=1` keeps the scripts.
 
 ## Layout
 

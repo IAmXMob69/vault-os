@@ -1,5 +1,12 @@
 # CONTINUE
 
+## Landed — 1.5.22
+
+- `install.sh` no longer aborts when an optional picom profile is missing. It ships `picom-anim.conf` and `picom-reduced.conf`, and the status colors are phosphor `#1AFF6B` (the old `38;2;51;255;106` truecolor was banned `#33FF6A` and lint now catches that form).
+- `vault-os a11y` swaps those whole picom profiles, and still sed-edits `picom.conf` when the profiles were never installed.
+- `vault-os doctor` WARNs when the system screensaver desktop or wrapper is absent. A wrong or hijacked desktop is still FAIL, so a user-level install is not marked unhealthy for a sudo step that has not been run.
+- `vaultos-run.sh` prefers `vaultos-boot` and `vaultos-firstuser` when those binaries are installed, otherwise the shell scripts. The three boot units and `vaultos firstboot --run` use it. `install-system.sh` and `iso/prepare-profile.sh` install a binary that is already built, or build it when g++ is present.
+
 ## Open — code improvement pass
 
 Improve Arch XFCE / Vault.OS across the stack. Master Coding Bot can pull any lane; specialists still own craft depth.

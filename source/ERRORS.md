@@ -390,6 +390,26 @@ Do not leave `vaultos-spin-arch --full` running for days on HD 630 — it burns 
 - **Do instead:** nmcli: `connection add … wifi-sec.key-mgmt wpa-psk` with no secret, then `connection up uuid U passwd-file /dev/fd/3 3<<<"802-11-wireless-security.psk:ESCAPED"` (passwd-file takes backslash escapes and strips unescaped edge spaces, so escape `\`, spaces and tabs). iwctl: write `/var/lib/iwd/<name>.psk` 0600 (`[Security]` `Passphrase=`; escape `\`, tab, and a leading space as `\s`; name is the SSID or `=`+hex), then `iwctl station DEV connect SSID`. In bash, only builtins may touch the secret. `iso/test-firstboot.sh` stubs nmcli/iwctl, scans every `/proc/*/cmdline` with a random marker in the PSK, and diffs both wizards.
 - **Logged:** 2026-09-30 cpp-tools
 
+### DO NOT rsync into `~/.config` before creating it
+- **Symptom:** On a home with no `~/.config` yet, `install.sh` died at `rsync … config/pipboy/ ~/.config/pipboy/` (`mkdir failed: No such file or directory`). Themes were in place; configs, the terminal, and autostart were not.
+- **Do instead:** `mkdir -p "$CFG"` before the first rsync into it. rsync creates the last path component only.
+- **Logged:** 2026-10-21
+
+### DO NOT let `install.sh` die on an optional file
+- **Symptom:** `./install.sh` copied `picom.conf`, then `cp` of the missing `config/picom-anim.conf` aborted the rest of the install (`set -e`). GTK, terminal, and autostart never landed.
+- **Do instead:** Copy optional profiles only when the source exists. Ship `config/picom-anim.conf` and `config/picom-reduced.conf`; `vault-os a11y` swaps those whole files and falls back to the old `sed` when they are absent.
+- **Logged:** 2026-10-21
+
+### DO NOT paint the installer with Pip-Boy truecolor `38;2;51;255;106`
+- **Symptom:** `install.sh` used ANSI `51;255;106`, which is banned `#33FF6A`. The hex/rgb lint did not see it because the numbers were separated by semicolons.
+- **Do instead:** Phosphor is `#1AFF6B` (`38;2;26;255;107`). Lint now rejects `38;2;51;255;106m` and `38;2;68;255;61m` too.
+- **Logged:** 2026-10-21
+
+### DO NOT fail `vault-os doctor` because the sudo screensaver files are absent
+- **Symptom:** A correct `./bin/vault-os install` (no root) always exited 1: `/usr/share/applications/screensavers/vaultos-arch-spin.desktop` and the wrapper are not there until `install-system.sh`.
+- **Do instead:** Absence is WARN. A desktop that exists but is Hidden, has the wrong Exec, or hijacks `xfce-floaters.desktop` is still FAIL.
+- **Logged:** 2026-10-21
+
 ### DO NOT record "I created X" only after creating X
 - **Symptom:** The shell wizard set `CREATED_USER` after useradd returned. A SIGTERM between the passwd write and that line left the account behind, because the EXIT trap had no name to roll back (the SIGTERM test failed intermittently).
 - **Do instead:** Set the rollback marker before the step that creates the thing, and make the rollback safe when nothing was made (the name was checked free, so `userdel` of a missing user is a no-op).

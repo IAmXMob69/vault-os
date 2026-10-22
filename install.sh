@@ -11,8 +11,9 @@ APPLY=1
 SYSTEM=0
 PACKAGES=0
 
-info()  { printf '\033[38;2;51;255;106m==>\033[0m %s\n' "$*"; }
-ok()    { printf '\033[38;2;51;255;106m  ✓\033[0m %s\n' "$*"; }
+# Phosphor #1AFF6B (26;255;107). Do not use the old Pip-Boy truecolor.
+info()  { printf '\033[38;2;26;255;107m==>\033[0m %s\n' "$*"; }
+ok()    { printf '\033[38;2;26;255;107m  ✓\033[0m %s\n' "$*"; }
 warn()  { printf '\033[38;2;255;176;0m  !\033[0m %s\n' "$*"; }
 
 usage() {
@@ -51,6 +52,8 @@ install_new() {
   fi
   subst_home "$src" "$dest"
 }
+
+command -v rsync >/dev/null || { echo "install.sh needs rsync" >&2; exit 1; }
 
 info "Vault-OS — installing Pip-Boy rice into $HOME"
 
@@ -146,6 +149,8 @@ fi
 # Configs
 # ---------------------------------------------------------------------------
 info "Installing configs..."
+# A brand-new home has no ~/.config. rsync will not create the parent.
+mkdir -p "$CFG"
 rsync -a "$ROOT/config/pipboy/" "$CFG/pipboy/"
 chmod +x "$CFG/pipboy/"*.sh "$CFG/pipboy/pipboy.bash" 2>/dev/null || true
 
@@ -172,8 +177,9 @@ fi
 cp -f "$ROOT/config/gtk-4.0/settings.ini" "$CFG/gtk-4.0/settings.ini"
 [[ -f "$ROOT/config/gtkrc-2.0" ]] && cp -f "$ROOT/config/gtkrc-2.0" "$HOME/.gtkrc-2.0"
 cp -f "$ROOT/config/picom.conf" "$CFG/picom.conf"
-cp -f "$ROOT/config/picom-anim.conf" "$CFG/picom-anim.conf"
-cp -f "$ROOT/config/picom-anim.conf" "$CFG/picom-anim.canon.conf"
+# Optional compositor profiles. Missing files must not abort the rest of install.
+[[ -f "$ROOT/config/picom-anim.conf" ]] && cp -f "$ROOT/config/picom-anim.conf" "$CFG/picom-anim.conf"
+[[ -f "$ROOT/config/picom-reduced.conf" ]] && cp -f "$ROOT/config/picom-reduced.conf" "$CFG/picom-reduced.conf"
 cp -f "$ROOT/config/fontconfig/fonts.conf" "$CFG/fontconfig/fonts.conf"
 rsync -a "$ROOT/config/Kvantum/" "$CFG/Kvantum/"
 cp -f "$ROOT/config/qt5ct/qt5ct.conf" "$CFG/qt5ct/qt5ct.conf"

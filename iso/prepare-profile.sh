@@ -36,6 +36,16 @@ install -m 0644 "$ROOT/overlay/README.md" "$PROFILE/airootfs/usr/lib/vaultos/ove
 install -m 0644 "$ROOT/overlay/identity/"* "$PROFILE/airootfs/usr/lib/vaultos/overlay/identity/"
 install -m 0644 "$ROOT/overlay/packages/"* "$PROFILE/airootfs/usr/lib/vaultos/overlay/packages/"
 install -m 0755 "$ROOT/overlay/libexec/"*.sh "$PROFILE/airootfs/usr/lib/vaultos/libexec/"
+# Ship a built native helper next to its script. vaultos-run.sh falls back when it is absent.
+for native in vaultos-boot vaultos-firstuser; do
+  bin="$ROOT/src/$native/$native"
+  if [[ ! -x "$bin" ]] && command -v g++ >/dev/null && command -v make >/dev/null; then
+    make -C "$ROOT/src/$native" || echo "vaultos: $native not built; ISO keeps the shell fallback" >&2
+  fi
+  if [[ -x "$bin" ]]; then
+    install -m 0755 "$bin" "$PROFILE/airootfs/usr/lib/vaultos/libexec/$native"
+  fi
+done
 install -m 0644 "$ROOT/overlay/systemd/"*.service "$PROFILE/airootfs/usr/lib/systemd/system/"
 install -d "$PROFILE/airootfs/usr/lib/vaultos/overlay/skel" \
   "$PROFILE/airootfs/usr/lib/vaultos/overlay/xsessions" \

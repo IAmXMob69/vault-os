@@ -296,9 +296,14 @@ string scan(const string& root, const Pattern& p, const string& glob, const vect
 // Patterns are split so this file never matches its own checks.
 const string kHexA = "33FF" "6A", kHexB = "44FF" "3D";
 Pattern banned_hex() {
-  return {std::regex("(#|0x)(" + kHexA + "|" + kHexB + ")|rgba?\\(\\s*(51\\s*,\\s*255\\s*,\\s*106|68\\s*,\\s*255\\s*,\\s*61)\\b",
+  // Truecolor tails are split so a future scan of this file does not match itself.
+  const string ansiA = string("38;2;51;255;") + "106m";
+  const string ansiB = string("38;2;68;255;") + "61m";
+  return {std::regex("(#|0x)(" + kHexA + "|" + kHexB +
+                         ")|rgba?\\(\\s*(51\\s*,\\s*255\\s*,\\s*106|68\\s*,\\s*255\\s*,\\s*61)\\b|" +
+                         ansiA + "|" + ansiB,
                      std::regex::icase),
-          {lower_s(kHexA), lower_s(kHexB), "rgb"}};
+          {lower_s(kHexA), lower_s(kHexB), "rgb", ansiA, ansiB}};
 }
 Pattern important() { return {std::regex(string("!\\s*import") + "ant", std::regex::icase), {"!"}}; }
 Pattern css_junk() {
@@ -901,7 +906,8 @@ void doctor_live(const string& R) {
     if (out.empty()) chk("OK", "live-saver", "system desktop: no Hidden=, Exec/TryExec → " + wrap);
     else chk("FAIL", "live-saver", sysd + ": " + out + "(sudo: install-system.sh)");
   } else {
-    chk("FAIL", "live-saver", sysd + " missing (sudo: source/xfce4-screensaver/install-system.sh)");
+    // A user install never has these. Wrong contents stay FAIL; absence is sudo-later.
+    chk("WARN", "live-saver", sysd + " missing (sudo: source/xfce4-screensaver/install-system.sh)");
   }
   if (vaultos::is_exec_file(wrap)) {
     if (!R.empty() && is_reg(R + "/source/xfce4-screensaver/vaultos-arch-spin.wrapper") &&
@@ -910,7 +916,7 @@ void doctor_live(const string& R) {
     else
       chk("OK", "live-saver", wrap + " present");
   } else {
-    chk("FAIL", "live-saver", wrap + " missing or not executable (sudo: install-system.sh)");
+    chk("WARN", "live-saver", wrap + " missing or not executable (sudo: install-system.sh)");
   }
   string fl = "/usr/share/applications/screensavers/xfce-floaters.desktop";
   static const std::regex fl_re("^(Try)?Exec=.*vaultos");

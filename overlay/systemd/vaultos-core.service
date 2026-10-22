@@ -9,7 +9,7 @@ Wants=vaultos-firstboot.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/lib/vaultos/libexec/vaultos-core.sh
+ExecStart=/usr/lib/vaultos/libexec/vaultos-run.sh /usr/lib/vaultos/libexec/vaultos-boot /usr/lib/vaultos/libexec/vaultos-core.sh core
 Nice=10
 TimeoutStartSec=30
 

@@ -299,7 +299,12 @@ int cmd_firstboot(const string& a) {
   if (a == "--run") {
     if (!root()) { std::cerr << "firstboot --run needs root\n"; return 1; }
     std::cerr << "wizard prompts on tty1 (Ctrl-Alt-F1)\n";
-    exec({"/usr/lib/vaultos/libexec/vaultos-firstuser.sh"});
+    // An install lays scripts in libexec/. A checkout keeps them in overlay/libexec.
+    fs::path le = fs::path(g_lib) / "overlay" / "libexec";
+    if (present(fs::path(g_lib) / "libexec" / "vaultos-firstuser.sh")) le = fs::path(g_lib) / "libexec";
+    fs::path run = le / "vaultos-run.sh";
+    if (is_exec(run)) exec({run.string(), (le / "vaultos-firstuser").string(), (le / "vaultos-firstuser.sh").string()});
+    exec({(le / "vaultos-firstuser.sh").string()});
   }
   std::cerr << "usage: vaultos firstboot [status|--reset|--run]\n";
   return 2;

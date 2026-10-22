@@ -182,7 +182,10 @@ cmd_firstboot() {
         return 1
       fi
       echo "wizard prompts on tty1 (Ctrl-Alt-F1)" >&2
-      exec /usr/lib/vaultos/libexec/vaultos-firstuser.sh
+      # An install lays scripts in $LIB/libexec. A checkout keeps them in overlay/libexec.
+      local le="$LIB/overlay/libexec"
+      [[ -e "$LIB/libexec/vaultos-firstuser.sh" ]] && le="$LIB/libexec"
+      exec "$le/vaultos-run.sh" "$le/vaultos-firstuser" "$le/vaultos-firstuser.sh"
       ;;
     *)
       echo "usage: vaultos firstboot [status|--reset|--run]" >&2

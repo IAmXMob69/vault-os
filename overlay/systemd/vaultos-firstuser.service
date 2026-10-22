@@ -22,7 +22,7 @@ Type=oneshot
 # Stay "started" so systemd will not start LightDM until we have succeeded
 # (Before= + this unit remaining in the transaction).
 RemainAfterExit=yes
-ExecStart=/usr/lib/vaultos/libexec/vaultos-firstuser.sh
+ExecStart=/usr/lib/vaultos/libexec/vaultos-run.sh /usr/lib/vaultos/libexec/vaultos-firstuser /usr/lib/vaultos/libexec/vaultos-firstuser.sh
 # Bind the wizard to the first VT (not /dev/console, which can be serial).
 StandardInput=tty
 StandardOutput=tty
